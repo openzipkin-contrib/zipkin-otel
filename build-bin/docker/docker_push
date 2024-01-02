@@ -26,7 +26,7 @@
 set -ue
 
 docker_image=${1?docker_image is required, notably without a tag. Ex openzipkin/zipkin}
-version=${2:-master}
+version=${2:-main}
 
 # We don't need build kit, but Docker 20.10 no longer accepts --platform
 # without it. It is simpler to always enable it vs require maintainers to use
@@ -34,7 +34,7 @@ version=${2:-master}
 export DOCKER_BUILDKIT=1
 
 case ${version} in
-  master )
+  main )
     is_release=false
     ;;
   *-SNAPSHOT )
@@ -55,7 +55,7 @@ if [ "${is_release}" = "true" ]; then
   fi
   docker_repos=${DOCKER_RELEASE_REPOS:-ghcr.io docker.io}
 else
-  docker_tags=master
+  docker_tags=main
   docker_repos=ghcr.io
 fi
 

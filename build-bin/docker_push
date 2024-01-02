@@ -1,7 +1,7 @@
 #!/bin/sh -ue
 
 # Pushes docker as part of `deploy` or from a trigger tag
-version=${1:-master}
+version=${1:-main}
 
 # handle trigger pattern like /^docker-[0-9]+\.[0-9]+\.[0-9]+$/
 case ${version} in

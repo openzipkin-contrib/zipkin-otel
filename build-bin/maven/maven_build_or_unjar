@@ -29,8 +29,8 @@ classifier=${4:-}
 
 pom="${MAVEN_PROJECT_BASEDIR:-.}/pom.xml"
 
-# Use implicit version when master, if we can..
-if [ "${version}" = "master" ] && [ -f "${pom}" ]; then
+# Use implicit version when main, if we can..
+if [ "${version}" = "main" ] && [ -f "${pom}" ]; then
   version=$(sed -En 's/.*<version>(.*)<\/version>.*/\1/p' ${pom}| head -1)
 fi
 

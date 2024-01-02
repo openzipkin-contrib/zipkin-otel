@@ -4,7 +4,7 @@ This repo uses semantic versions. Please keep this in mind when choosing version
 
 1. **Alert others you are releasing**
 
-   There should be no commits made to master while the release is in progress (about 10 minutes). Before you start
+   There should be no commits made to main while the release is in progress (about 10 minutes). Before you start
    a release, alert others on [gitter](https://gitter.im/openzipkin/zipkin) so that they don't accidentally merge
    anything. If they do, and the build fails because of that, you'll have to recreate the release tag described below.
 
@@ -78,7 +78,7 @@ export SONATYPE_USER=your_sonatype_account
 export SONATYPE_PASSWORD=your_sonatype_password
 release_version=xx-version-to-release-xx
 
-# now from latest master, create the release. This creates and pushes the MAJOR.MINOR.PATCH tag
+# now from latest main, create the release. This creates and pushes the MAJOR.MINOR.PATCH tag
 ./build-bin/maven/maven_release release-${release_version}
 
 # once this works, deploy the release
@@ -87,6 +87,6 @@ git checkout ${release_version}
 
 # Finally, clean up
 ./mvnw release:clean
-git checkout master
+git checkout main
 git reset HEAD --hard
 ```

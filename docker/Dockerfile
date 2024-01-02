@@ -43,8 +43,8 @@ WORKDIR /install
 # /code contains what is allowed in .dockerignore. On problem, ensure .dockerignore is correct.
 ARG release_from_maven_build=false
 ENV RELEASE_FROM_MAVEN_BUILD=$release_from_maven_build
-# Version of the artifact to unjar. Ex. "2.4.5" or "2.4.5-SNAPSHOT" "master" to use the pom version.
-ARG version=master
+# Version of the artifact to unjar. Ex. "2.4.5" or "2.4.5-SNAPSHOT" "main" to use the pom version.
+ARG version=main
 ENV VERSION=$version
 ENV MAVEN_PROJECT_BASEDIR=/code
 RUN /code/build-bin/maven/maven_build_or_unjar io.zipkin.contrib.otel zipkin-module-otel ${VERSION} module

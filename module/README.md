@@ -44,7 +44,7 @@ The Zipkin server can be further configured as described in the
 
 Configuration can be applied either through environment variables or an external Zipkin
 configuration file. The module includes default configuration that can be used as a
-[reference](https://github.com/openzipkin-contrib/zipkin-otel/tree/master/autoconfigure/collector/src/main/resources/zipkin-server-otel.yml)
+[reference](https://github.com/openzipkin-contrib/zipkin-otel/blob/main/module/src/main/resources/zipkin-server-otel.yml)
 for users that prefer a file based approach.
 
 | Property                             | Environment Variable          | Description                                              |

@@ -37,7 +37,7 @@ Releases are at [Sonatype](https://oss.sonatype.org/content/repositories/release
 
 ### Library Snapshots
 Snapshots are uploaded to [Sonatype](https://oss.sonatype.org/content/repositories/snapshots) after
-commits to master.
+commits to main.
 
 ### Docker Images
 Released versions of zipkin-otel are published to the GitHub Container Registry

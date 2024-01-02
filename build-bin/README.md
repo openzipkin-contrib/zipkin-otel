@@ -33,7 +33,7 @@ actions and are entirely appropriate to vary per project. Here's an overview:
 ## Test
 
 Test builds and runs any tests of the project, including integration tests. CI providers should be
-configured to run tests on pull requests or pushes to the master branch, notably when the tag is
+configured to run tests on pull requests or pushes to the main branch, notably when the tag is
 blank. Tests should not run on documentation-only commits. Tests must not depend on authenticated
 resources, as running tests can leak credentials. Git checkouts should include the full history so
 that license headers or other git analysis can take place.
@@ -55,10 +55,10 @@ Here's a partial `test.yml` including only the aspects mentioned above.
 on:
   push:
     tags: ''
-    branches: master
+    branches: main
     paths-ignore: '**/*.md'
   pull_request:
-    branches: master
+    branches: main
     paths-ignore: '**/*.md'
 
 jobs:
@@ -76,13 +76,13 @@ jobs:
 
 ## Deploy
 
-Deploy builds and pushes artifacts to a remote repository for master and release commits on it. CI
-providers deploy pushes to master on when the tag is blank, but not on documentation-only commits.
+Deploy builds and pushes artifacts to a remote repository for main and release commits on it. CI
+providers deploy pushes to main on when the tag is blank, but not on documentation-only commits.
 Releases should deploy on version tags (ex `/^[0-9]+\.[0-9]+\.[0-9]+/`), without consideration of if
 the commit is documentation only or not.
 
 * [configure_deploy] - Sets up environment and logs in, assuming [configure_test] was not called.
-* [deploy] - deploys the project, with arg0 being "master" or a release commit like "1.2.3"
+* [deploy] - deploys the project, with arg0 being "main" or a release commit like "1.2.3"
 
 ### Example GitHub Actions setup
 
@@ -91,8 +91,8 @@ conditions. The name `deploy.yml` and job `deploy` allows easy references to sta
 parity of the scripts it uses.
 
 The `on:` section obviates job creation and resource usage for irrelevant events. GitHub Actions
-cannot implement "master, except documentation only-commits" in the same file. Hence, deployments of
-master will happen even on README change.
+cannot implement "main, except documentation only-commits" in the same file. Hence, deployments of
+main will happen even on README change.
 
 Here's a partial `deploy.yml` including only the aspects mentioned above. Notice env variables are
 explicitly defined and `on.tags` is a [glob pattern](https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet).
@@ -101,7 +101,7 @@ explicitly defined and `on.tags` is a [glob pattern](https://docs.github.com/en/
 on:
   push:
     tags: '[0-9]+.[0-9]+.[0-9]+**'  # e.g. 8.272.10 or 15.0.1_p9
-    branches: master
+    branches: main
 
 jobs:
   deploy:
@@ -116,6 +116,6 @@ jobs:
           GH_USER: ${{ secrets.GH_USER }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       - name: Deploy
-        # GITHUB_REF will be refs/heads/master or refs/tags/1.2.3
+        # GITHUB_REF will be refs/heads/main or refs/tags/1.2.3
         run: build-bin/deploy $(echo ${GITHUB_REF} | cut -d/ -f 3)
 ```
