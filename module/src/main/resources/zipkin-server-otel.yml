@@ -1,0 +1,14 @@
+# When enabled, this allows shorter env properties (ex -Dspring.profiles.active=otel)
+zipkin:
+  internal:
+    module:
+      grpc: zipkin.module.otel.ZipkinOpenTelemetryGrpcCollectorModule
+      http: zipkin.module.otel.ZipkinOpenTelemetryHttpCollectorModule
+  collector:
+    otel:
+      grpc:
+        # Set to false to disable creation of spans via OLTP/GRPC protocol
+        enabled: ${COLLECTOR_GRPC_ENABLED:${COLLECTOR_OTEL_GRPC_ENABLED:true}}
+      http:
+        # Set to false to disable creation of spans via OLTP/HTTP protocol
+        enabled: ${COLLECTOR_HTTP_ENABLED:${COLLECTOR_OTEL_HTTP_ENABLED:true}}

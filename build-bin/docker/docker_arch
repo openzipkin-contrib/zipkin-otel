@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# Copyright 2024 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+# This script gets a normalized name for the architecture as used in Docker. This will be a subset
+# of ones supported by buildx: https://github.com/docker/buildx/releases. This is a subset because
+# for us to support a platform implies also supporting things like running NPM on it, so it should
+# be an explicit act to add a platform.
+
+set -ue
+
+# Normalize docker_arch to what's available
+#
+# Note: s390x and ppc64le were added for Knative
+docker_arch=${DOCKER_ARCH:-$(uname -m)}
+case ${docker_arch} in
+  amd64* )
+    docker_arch=amd64
+    ;;
+  x86_64* )
+    docker_arch=amd64
+    ;;
+  arm64* )
+    docker_arch=arm64
+    ;;
+  aarch64* )
+    docker_arch=arm64
+    ;;
+  s390x* )
+    docker_arch=s390x
+    ;;
+  ppc64le* )
+    docker_arch=ppc64le
+    ;;
+  * )
+    >&2 echo "Unsupported DOCKER_ARCH: ${docker_arch}"
+    exit 1;
+esac
+
+echo ${docker_arch}
