@@ -1,0 +1,6 @@
+#!/bin/sh -ue
+
+# This script runs the tests of the project.
+#
+# See [README.md] for an explanation of this and how CI should use it.
+./mvnw -T1C -nsu verify
