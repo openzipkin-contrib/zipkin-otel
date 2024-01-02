@@ -7,9 +7,7 @@ Shared libraries that provide Zipkin integration with the OpenTelemetry. Require
 
 # Usage
 These components integrate traced applications and servers with OpenTelemetry protocols
-via interfaces defined in [Zipkin](https://github.com/openzipkin/zipkin)
-and [zipkin-reporter-java](https://github.com/openzipkin/zipkin-reporter-java).
-
+via interfaces defined by [Zipkin](https://github.com/openzipkin/zipkin).
 
 ## Collectors
 The component in a zipkin server that receives trace data is called a
