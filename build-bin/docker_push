@@ -12,4 +12,4 @@ esac
 
 # openzipkin-contrib is named differently in docker.io (openzipkincontrib). Skip the latter for now.
 export DOCKER_RELEASE_REPOS=ghcr.io
-build-bin/docker/docker_push openzipkin/zipkin-otel ${version}
+build-bin/docker/docker_push openzipkin-contrib/zipkin-otel ${version}

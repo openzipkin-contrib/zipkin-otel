@@ -8,7 +8,7 @@ This layers OpenTelemetry protocols on the base zipkin docker image.
 
 ```bash
 $ docker run -d -p 9411:9411 --name zipkin-otel \
-  ghcr.io/openzipkin/zipkin-otel
+  ghcr.io/openzipkin-contrib/zipkin-otel
 ```
 
 ## Configuration
@@ -20,12 +20,12 @@ Configuration variables are detailed [here](../module/README.md#configuration).
 To build a zipkin-otel Docker image from source, in the top level of the repository, run:
 
 ```bash
-$ build-bin/docker/docker_build openzipkin/zipkin-otel:test
+$ build-bin/docker/docker_build openzipkin-contrib/zipkin-otel:test
 ```
 
 To build from a published version, run this instead:
 
 ```bash
-$ build-bin/docker/docker_build openzipkin/zipkin-otel:test 0.18.1
+$ build-bin/docker/docker_build openzipkin-contrib/zipkin-otel:test 0.18.1
 ```
 

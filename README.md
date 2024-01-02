@@ -41,6 +41,6 @@ commits to master.
 
 ### Docker Images
 Released versions of zipkin-otel are published to the GitHub Container Registry
-as `ghcr.io/openzipkin/zipkin-otel`.
+as `ghcr.io/openzipkin-contrib/zipkin-otel`.
 
 See [docker](./docker) for details.
