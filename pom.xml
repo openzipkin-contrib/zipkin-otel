@@ -26,6 +26,11 @@
 
   <modules>
     <module>module</module>
+    <module>translation-otel</module>
+    <module>encoder-otel-brave</module>
+    <module>encoder-otel-zipkin</module>
+    <module>sender-grpc</module>
+    <module>sender-http</module>
     <module>collector-grpc</module>
     <module>collector-http</module>
   </modules>
@@ -60,29 +65,45 @@
     <!-- matching armeria/grpc/zipkin -->
     <zipkin.groupId>io.zipkin.zipkin2</zipkin.groupId>
     <!-- when updating, update docker/Dockerfile -->
-    <zipkin.version>2.26.0</zipkin.version>
-    <zipkin-reporter.version>2.17.1</zipkin-reporter.version>
-    <spring-boot.version>2.7.18</spring-boot.version>
+    <zipkin.version>3.4.0</zipkin.version>
+    <zipkin-reporter.version>3.4.0</zipkin-reporter.version>
+    <spring-boot.version>3.3.0</spring-boot.version>
     <!-- armeria.groupId allows you to test feature branches with jitpack -->
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>1.26.4</armeria.version>
+    <armeria.version>1.28.4</armeria.version>
 
-    <assertj.version>3.24.2</assertj.version>
-    <awaitility.version>4.2.0</awaitility.version>
-    <junit-jupiter.version>5.10.1</junit-jupiter.version>
-    <mockito.version>5.8.0</mockito.version>
+    <!-- This allows you to test feature branches with jitpack -->
+    <!--    <brave.groupId>com.github.openzipkin.brave</brave.groupId>-->
+    <!--    <brave.version>master-SNAPSHOT</brave.version>-->
+    <brave.groupId>io.zipkin.brave</brave.groupId>
+    <brave.version>6.0.3</brave.version>
+
+    <opentelemetry.version>1.39.0</opentelemetry.version>
+    <!-- Alpha jar! -->
+    <opentelemetry-proto.version>1.3.1-alpha</opentelemetry-proto.version>
+    <opentelemetry-semconv.version>1.25.0-alpha</opentelemetry-semconv.version>
+    <!-- from armeria-grpc or grpc-google-cloud-trace-v1 whichever is higher -->
+    <grpc.version>1.63.0</grpc.version>
+    <!-- from grpc-protobuf -->
+    <protobuf.version>3.25.1</protobuf.version>
+
+    <assertj.version>3.25.3</assertj.version>
+    <awaitility.version>4.2.1</awaitility.version>
+    <junit-jupiter.version>5.10.2</junit-jupiter.version>
+    <mockito.version>5.12.0</mockito.version>
 
     <!-- override to set exclusions per-project -->
     <errorprone.args/>
-    <errorprone.version>2.24.0</errorprone.version>
+    <errorprone.version>2.27.1</errorprone.version>
 
     <license.skip>${skipTests}</license.skip>
 
     <animal-sniffer-maven-plugin.version>1.23</animal-sniffer-maven-plugin.version>
     <go-offline-maven-plugin.version>1.2.8</go-offline-maven-plugin.version>
     <!-- TODO: cleanup any redundant ignores now also in the 4.0 release (once final) -->
-    <license-maven-plugin.version>4.3</license-maven-plugin.version>
-    <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+    <license-maven-plugin.version>4.5</license-maven-plugin.version>
+    <maven-bundle-plugin.version>5.1.9</maven-bundle-plugin.version>
+    <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
     <!-- Use same version as https://github.com/openzipkin/docker-java -->
     <maven-dependency-plugin.version>3.6.1</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
@@ -90,12 +111,12 @@
     <!-- Use same version as https://github.com/openzipkin/docker-java -->
     <maven-help-plugin.version>3.4.0</maven-help-plugin.version>
     <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
-    <maven-javadoc-plugin.version>3.6.2</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
     <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
     <maven-release-plugin.version>3.0.1</maven-release-plugin.version>
-    <maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
-    <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
-    <maven-surefire-plugin.version>3.2.2</maven-surefire-plugin.version>
+    <maven-shade-plugin.version>3.5.2</maven-shade-plugin.version>
+    <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
+    <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
     <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
   </properties>
 
@@ -134,6 +155,39 @@
     </developer>
   </developers>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.opentelemetry</groupId>
+        <artifactId>opentelemetry-bom</artifactId>
+        <version>${opentelemetry.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.opentelemetry.proto</groupId>
+        <artifactId>opentelemetry-proto</artifactId>
+        <version>${opentelemetry-proto.version}</version>
+      </dependency>
+      <!-- Stable semantic conventions. Note: generated code is still subject to breaking changes while published with "-alpha" suffix. -->
+      <dependency>
+        <groupId>io.opentelemetry.semconv</groupId>
+        <artifactId>opentelemetry-semconv</artifactId>
+        <version>${opentelemetry-semconv.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.asarkar.grpc</groupId>
+        <artifactId>grpc-test</artifactId>
+        <version>1.2.2</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -151,7 +205,7 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.2.13</version>
+      <version>1.5.6</version>
       <scope>test</scope>
     </dependency>
     <dependency>

@@ -92,7 +92,39 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
 
     @Override protected HttpResponse doPost(ServiceRequestContext ctx, HttpRequest req)
         throws Exception {
+      /*
+          // take bytes from req
+          byte[] serialized = pubsubMessage.getData().toByteArray();
+          metrics.incrementMessages();
+          metrics.incrementBytes(serialized.length);
+          collector.acceptSpans(serialized, new SpanCallback(ackReplyConsumer));
+       */
       throw new RuntimeException("Implement me!");
     }
   }
 }
+
+/*
+import com.google.cloud.pubsub.v1.AckReplyConsumer;
+import zipkin2.Callback;
+
+final class SpanCallback implements Callback<Void> {
+
+  private final AckReplyConsumer ackReplyConsumer;
+
+  public SpanCallback(AckReplyConsumer ackReplyConsumer) {
+    this.ackReplyConsumer = ackReplyConsumer;
+  }
+
+  @Override
+  public void onSuccess(Void value) {
+    ackReplyConsumer.ack();
+  }
+
+  @Override
+  public void onError(Throwable throwable) {
+    ackReplyConsumer.nack();
+  }
+}
+
+ */

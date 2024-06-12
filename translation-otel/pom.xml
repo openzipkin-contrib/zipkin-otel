@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright The OpenZipkin Authors
+    SPDX-License-Identifier: Apache-2.0
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <groupId>io.zipkin.contrib.otel</groupId>
+    <artifactId>zipkin-otel-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>zipkin-translation-otel</artifactId>
+  <name>Zipkin to OpenTelemetry Trace Translation</name>
+
+  <properties>
+    <main.basedir>${project.basedir}/..</main.basedir>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>${zipkin.groupId}</groupId>
+      <artifactId>zipkin</artifactId>
+      <version>${zipkin.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>${protobuf.version}</version>
+      <!-- We use provided scope to avoid pinning a protobuf version -->
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+</project>
