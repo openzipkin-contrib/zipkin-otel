@@ -23,6 +23,18 @@
 
   <dependencies>
     <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry.proto</groupId>
+      <artifactId>opentelemetry-proto</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry.semconv</groupId>
+      <artifactId>opentelemetry-semconv</artifactId>
+    </dependency>
+    <dependency>
       <groupId>${zipkin.groupId}</groupId>
       <artifactId>zipkin</artifactId>
       <version>${zipkin.version}</version>

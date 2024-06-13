@@ -13,12 +13,18 @@
  */
 package zipkin2.collector.otel.grpc;
 
+import com.linecorp.armeria.common.ContextAwareBlockingTaskExecutor;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.ServerConfigurator;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.grpc.protocol.AbstractUnsafeUnaryGrpcService;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import zipkin2.Callback;
+import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
 import zipkin2.collector.CollectorMetrics;
@@ -71,6 +77,7 @@ public final class OpenTelemetryGrpcCollector extends CollectorComponent
   @Override public OpenTelemetryGrpcCollector start() {
     return this;
   }
+
   @Override public String toString() {
     return "OpenTelemetryGrpcCollector{}";
   }
@@ -83,15 +90,42 @@ public final class OpenTelemetryGrpcCollector extends CollectorComponent
   }
 
   static final class HttpService extends AbstractUnsafeUnaryGrpcService {
-    final OpenTelemetryGrpcCollector collector;
+    final Collector collector;
+    final CollectorMetrics metrics;
 
     HttpService(OpenTelemetryGrpcCollector collector) {
-      this.collector = collector;
+      this.collector = collector.collector;
+      this.metrics = collector.metrics;
     }
 
     @Override
-    protected CompletionStage<ByteBuf> handleMessage(ServiceRequestContext ctx, ByteBuf message) {
-      throw new RuntimeException("Implement me!");
+    protected CompletionStage<ByteBuf> handleMessage(ServiceRequestContext ctx, ByteBuf bytes) {
+      metrics.incrementMessages();
+      metrics.incrementBytes(bytes.readableBytes());
+
+      if (!bytes.isReadable()) {
+        return CompletableFuture.completedFuture(bytes); // lenient on empty messages
+      }
+
+      try {
+        CompletableFutureCallback result = new CompletableFutureCallback();
+        collector.acceptSpans(bytes.nioBuffer(), SpanBytesDecoder.PROTO3, result, ctx.blockingTaskExecutor());
+        return result;
+      } finally {
+        bytes.release();
+      }
+    }
+  }
+
+  static final class CompletableFutureCallback extends CompletableFuture<ByteBuf>
+      implements Callback<Void> {
+
+    @Override public void onSuccess(Void value) {
+      complete(Unpooled.EMPTY_BUFFER);
+    }
+
+    @Override public void onError(Throwable t) {
+      completeExceptionally(t);
     }
   }
 }

@@ -2,14 +2,8 @@
  * Copyright The OpenZipkin Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package zipkin2.reporter.otel.brave;
+package zipkin2.translation.zipkin;
 
-import brave.Span.Kind;
-import brave.Tag;
-import brave.handler.MutableSpan;
-import brave.handler.MutableSpan.AnnotationConsumer;
-import brave.handler.MutableSpan.TagConsumer;
-import brave.handler.SpanHandler;
 import com.google.protobuf.ByteString;
 import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.KeyValue;
@@ -28,29 +22,25 @@ import io.opentelemetry.semconv.UrlAttributes;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import zipkin2.Span.Kind;
 
 
 /**
  * SpanTranslator converts a Zipkin Span to a OpenTelemetry Span.
  */
-final class SpanTranslator {
+public final class SpanTranslator {
 
-  private static final Map<String, String> RENAMED_LABELS;
+  static final AttributesExtractor ATTRIBUTES_EXTRACTOR;
 
   static {
-    RENAMED_LABELS = new LinkedHashMap<>();
-    RENAMED_LABELS.put("http.host", ServerAttributes.SERVER_ADDRESS.getKey());
-    RENAMED_LABELS.put("http.method", HttpAttributes.HTTP_REQUEST_METHOD.getKey());
-    RENAMED_LABELS.put("http.status_code", HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey());
-    RENAMED_LABELS.put("http.request.size", "http.request.body.size");
-    RENAMED_LABELS.put("http.response.size", "http.response.body.size");
-    RENAMED_LABELS.put("http.url", UrlAttributes.URL_FULL.getKey());
-  }
-
-  private final Consumer consumer;
-
-  SpanTranslator(Tag<Throwable> errorTag) {
-    this.consumer = new Consumer(new AttributesExtractor(errorTag, RENAMED_LABELS));
+    Map<String, String> renamedLabels = new LinkedHashMap<>();
+    renamedLabels.put("http.host", ServerAttributes.SERVER_ADDRESS.getKey());
+    renamedLabels.put("http.method", HttpAttributes.HTTP_REQUEST_METHOD.getKey());
+    renamedLabels.put("http.status_code", HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey());
+    renamedLabels.put("http.request.size", "http.request.body.size");
+    renamedLabels.put("http.response.size", "http.response.body.size");
+    renamedLabels.put("http.url", UrlAttributes.URL_FULL.getKey());
+    ATTRIBUTES_EXTRACTOR = new AttributesExtractor(renamedLabels);
   }
 
   /**
@@ -59,17 +49,17 @@ final class SpanTranslator {
    * <p>Ex.
    *
    * <pre>{@code
-   * tracesData = SpanTranslator.translate(braveSpan);
+   * tracesData = SpanTranslator.translate(zipkinSpan);
    * }</pre>
    *
-   * @param braveSpan The Zipkin Span.
+   * @param zipkinSpan The Zipkin Span.
    * @return A OpenTelemetry Span.
    */
-  TracesData translate(MutableSpan braveSpan) {
+  public static TracesData translate(zipkin2.Span zipkinSpan) {
     TracesData.Builder tracesDataBuilder = TracesData.newBuilder();
     Builder resourceSpansBuilder = ResourceSpans.newBuilder();
     ScopeSpans.Builder scopeSpanBuilder = ScopeSpans.newBuilder();
-    Span.Builder spanBuilder = builderForSingleSpan(braveSpan, resourceSpansBuilder);
+    Span.Builder spanBuilder = builderForSingleSpan(zipkinSpan, resourceSpansBuilder);
     scopeSpanBuilder.addSpans(spanBuilder
         .build());
     resourceSpansBuilder.addScopeSpans(scopeSpanBuilder
@@ -78,7 +68,7 @@ final class SpanTranslator {
     return tracesDataBuilder.build();
   }
 
-  private Span.Builder builderForSingleSpan(MutableSpan span, Builder resourceSpansBuilder) {
+  private static Span.Builder builderForSingleSpan(zipkin2.Span span, Builder resourceSpansBuilder) {
     Span.Builder spanBuilder = Span.newBuilder()
         .setTraceId(ByteString.fromHex(span.traceId()))
         .setSpanId(ByteString.fromHex(span.id()))
@@ -86,8 +76,8 @@ final class SpanTranslator {
     if (span.parentId() != null) {
       spanBuilder.setParentSpanId(ByteString.fromHex(span.parentId()));
     }
-    long start = span.startTimestamp();
-    long finish = span.finishTimestamp();
+    long start = span.timestamp();
+    long finish = span.timestampAsLong() + span.durationAsLong();
     spanBuilder.setStartTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(start));
     if (start != 0 && finish != 0L) {
       spanBuilder.setEndTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(finish));
@@ -117,12 +107,12 @@ final class SpanTranslator {
           KeyValue.newBuilder().setKey(ServiceAttributes.SERVICE_NAME.getKey())
               .setValue(AnyValue.newBuilder().setStringValue(localServiceName).build()).build());
     }
-    String localIp = span.localIp();
+    String localIp = span.localEndpoint() != null ? span.localEndpoint().ipv4() : null;
     if (localIp != null) {
       spanBuilder.addAttributes(KeyValue.newBuilder().setKey(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey())
           .setValue(AnyValue.newBuilder().setStringValue(localIp).build()).build());
     }
-    int localPort = span.localPort();
+    int localPort = span.localEndpoint() != null ? span.localEndpoint().portAsInt() : 0;
     if (localPort != 0) {
       spanBuilder.addAttributes(KeyValue.newBuilder().setKey(ServerAttributes.SERVER_PORT.getKey())
           .setValue(AnyValue.newBuilder().setIntValue(localPort).build()).build());
@@ -132,44 +122,21 @@ final class SpanTranslator {
       spanBuilder.addAttributes(KeyValue.newBuilder().setKey(SemanticAttributes.NET_SOCK_PEER_NAME.getKey())
           .setValue(AnyValue.newBuilder().setStringValue(peerName).build()).build());
     }
-    String peerIp = span.remoteIp();
+    String peerIp = span.remoteEndpoint() != null ? span.remoteEndpoint().ipv4() : null;
     if (peerIp != null) {
       spanBuilder.addAttributes(KeyValue.newBuilder().setKey(SemanticAttributes.NET_SOCK_PEER_ADDR.getKey())
           .setValue(AnyValue.newBuilder().setStringValue(peerIp).build()).build());
     }
-    int peerPort = span.remotePort();
+    int peerPort = span.remoteEndpoint() != null ? span.remoteEndpoint().portAsInt() : 0;
     if (peerPort != 0) {
       spanBuilder.addAttributes(KeyValue.newBuilder().setKey(SemanticAttributes.NET_SOCK_PEER_PORT.getKey())
           .setValue(AnyValue.newBuilder().setIntValue(peerPort).build()).build());
     }
-    span.forEachTag(consumer, spanBuilder);
-    span.forEachAnnotation(consumer, spanBuilder);
-    consumer.addErrorTag(spanBuilder, span);
+    span.tags().forEach((key, value) -> ATTRIBUTES_EXTRACTOR.addTag(KeyValue.newBuilder(), key, value));
+    span.annotations().forEach(annotation -> spanBuilder.addEventsBuilder().setTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(annotation.timestamp()))
+        .setName(annotation.value()));
     return spanBuilder;
   }
 
-  class Consumer implements TagConsumer<Span.Builder>, AnnotationConsumer<Span.Builder> {
-
-    private final AttributesExtractor attributesExtractor;
-
-    Consumer(AttributesExtractor attributesExtractor) {
-      this.attributesExtractor = attributesExtractor;
-    }
-
-    @Override
-    public void accept(Span.Builder target, String key, String value) {
-      attributesExtractor.addTag(target.addAttributesBuilder(), key, value);
-    }
-
-    void addErrorTag(Span.Builder target, MutableSpan span) {
-      attributesExtractor.addErrorTag(target.addAttributesBuilder(), span);
-    }
-
-    @Override
-    public void accept(Span.Builder target, long timestamp, String value) {
-      target.addEventsBuilder().setTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(timestamp))
-          .setName(value);
-    }
-  }
 
 }

@@ -13,12 +13,23 @@
  */
 package zipkin2.collector.otel.http;
 
+import static zipkin2.Call.propagateIfFatal;
+
+import com.linecorp.armeria.common.AggregationOptions;
+import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.server.AbstractHttpService;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.ServerConfigurator;
 import com.linecorp.armeria.server.ServiceRequestContext;
+import io.netty.buffer.ByteBufAllocator;
+import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
+import zipkin2.Callback;
+import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
 import zipkin2.collector.CollectorMetrics;
@@ -27,6 +38,7 @@ import zipkin2.storage.StorageComponent;
 
 public final class OpenTelemetryHttpCollector extends CollectorComponent
     implements ServerConfigurator {
+
   public static Builder newBuilder() {
     return new Builder();
   }
@@ -36,23 +48,29 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
     Collector.Builder delegate = Collector.newBuilder(OpenTelemetryHttpCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
 
-    @Override public Builder storage(StorageComponent storageComponent) {
+    @Override
+    public Builder storage(StorageComponent storageComponent) {
       delegate.storage(storageComponent);
       return this;
     }
 
-    @Override public Builder metrics(CollectorMetrics metrics) {
-      if (metrics == null) throw new NullPointerException("metrics == null");
+    @Override
+    public Builder metrics(CollectorMetrics metrics) {
+      if (metrics == null) {
+        throw new NullPointerException("metrics == null");
+      }
       delegate.metrics(this.metrics = metrics.forTransport("otel/http"));
       return this;
     }
 
-    @Override public Builder sampler(CollectorSampler sampler) {
+    @Override
+    public Builder sampler(CollectorSampler sampler) {
       delegate.sampler(sampler);
       return this;
     }
 
-    @Override public OpenTelemetryHttpCollector build() {
+    @Override
+    public OpenTelemetryHttpCollector build() {
       return new OpenTelemetryHttpCollector(this);
     }
 
@@ -68,63 +86,71 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
     metrics = builder.metrics;
   }
 
-  @Override public OpenTelemetryHttpCollector start() {
+  @Override
+  public OpenTelemetryHttpCollector start() {
     return this;
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return "OpenTelemetryHttpCollector{}";
   }
 
   /**
    * Reconfigures the service per https://opentelemetry.io/docs/specs/otlp/#otlphttp-request
    */
-  @Override public void reconfigure(ServerBuilder sb) {
+  @Override
+  public void reconfigure(ServerBuilder sb) {
     sb.service("/v1/traces", new HttpService(this));
   }
 
   static final class HttpService extends AbstractHttpService {
+
     final OpenTelemetryHttpCollector collector;
 
     HttpService(OpenTelemetryHttpCollector collector) {
       this.collector = collector;
     }
 
-    @Override protected HttpResponse doPost(ServiceRequestContext ctx, HttpRequest req)
+    @Override
+    protected HttpResponse doPost(ServiceRequestContext ctx, HttpRequest req)
         throws Exception {
-      /*
-          // take bytes from req
-          byte[] serialized = pubsubMessage.getData().toByteArray();
-          metrics.incrementMessages();
-          metrics.incrementBytes(serialized.length);
-          collector.acceptSpans(serialized, new SpanCallback(ackReplyConsumer));
-       */
-      throw new RuntimeException("Implement me!");
+      CompletableCallback result = new CompletableCallback();
+      req.aggregate(AggregationOptions.usePooledObjects(ByteBufAllocator.DEFAULT, ctx.eventLoop()
+      )).handle((msg, t) -> {
+        if (t != null) {
+          result.onError(t);
+          return null;
+        }
+        try (HttpData content = msg.content()) {
+          if (content.isEmpty()) {
+            result.onSuccess(null);
+            return null;
+          }
+
+          final ByteBuffer nioBuffer = content.byteBuf().nioBuffer();
+          collector.collector.acceptSpans(nioBuffer, SpanBytesDecoder.PROTO3, result, ctx.blockingTaskExecutor());
+          return null;
+        }
+      });
+      return HttpResponse.of(result);
     }
   }
+
+  static final class CompletableCallback extends CompletableFuture<HttpResponse>
+      implements Callback<Void> {
+
+    static final ResponseHeaders ACCEPTED_RESPONSE = ResponseHeaders.of(HttpStatus.ACCEPTED);
+
+    @Override
+    public void onSuccess(Void value) {
+      complete(HttpResponse.of(ACCEPTED_RESPONSE));
+    }
+
+    @Override
+    public void onError(Throwable t) {
+      completeExceptionally(t);
+    }
+  }
+
 }
-
-/*
-import com.google.cloud.pubsub.v1.AckReplyConsumer;
-import zipkin2.Callback;
-
-final class SpanCallback implements Callback<Void> {
-
-  private final AckReplyConsumer ackReplyConsumer;
-
-  public SpanCallback(AckReplyConsumer ackReplyConsumer) {
-    this.ackReplyConsumer = ackReplyConsumer;
-  }
-
-  @Override
-  public void onSuccess(Void value) {
-    ackReplyConsumer.ack();
-  }
-
-  @Override
-  public void onError(Throwable throwable) {
-    ackReplyConsumer.nack();
-  }
-}
-
- */

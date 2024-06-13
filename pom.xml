@@ -30,9 +30,9 @@
     <module>encoder-otel-brave</module>
     <module>encoder-otel-zipkin</module>
     <module>sender-grpc</module>
-    <module>sender-http</module>
     <module>collector-grpc</module>
     <module>collector-http</module>
+    <module>tests</module>
   </modules>
 
   <distributionManagement>
@@ -91,6 +91,7 @@
     <awaitility.version>4.2.1</awaitility.version>
     <junit-jupiter.version>5.10.2</junit-jupiter.version>
     <mockito.version>5.12.0</mockito.version>
+    <testcontainers.version>1.19.8</testcontainers.version>
 
     <!-- override to set exclusions per-project -->
     <errorprone.args/>

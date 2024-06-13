@@ -24,11 +24,13 @@ import zipkin2.storage.InMemoryStorage;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ITOpenTelemetryGrpcCollector {
+
   InMemoryStorage store;
   InMemoryCollectorMetrics metrics;
   CollectorComponent collector;
 
-  @BeforeEach public void setup() {
+  @BeforeEach
+  public void setup() {
     store = InMemoryStorage.newBuilder().build();
     metrics = new InMemoryCollectorMetrics();
 
@@ -41,7 +43,8 @@ class ITOpenTelemetryGrpcCollector {
     metrics = metrics.forTransport("otel/grpc");
   }
 
-  @AfterEach void teardown() throws IOException {
+  @AfterEach
+  void teardown() throws IOException {
     store.close();
     collector.close();
   }
