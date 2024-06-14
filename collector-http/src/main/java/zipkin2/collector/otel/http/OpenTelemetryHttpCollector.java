@@ -13,8 +13,6 @@
  */
 package zipkin2.collector.otel.http;
 
-import static zipkin2.Call.propagateIfFatal;
-
 import com.linecorp.armeria.common.AggregationOptions;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpRequest;
