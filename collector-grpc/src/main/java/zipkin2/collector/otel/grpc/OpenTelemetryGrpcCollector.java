@@ -13,24 +13,31 @@
  */
 package zipkin2.collector.otel.grpc;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.ServerConfigurator;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.grpc.protocol.AbstractUnsafeUnaryGrpcService;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import zipkin2.Callback;
-import zipkin2.codec.SpanBytesDecoder;
+import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
+import zipkin2.internal.ReadBuffer;
 import zipkin2.storage.StorageComponent;
+import zipkin2.translation.zipkin.SpanTranslator;
 
 public final class OpenTelemetryGrpcCollector extends CollectorComponent
     implements ServerConfigurator {
+
   public static Builder newBuilder() {
     return new Builder();
   }
@@ -40,23 +47,29 @@ public final class OpenTelemetryGrpcCollector extends CollectorComponent
     Collector.Builder delegate = Collector.newBuilder(OpenTelemetryGrpcCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
 
-    @Override public Builder storage(StorageComponent storageComponent) {
+    @Override
+    public Builder storage(StorageComponent storageComponent) {
       delegate.storage(storageComponent);
       return this;
     }
 
-    @Override public Builder metrics(CollectorMetrics metrics) {
-      if (metrics == null) throw new NullPointerException("metrics == null");
+    @Override
+    public Builder metrics(CollectorMetrics metrics) {
+      if (metrics == null) {
+        throw new NullPointerException("metrics == null");
+      }
       delegate.metrics(this.metrics = metrics.forTransport("otel/grpc"));
       return this;
     }
 
-    @Override public Builder sampler(CollectorSampler sampler) {
+    @Override
+    public Builder sampler(CollectorSampler sampler) {
       delegate.sampler(sampler);
       return this;
     }
 
-    @Override public OpenTelemetryGrpcCollector build() {
+    @Override
+    public OpenTelemetryGrpcCollector build() {
       return new OpenTelemetryGrpcCollector(this);
     }
 
@@ -72,22 +85,28 @@ public final class OpenTelemetryGrpcCollector extends CollectorComponent
     metrics = builder.metrics;
   }
 
-  @Override public OpenTelemetryGrpcCollector start() {
+  @Override
+  public OpenTelemetryGrpcCollector start() {
     return this;
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return "OpenTelemetryGrpcCollector{}";
   }
 
   /**
-   * Reconfigures the service per https://github.com/open-telemetry/opentelemetry-proto/blob/v1.0.0/opentelemetry/proto/collector/trace/v1/trace_service.proto
+   * Reconfigures the service per
+   * https://github.com/open-telemetry/opentelemetry-proto/blob/v1.0.0/opentelemetry/proto/collector/trace/v1/trace_service.proto
    */
-  @Override public void reconfigure(ServerBuilder sb) {
-    sb.service("/opentelemetry.proto.collector.trace.v1.TraceService/Export", new HttpService(this));
+  @Override
+  public void reconfigure(ServerBuilder sb) {
+    sb.service("/opentelemetry.proto.collector.trace.v1.TraceService/Export",
+        new HttpService(this));
   }
 
   static final class HttpService extends AbstractUnsafeUnaryGrpcService {
+
     final Collector collector;
     final CollectorMetrics metrics;
 
@@ -105,10 +124,18 @@ public final class OpenTelemetryGrpcCollector extends CollectorComponent
         return CompletableFuture.completedFuture(bytes); // lenient on empty messages
       }
 
-      try {
+      try (ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(bytes.nioBuffer())) {
         CompletableFutureCallback result = new CompletableFutureCallback();
-        collector.acceptSpans(bytes.nioBuffer(), SpanBytesDecoder.PROTO3, result, ctx.blockingTaskExecutor());
-        return result;
+        try {
+          ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(
+              ByteBufUtil.getBytes(bytes));
+          List<zipkin2.Span> spans = SpanTranslator.translate(request);
+          byte[] encoded = SpanBytesEncoder.PROTO3.encodeList(spans);
+          collector.acceptSpans(encoded, result);
+          return result;
+        } catch (InvalidProtocolBufferException e) {
+          throw new RuntimeException(e);
+        }
       } finally {
         bytes.release();
       }
@@ -118,11 +145,13 @@ public final class OpenTelemetryGrpcCollector extends CollectorComponent
   static final class CompletableFutureCallback extends CompletableFuture<ByteBuf>
       implements Callback<Void> {
 
-    @Override public void onSuccess(Void value) {
+    @Override
+    public void onSuccess(Void value) {
       complete(Unpooled.EMPTY_BUFFER);
     }
 
-    @Override public void onError(Throwable t) {
+    @Override
+    public void onError(Throwable t) {
       completeExceptionally(t);
     }
   }

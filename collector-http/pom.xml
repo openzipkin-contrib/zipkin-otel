@@ -39,6 +39,11 @@
       <artifactId>zipkin-collector</artifactId>
       <version>${zipkin.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-encoder-otel</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <dependency>
       <groupId>${armeria.groupId}</groupId>
@@ -52,11 +57,20 @@
       <version>${zipkin.version}</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
-      <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-junit5</artifactId>
-      <version>${armeria.version}</version>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>${awaitility.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-sdk</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-exporter-otlp</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

@@ -30,6 +30,7 @@ import brave.Tracing;
 import brave.handler.SpanHandler;
 import brave.propagation.ThreadLocalCurrentTraceContext;
 import brave.sampler.Sampler;
+import java.util.function.Supplier;
 import okhttp3.OkHttpClient;
 import okhttp3.OkHttpClient.Builder;
 import okhttp3.Request;
@@ -64,7 +65,7 @@ class BasicUsageTest {
     ThreadLocalCurrentTraceContext braveCurrentTraceContext = ThreadLocalCurrentTraceContext.newBuilder()
       .build();
     this.testSetup = testSetup;
-    SpanHandler spanHandler = testSetup.apply(jaegerAllInOne.getHttpOtlpPort());
+    SpanHandler spanHandler = testSetup.get();
     tracing = Tracing.newBuilder()
       .currentTraceContext(braveCurrentTraceContext)
       .supportsJoin(false)
@@ -117,86 +118,149 @@ class BasicUsageTest {
     });
   }
 
-  enum TestSetup implements Function<Integer, SpanHandler>, Closeable {
-
-
-    OK_HTTP_OTEL_SENDER {
-
-      OkHttpSender okHttpSender;
-
-      AsyncReporter<MutableSpan> reporter;
-
-      SpanHandler spanHandler;
-
-      @Override
-      public void close() {
-        if (reporter != null) {
-          reporter.close();
-        }
-        if (okHttpSender != null) {
-          okHttpSender.close();
-        }
-      }
-
-      @Override
-      public SpanHandler apply(Integer port) {
-        okHttpSender = OkHttpSender.newBuilder()
-          .encoding(Encoding.PROTO3)
-          .endpoint("http://localhost:" + port + "/v1/traces")
-          .build();
-        OtelEncoder otelEncoder = new OtelEncoder(Tags.ERROR);
-        reporter = AsyncReporter.builder(okHttpSender).build(otelEncoder);
-        spanHandler = new SpanHandler() {
-          @Override
-          public boolean end(TraceContext context, MutableSpan span, Cause cause) {
-            reporter.report(span);
-            return true;
-          }
-        };
-        return spanHandler;
-      }
-    },
-
-    GRPC_SENDER {
-
-      OtelGrpcSender otelGrpcSender;
-
-      AsyncReporter<MutableSpan> reporter;
-
-      SpanHandler spanHandler;
-
-      @Override
-      public void close() {
-        if (otelGrpcSender != null) {
-          otelGrpcSender.close();
-        }
-      }
-
-      @Override
-      public SpanHandler apply(Integer port) {
-        otelGrpcSender = OtelGrpcSender.newBuilder(ManagedChannelBuilder
-            .forAddress("localhost", jaegerAllInOne.getGrpcOtlpPort())
-            .usePlaintext()
-            .build()).build();
-        OtelEncoder otelEncoder = new OtelEncoder(Tags.ERROR);
-        reporter = AsyncReporter.builder(otelGrpcSender).build(otelEncoder);
-        spanHandler = new SpanHandler() {
-          @Override
-          public boolean end(TraceContext context, MutableSpan span, Cause cause) {
-            reporter.report(span);
-            return true;
-          }
-        };
-        return spanHandler;
-      }
-
-    }
-  }
-
   @AfterEach
   void shutdown() throws IOException {
     if (tracing != null) {
       tracing.close();
     }
   }
+
+  static class HttpSenderProvider implements Function<Integer, SpanHandler>, Closeable {
+
+    OkHttpSender okHttpSender;
+
+    AsyncReporter<MutableSpan> reporter;
+
+    SpanHandler spanHandler;
+
+    @Override
+    public void close() {
+      if (reporter != null) {
+        reporter.close();
+      }
+      if (okHttpSender != null) {
+        okHttpSender.close();
+      }
+    }
+
+    @Override
+    public SpanHandler apply(Integer port) {
+      okHttpSender = OkHttpSender.newBuilder()
+          .encoding(Encoding.PROTO3)
+          .endpoint("http://localhost:" + port + "/v1/traces")
+          .build();
+      OtelEncoder otelEncoder = new OtelEncoder(Tags.ERROR);
+      reporter = AsyncReporter.builder(okHttpSender).build(otelEncoder);
+      spanHandler = new SpanHandler() {
+        @Override
+        public boolean end(TraceContext context, MutableSpan span, Cause cause) {
+          reporter.report(span);
+          return true;
+        }
+      };
+      return spanHandler;
+    }
+  }
+
+  static class GrpcSenderProvider implements Function<Integer, SpanHandler>, Closeable {
+
+    OtelGrpcSender otelGrpcSender;
+
+    AsyncReporter<MutableSpan> reporter;
+
+    SpanHandler spanHandler;
+
+    @Override
+    public void close() {
+      if (otelGrpcSender != null) {
+        otelGrpcSender.close();
+      }
+    }
+
+    @Override
+    public SpanHandler apply(Integer port) {
+      otelGrpcSender = OtelGrpcSender.newBuilder(ManagedChannelBuilder
+          .forAddress("localhost", jaegerAllInOne.getGrpcOtlpPort())
+          .usePlaintext()
+          .build()).build();
+      OtelEncoder otelEncoder = new OtelEncoder(Tags.ERROR);
+      reporter = AsyncReporter.builder(otelGrpcSender).build(otelEncoder);
+      spanHandler = new SpanHandler() {
+        @Override
+        public boolean end(TraceContext context, MutableSpan span, Cause cause) {
+          reporter.report(span);
+          return true;
+        }
+      };
+      return spanHandler;
+    }
+
+  }
+
+  enum TestSetup implements Supplier<SpanHandler>, Closeable {
+
+
+    OK_HTTP_OTEL_SENDER_TO_JAEGER {
+
+      private final HttpSenderProvider httpSenderProvider = new HttpSenderProvider();
+
+      @Override
+      public void close() {
+        httpSenderProvider.close();
+      }
+
+      @Override
+      public SpanHandler get() {
+        return httpSenderProvider.apply(jaegerAllInOne.getHttpOtlpPort());
+      }
+    },
+
+    GRPC_SENDER_TO_JAEGER {
+
+      private final GrpcSenderProvider grpcSenderProvider = new GrpcSenderProvider();
+
+      @Override
+      public void close() {
+        grpcSenderProvider.close();
+      }
+
+      @Override
+      public SpanHandler get() {
+        return grpcSenderProvider.apply(jaegerAllInOne.getGrpcOtlpPort());
+      }
+
+    },
+
+    OK_HTTP_OTEL_SENDER_TO_ZIPKIN {
+
+      private final HttpSenderProvider httpSenderProvider = new HttpSenderProvider();
+
+      @Override
+      public void close() {
+        httpSenderProvider.close();
+      }
+
+      @Override
+      public SpanHandler get() {
+        return httpSenderProvider.apply(jaegerAllInOne.getHttpOtlpPort());
+      }
+    },
+
+    GRPC_SENDER_TO_ZIPKIN {
+
+      private final GrpcSenderProvider grpcSenderProvider = new GrpcSenderProvider();
+
+      @Override
+      public void close() {
+        grpcSenderProvider.close();
+      }
+
+      @Override
+      public SpanHandler get() {
+        return grpcSenderProvider.apply(jaegerAllInOne.getGrpcOtlpPort());
+      }
+
+    }
+  }
+
 }

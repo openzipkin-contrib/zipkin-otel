@@ -13,6 +13,7 @@
  */
 package zipkin2.collector.otel.http;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.linecorp.armeria.common.AggregationOptions;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpRequest;
@@ -23,16 +24,24 @@ import com.linecorp.armeria.server.AbstractHttpService;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.ServerConfigurator;
 import com.linecorp.armeria.server.ServiceRequestContext;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBufUtil;
+import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import zipkin2.Callback;
+import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
+import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
+import zipkin2.internal.ReadBuffer;
 import zipkin2.storage.StorageComponent;
+import zipkin2.translation.zipkin.SpanTranslator;
 
 public final class OpenTelemetryHttpCollector extends CollectorComponent
     implements ServerConfigurator {
@@ -126,8 +135,19 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
             return null;
           }
 
-          final ByteBuffer nioBuffer = content.byteBuf().nioBuffer();
-          collector.collector.acceptSpans(nioBuffer, SpanBytesDecoder.PROTO3, result, ctx.blockingTaskExecutor());
+          ByteBuf byteBuf = content.byteBuf();
+          final ByteBuffer nioBuffer = byteBuf.nioBuffer();
+          try (ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(nioBuffer)) {
+            try {
+              ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(
+                  ByteBufUtil.getBytes(byteBuf));
+              List<Span> spans = SpanTranslator.translate(request);
+              byte[] encoded = SpanBytesEncoder.PROTO3.encodeList(spans);
+              collector.collector.acceptSpans(encoded, result);
+            } catch (InvalidProtocolBufferException e) {
+              throw new RuntimeException(e);
+            }
+          }
           return null;
         }
       });
