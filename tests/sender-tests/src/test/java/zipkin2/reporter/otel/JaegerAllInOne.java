@@ -25,7 +25,7 @@ class JaegerAllInOne extends GenericContainer<JaegerAllInOne> {
 
   static final int JAEGER_ADMIN_PORT = 14269;
 
-  static final int GRPC_OTLP_PORT = 14250;
+  static final int GRPC_OTLP_PORT = 4317;
 
   static final int HTTP_OTLP_PORT = 4318;
 
