@@ -13,23 +13,21 @@
  */
 package zipkin2.reporter.otel;
 
+import brave.Span;
+import brave.Span.Kind;
 import brave.Tags;
+import brave.Tracer;
+import brave.Tracing;
 import brave.handler.MutableSpan;
+import brave.handler.SpanHandler;
+import brave.propagation.ThreadLocalCurrentTraceContext;
 import brave.propagation.TraceContext;
-import io.grpc.ManagedChannelBuilder;
+import brave.sampler.Sampler;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-
-import brave.Span;
-import brave.Span.Kind;
-import brave.Tracer;
-import brave.Tracing;
-import brave.handler.SpanHandler;
-import brave.propagation.ThreadLocalCurrentTraceContext;
-import brave.sampler.Sampler;
 import java.util.function.Supplier;
 import okhttp3.OkHttpClient;
 import okhttp3.OkHttpClient.Builder;
@@ -40,16 +38,22 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.test.util.TestSocketUtils;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import zipkin.module.otel.ZipkinOpenTelemetryHttpCollectorProperties;
+import zipkin.server.ZipkinServer;
 import zipkin2.reporter.AsyncReporter;
 import zipkin2.reporter.Encoding;
 import zipkin2.reporter.okhttp3.OkHttpSender;
 import zipkin2.reporter.otel.brave.OtelEncoder;
-import zipkin2.reporter.otel.grpc.OtelGrpcSender;
 
-@Testcontainers
-class BasicUsageTest {
+@Testcontainers(disabledWithoutDocker = true)
+class ITBasicUsage {
 
   @Container
   static JaegerAllInOne jaegerAllInOne = new JaegerAllInOne();
@@ -63,17 +67,20 @@ class BasicUsageTest {
   void shouldSendSpansToOtlpEndpoint(TestSetup testSetup) throws InterruptedException, IOException {
     // Setup
     ThreadLocalCurrentTraceContext braveCurrentTraceContext = ThreadLocalCurrentTraceContext.newBuilder()
-      .build();
+        .build();
     this.testSetup = testSetup;
+
+    testSetup.setup();
+
     SpanHandler spanHandler = testSetup.get();
     tracing = Tracing.newBuilder()
-      .currentTraceContext(braveCurrentTraceContext)
-      .supportsJoin(false)
-      .traceId128Bit(true)
-      .sampler(Sampler.ALWAYS_SAMPLE)
-      .addSpanHandler(spanHandler)
-      .localServiceName("my-service")
-      .build();
+        .currentTraceContext(braveCurrentTraceContext)
+        .supportsJoin(false)
+        .traceId128Bit(true)
+        .sampler(Sampler.ALWAYS_SAMPLE)
+        .addSpanHandler(spanHandler)
+        .localServiceName("my-service")
+        .build();
     Tracer braveTracer = tracing.tracer();
 
     List<String> traceIds = new ArrayList<>();
@@ -81,11 +88,11 @@ class BasicUsageTest {
     for (int i = 0; i < size; i++) {
       // Given
       Span span = braveTracer.nextSpan().name("foo " + i)
-        .tag("foo tag", "foo value")
-        .kind(Kind.CONSUMER)
-        .error(new RuntimeException("BOOOOOM!"))
-        .remoteServiceName("remote service")
-        .start();
+          .tag("foo tag", "foo value")
+          .kind(Kind.CONSUMER)
+          .error(new RuntimeException("BOOOOOM!"))
+          .remoteServiceName("remote service")
+          .start();
       String traceId = span.context().traceIdString();
       System.out.println("Trace Id <" + traceId + ">");
       span.remoteIpAndPort("http://localhost", 123456);
@@ -98,24 +105,26 @@ class BasicUsageTest {
       traceIds.add(span.context().traceIdString());
     }
 
-    testSetup.close();
+    testSetup.flush();
 
     // Then
     Awaitility.await().untilAsserted(() -> {
       BDDAssertions.then(traceIds).hasSize(size);
       OkHttpClient client = new Builder()
-        .build();
+          .build();
+
       traceIds.forEach(traceId -> {
-        Request request = new Request.Builder().url("http://localhost:" + jaegerAllInOne.getQueryPort() + "/api/traces/" + traceId).build();
+        Request request = new Request.Builder().url(testSetup.queryUrl() + traceId).build();
         try (Response response = client.newCall(request).execute()) {
           BDDAssertions.then(response.isSuccessful()).isTrue();
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
         }
       });
 
     });
+
+    testSetup.close();
   }
 
   @AfterEach
@@ -160,44 +169,22 @@ class BasicUsageTest {
       };
       return spanHandler;
     }
+
+    void flush() {
+      reporter.flush();
+    }
   }
 
-  static class GrpcSenderProvider implements Function<Integer, SpanHandler>, Closeable {
+  interface TraceSetup {
 
-    OtelGrpcSender otelGrpcSender;
+    void setup();
 
-    AsyncReporter<MutableSpan> reporter;
+    String queryUrl();
 
-    SpanHandler spanHandler;
-
-    @Override
-    public void close() {
-      if (otelGrpcSender != null) {
-        otelGrpcSender.close();
-      }
-    }
-
-    @Override
-    public SpanHandler apply(Integer port) {
-      otelGrpcSender = OtelGrpcSender.newBuilder(ManagedChannelBuilder
-          .forAddress("localhost", jaegerAllInOne.getGrpcOtlpPort())
-          .usePlaintext()
-          .build()).build();
-      OtelEncoder otelEncoder = new OtelEncoder(Tags.ERROR);
-      reporter = AsyncReporter.builder(otelGrpcSender).build(otelEncoder);
-      spanHandler = new SpanHandler() {
-        @Override
-        public boolean end(TraceContext context, MutableSpan span, Cause cause) {
-          reporter.report(span);
-          return true;
-        }
-      };
-      return spanHandler;
-    }
-
+    void flush();
   }
 
-  enum TestSetup implements Supplier<SpanHandler>, Closeable {
+  enum TestSetup implements Supplier<SpanHandler>, TraceSetup, Closeable {
 
 
     OK_HTTP_OTEL_SENDER_TO_JAEGER {
@@ -205,6 +192,21 @@ class BasicUsageTest {
       private final HttpSenderProvider httpSenderProvider = new HttpSenderProvider();
 
       @Override
+      public void setup() {
+
+      }
+
+      @Override
+      public String queryUrl() {
+        return "http://localhost:" + jaegerAllInOne.getQueryPort() + "/api/traces/";
+      }
+
+      @Override
+      public void flush() {
+        httpSenderProvider.flush();
+      }
+
+      @Override
       public void close() {
         httpSenderProvider.close();
       }
@@ -215,52 +217,53 @@ class BasicUsageTest {
       }
     },
 
-    GRPC_SENDER_TO_JAEGER {
-
-      private final GrpcSenderProvider grpcSenderProvider = new GrpcSenderProvider();
-
-      @Override
-      public void close() {
-        grpcSenderProvider.close();
-      }
-
-      @Override
-      public SpanHandler get() {
-        return grpcSenderProvider.apply(jaegerAllInOne.getGrpcOtlpPort());
-      }
-
-    },
-
+    // Why is it so slow?
     OK_HTTP_OTEL_SENDER_TO_ZIPKIN {
 
       private final HttpSenderProvider httpSenderProvider = new HttpSenderProvider();
 
+      private ConfigurableApplicationContext ctx;
+
+      private final int port = TestSocketUtils.findAvailableTcpPort();
+
+      @Override
+      public void setup() {
+        ctx = new SpringApplicationBuilder(Config.class)
+            .web(WebApplicationType.NONE)
+            .run("--spring.main.allow-bean-definition-overriding=true", "--server.port=0",
+                "--armeria.ports[0].port=" + port, "--logging.level.zipkin2=trace",
+                "--logging.level.com.linecorp=debug");
+      }
+
+
+      @Override
+      public String queryUrl() {
+        return "http://localhost:" + port + "/api/v2/trace/";
+      }
+
+      @Override
+      public void flush() {
+        httpSenderProvider.flush();
+      }
+
       @Override
       public void close() {
         httpSenderProvider.close();
+        if (ctx != null) {
+          ctx.close();
+        }
       }
 
       @Override
       public SpanHandler get() {
-        return httpSenderProvider.apply(jaegerAllInOne.getHttpOtlpPort());
+        return httpSenderProvider.apply(port);
       }
-    },
-
-    GRPC_SENDER_TO_ZIPKIN {
-
-      private final GrpcSenderProvider grpcSenderProvider = new GrpcSenderProvider();
-
-      @Override
-      public void close() {
-        grpcSenderProvider.close();
-      }
-
-      @Override
-      public SpanHandler get() {
-        return grpcSenderProvider.apply(jaegerAllInOne.getGrpcOtlpPort());
-      }
-
     }
   }
 
+  @SpringBootApplication(scanBasePackageClasses = {ZipkinOpenTelemetryHttpCollectorProperties.class,
+      ZipkinServer.class})
+  static class Config {
+
+  }
 }

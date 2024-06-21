@@ -28,9 +28,12 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.zip.GZIPInputStream;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
@@ -139,12 +142,14 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
           final ByteBuffer nioBuffer = byteBuf.nioBuffer();
           try (ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(nioBuffer)) {
             try {
-              ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(
-                  ByteBufUtil.getBytes(byteBuf));
+              InputStream inputStream = readBuffer;
+              if ("gzip".equals(req.headers().get("content-encoding"))) {
+                inputStream = new GZIPInputStream(content.toInputStream());
+              }
+              ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(inputStream);
               List<Span> spans = SpanTranslator.translate(request);
-              byte[] encoded = SpanBytesEncoder.PROTO3.encodeList(spans);
-              collector.collector.acceptSpans(encoded, result);
-            } catch (InvalidProtocolBufferException e) {
+              collector.collector.accept(spans, result);
+            } catch (IOException e) {
               throw new RuntimeException(e);
             }
           }
