@@ -400,7 +400,7 @@
                 <requireJavaVersion>
                   <!-- Change this to control LTS JDK versions allowed to build
                        the project. Keep in sync with .github/workflows -->
-                  <version>[11,12),[17,18),[21,22)</version>
+                  <version>[17,18),[21,22)</version> <!-- In sync with Boot 3 JDK version -->
                 </requireJavaVersion>
               </rules>
             </configuration>

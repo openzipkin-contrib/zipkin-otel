@@ -16,8 +16,18 @@ persists them to a configured collector component.
 
 | Collector                          | Description                                                                             |
 |------------------------------------|-----------------------------------------------------------------------------------------|
-| [collector-grpc](./collector-grpc) | Implements the [OTLP/gRPC protocol](https://opentelemetry.io/docs/specs/otlp/#otlpgrpc) |
 | [collector-http](./collector-http) | Implements the [OTLP/HTTP protocol](https://opentelemetry.io/docs/specs/otlp/#otlphttp) |
+
+### Encoders
+
+Encoding is library-specific, as some libraries use `zipkin2.Span` and others
+`brave.handler.MutableSpan`. Both options are available to encode to the
+OTLP format.
+
+| Encoder                                   | Description                                    |
+|-------------------------------------------|------------------------------------------------|
+| [`OtelEncoder.V1`](./encoder-otel-zipkin) | zipkin-reporter `AsyncReporter<Span>`          |
+| [`OtelEncoder`](./encoder-otel-brave)     | zipkin-reporter-brave `AsyncZipkinSpanHandler` |
 
 ## Server integration
 
