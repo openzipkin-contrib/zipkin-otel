@@ -46,7 +46,7 @@
     </dependency>
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-spring-boot2-autoconfigure</artifactId>
+      <artifactId>armeria-spring-boot3-autoconfigure</artifactId>
       <version>${armeria.version}</version>
       <scope>provided</scope>
     </dependency>

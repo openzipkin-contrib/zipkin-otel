@@ -88,6 +88,7 @@
     <junit-jupiter.version>5.10.2</junit-jupiter.version>
     <mockito.version>5.12.0</mockito.version>
     <testcontainers.version>1.19.8</testcontainers.version>
+    <okhttp.version>4.12.0</okhttp.version>
 
     <!-- override to set exclusions per-project -->
     <errorprone.args/>

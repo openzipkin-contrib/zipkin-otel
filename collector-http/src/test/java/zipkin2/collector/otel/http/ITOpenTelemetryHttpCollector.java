@@ -35,6 +35,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zipkin2.collector.CollectorComponent;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.collector.InMemoryCollectorMetrics;
@@ -42,6 +44,9 @@ import zipkin2.storage.InMemoryStorage;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ITOpenTelemetryHttpCollector {
+
+  private static final Logger log = LoggerFactory.getLogger(ITOpenTelemetryHttpCollector.class);
+
   InMemoryStorage store;
   InMemoryCollectorMetrics metrics;
   CollectorComponent collector;
@@ -97,7 +102,7 @@ class ITOpenTelemetryHttpCollector {
           .setSpanKind(SpanKind.CONSUMER)
           .startSpan();
       String traceId = span.getSpanContext().getTraceId();
-      System.out.println("Trace Id <" + traceId + ">");
+      log.info("Trace Id <" + traceId + ">");
       Thread.sleep(50);
       span.addEvent("boom!");
       Thread.sleep(50);
