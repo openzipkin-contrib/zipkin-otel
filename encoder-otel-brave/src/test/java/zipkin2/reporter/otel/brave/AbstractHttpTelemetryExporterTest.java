@@ -53,6 +53,7 @@ import okio.GzipSource;
 import okio.Okio;
 import okio.Source;
 import org.assertj.core.api.iterable.ThrowingExtractor;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -63,7 +64,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockserver.integration.ClientAndServer;
 
 /**
- * Taken from https://github.com/open-telemetry/opentelemetry-java/blob/v1.39.0/exporters/otlp/testing-internal/src/main/java/io/opentelemetry/exporter/otlp/testing/internal/AbstractHttpTelemetryExporterTest.java
+ * Taken from
+ * https://github.com/open-telemetry/opentelemetry-java/blob/v1.39.0/exporters/otlp/testing-internal/src/main/java/io/opentelemetry/exporter/otlp/testing/internal/AbstractHttpTelemetryExporterTest.java
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractHttpTelemetryExporterTest<T, U extends Message> {
@@ -97,6 +99,7 @@ public abstract class AbstractHttpTelemetryExporterTest<T, U extends Message> {
       };
 
   private static class CollectorService<T> implements HttpService {
+
     private final ThrowingExtractor<byte[], T, InvalidProtocolBufferException> parse;
     private final Function<T, List<? extends Object>> getResourceTelemetry;
     private final byte[] successResponse;
@@ -208,7 +211,9 @@ public abstract class AbstractHttpTelemetryExporterTest<T, U extends Message> {
     }
     assertThat(exporter.export(telemetry).join(10, TimeUnit.SECONDS).isSuccess()).isTrue();
     List<ResourceSpans> expectedResourceTelemetry = toProto(telemetry);
-    assertThat(exportedResourceTelemetry).containsExactlyElementsOf(expectedResourceTelemetry);
+    Awaitility.await().untilAsserted(
+        () -> assertThat(exportedResourceTelemetry).containsExactlyElementsOf(
+            expectedResourceTelemetry));
   }
 
   @Test
@@ -377,7 +382,7 @@ public abstract class AbstractHttpTelemetryExporterTest<T, U extends Message> {
                 throw new RuntimeException(e);
               }
             })
-        .collect(Collectors.toList());
+            .collect(Collectors.toList());
   }
 
   private static void addHttpError(int code) {
