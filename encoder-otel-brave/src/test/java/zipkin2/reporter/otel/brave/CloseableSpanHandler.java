@@ -19,6 +19,7 @@ import brave.propagation.TraceContext;
 import io.opentelemetry.sdk.common.CompletableResultCode;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.awaitility.Awaitility;
 import zipkin2.reporter.AsyncReporter;
 import zipkin2.reporter.InMemoryReporterMetrics;
 
@@ -47,17 +48,19 @@ public class CloseableSpanHandler extends SpanHandler {
     return true;
   }
 
-  public CompletableResultCode export(Collection<MutableSpan> spans) {
+  public CompletableResultCode export(Collection<MutableSpan> spansToExport) {
     if (shutdown.get()) {
       return CompletableResultCode.ofFailure();
     }
+    long spansBeforeExport = reporterMetrics.spans();
     try {
-      for (MutableSpan span : spans) {
+      for (MutableSpan span : spansToExport) {
         end(null, span, Cause.FINISHED);
       }
     } catch (Exception ex) {
       return CompletableResultCode.ofFailure();
     }
+    Awaitility.await().untilTrue(new AtomicBoolean(reporterMetrics.spans() == spansBeforeExport + spansToExport.size()));
     return CompletableResultCode.ofSuccess();
   }
 
