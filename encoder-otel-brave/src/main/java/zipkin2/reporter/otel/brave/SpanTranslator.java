@@ -25,6 +25,7 @@ import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.ResourceSpans.Builder;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.Span;
+import io.opentelemetry.proto.trace.v1.Span.Event;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.TracesData;
 import io.opentelemetry.semconv.HttpAttributes;
@@ -90,7 +91,7 @@ final class SpanTranslator {
     Span.Builder spanBuilder = Span.newBuilder()
         .setTraceId(ByteString.fromHex(span.traceId()))
         .setSpanId(ByteString.fromHex(span.id()))
-        .setName(span.name());
+        .setName((span.name() == null || span.name().isEmpty()) ? "unknown" : span.name());
     if (span.parentId() != null) {
       spanBuilder.setParentSpanId(ByteString.fromHex(span.parentId()));
     }
@@ -166,17 +167,17 @@ final class SpanTranslator {
 
     @Override
     public void accept(Span.Builder target, String key, String value) {
-      attributesExtractor.addTag(target.addAttributesBuilder(), key, value);
+      attributesExtractor.addTag(target, key, value);
     }
 
     void addErrorTag(Span.Builder target, MutableSpan span) {
-      attributesExtractor.addErrorTag(target.addAttributesBuilder(), span);
+      attributesExtractor.addErrorTag(target, span);
     }
 
     @Override
     public void accept(Span.Builder target, long timestamp, String value) {
-      target.addEventsBuilder().setTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(timestamp))
-          .setName(value);
+      target.addEvents(Event.newBuilder().setTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(timestamp))
+          .setName(value).build());
     }
   }
 

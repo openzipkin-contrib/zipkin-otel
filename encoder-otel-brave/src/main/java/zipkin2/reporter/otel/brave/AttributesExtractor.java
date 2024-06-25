@@ -17,6 +17,7 @@ import brave.Tag;
 import brave.handler.MutableSpan;
 import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.KeyValue;
+import io.opentelemetry.proto.trace.v1.Span;
 import java.util.Map;
 
 /**
@@ -42,17 +43,17 @@ final class AttributesExtractor {
     this.renamedLabels = renamedLabels;
   }
 
-  void addErrorTag(KeyValue.Builder target, MutableSpan braveSpan) {
+  void addErrorTag(Span.Builder target, MutableSpan braveSpan) {
     String errorValue = errorTag.value(braveSpan.error(), null);
     if (errorValue != null) {
-      target.setKey(getLabelName("error")).setValue(
-          AnyValue.newBuilder().setStringValue(errorValue).build());
+      target.addAttributes(KeyValue.newBuilder().setKey(getLabelName("error")).setValue(
+          AnyValue.newBuilder().setStringValue(errorValue).build()).build());
     }
   }
 
-  void addTag(KeyValue.Builder target, String key, String value) {
-    target.setKey(getLabelName(key)).setValue(
-        AnyValue.newBuilder().setStringValue(value).build());
+  void addTag(Span.Builder target, String key, String value) {
+    target.addAttributes(KeyValue.newBuilder().setKey(getLabelName(key)).setValue(
+        AnyValue.newBuilder().setStringValue(value).build()).build());
   }
 
   private String getLabelName(String zipkinName) {
