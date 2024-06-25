@@ -13,6 +13,8 @@
  */
 package zipkin2.reporter.otel.brave;
 
+import static io.opentelemetry.api.common.AttributeKey.stringKey;
+
 import brave.Span.Kind;
 import brave.Tag;
 import brave.handler.MutableSpan;
@@ -40,9 +42,15 @@ import java.util.concurrent.TimeUnit;
 
 
 /**
- * SpanTranslator converts a Zipkin Span to a OpenTelemetry Span.
+ * SpanTranslator converts a Brave Span to a OpenTelemetry Span.
  */
 final class SpanTranslator {
+
+  static final String KEY_INSTRUMENTATION_SCOPE_NAME = "otel.scope.name";
+  static final String KEY_INSTRUMENTATION_SCOPE_VERSION = "otel.scope.version";
+  static final String KEY_INSTRUMENTATION_LIBRARY_NAME = "otel.library.name";
+  static final String KEY_INSTRUMENTATION_LIBRARY_VERSION = "otel.library.version";
+  static final String OTEL_STATUS_CODE = "otel.status_code";
 
   private static final Map<String, String> RENAMED_LABELS;
 
@@ -89,8 +97,8 @@ final class SpanTranslator {
 
   private Span.Builder builderForSingleSpan(MutableSpan span, Builder resourceSpansBuilder) {
     Span.Builder spanBuilder = Span.newBuilder()
-        .setTraceId(ByteString.fromHex(span.traceId()))
-        .setSpanId(ByteString.fromHex(span.id()))
+        .setTraceId(ByteString.fromHex(span.traceId() != null ? span.traceId() : io.opentelemetry.api.trace.SpanContext.getInvalid().getTraceId()))
+        .setSpanId(ByteString.fromHex(span.id() != null ? span.id() : io.opentelemetry.api.trace.SpanContext.getInvalid().getSpanId()))
         .setName((span.name() == null || span.name().isEmpty()) ? "unknown" : span.name());
     if (span.parentId() != null) {
       spanBuilder.setParentSpanId(ByteString.fromHex(span.parentId()));
@@ -119,12 +127,19 @@ final class SpanTranslator {
         default:
           spanBuilder.setKind(SpanKind.SPAN_KIND_INTERNAL); //TODO: Should it work like this?
       }
+    } else {
+      spanBuilder.setKind(SpanKind.SPAN_KIND_INTERNAL); //TODO: Should it work like this?
     }
     String localServiceName = span.localServiceName();
     if (localServiceName != null) {
       resourceSpansBuilder.getResourceBuilder().addAttributes(
           KeyValue.newBuilder().setKey(ServiceAttributes.SERVICE_NAME.getKey())
               .setValue(AnyValue.newBuilder().setStringValue(localServiceName).build()).build());
+    } else {
+      resourceSpansBuilder.getResourceBuilder()
+          .addAttributes(KeyValue.newBuilder().setKey("service.name").setValue(
+              AnyValue.newBuilder().setStringValue(
+                  io.opentelemetry.sdk.resources.Resource.getDefault().getAttribute(stringKey("service.name"))).build()).build());
     }
     String localIp = span.localIp();
     if (localIp != null) {
@@ -151,6 +166,21 @@ final class SpanTranslator {
       spanBuilder.addAttributes(KeyValue.newBuilder().setKey(SemanticAttributes.NET_SOCK_PEER_PORT.getKey())
           .setValue(AnyValue.newBuilder().setIntValue(peerPort).build()).build());
     }
+    // TODO: What should we put here?
+    // tags taken from OtelToZipkinSpanTransformer
+    spanBuilder.addAttributes(KeyValue.newBuilder().setKey(KEY_INSTRUMENTATION_SCOPE_NAME).setValue(
+        AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build()).build());
+    // TODO: Hardcoded library version
+    spanBuilder.addAttributes(KeyValue.newBuilder().setKey(KEY_INSTRUMENTATION_SCOPE_VERSION).setValue(
+        AnyValue.newBuilder().setStringValue("0.0.1").build()).build());
+    // Include instrumentation library name for backwards compatibility
+    spanBuilder.addAttributes(KeyValue.newBuilder().setKey(KEY_INSTRUMENTATION_LIBRARY_NAME).setValue(
+        AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build()).build());
+    // TODO: Hardcoded library version
+    // Include instrumentation library name for backwards compatibility
+    spanBuilder.addAttributes(KeyValue.newBuilder().setKey(KEY_INSTRUMENTATION_LIBRARY_VERSION).setValue(
+        AnyValue.newBuilder().setStringValue("0.0.1").build()).build());
+
     span.forEachTag(consumer, spanBuilder);
     span.forEachAnnotation(consumer, spanBuilder);
     consumer.addErrorTag(spanBuilder, span);

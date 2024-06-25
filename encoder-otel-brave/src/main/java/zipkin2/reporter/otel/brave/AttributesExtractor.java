@@ -18,6 +18,8 @@ import brave.handler.MutableSpan;
 import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.trace.v1.Span;
+import io.opentelemetry.proto.trace.v1.Status;
+import io.opentelemetry.proto.trace.v1.Status.StatusCode;
 import java.util.Map;
 
 /**
@@ -48,6 +50,9 @@ final class AttributesExtractor {
     if (errorValue != null) {
       target.addAttributes(KeyValue.newBuilder().setKey(getLabelName("error")).setValue(
           AnyValue.newBuilder().setStringValue(errorValue).build()).build());
+      target.setStatus(Status.newBuilder().setCode(StatusCode.STATUS_CODE_ERROR).build());
+    } else {
+      target.setStatus(Status.newBuilder().setCode(StatusCode.STATUS_CODE_OK).build());
     }
   }
 

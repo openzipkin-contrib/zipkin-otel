@@ -25,6 +25,8 @@ import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.trace.v1.Span;
 import io.opentelemetry.proto.trace.v1.Span.Event;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
+import io.opentelemetry.proto.trace.v1.Status;
+import io.opentelemetry.proto.trace.v1.Status.StatusCode;
 import io.opentelemetry.proto.trace.v1.TracesData;
 import java.time.Instant;
 import java.util.Arrays;
@@ -66,6 +68,16 @@ class SpanTranslatorTest {
                             AnyValue.newBuilder().setStringValue("192.168.99.101").build()).build(),
                         KeyValue.newBuilder().setKey("net.sock.peer.port").setValue(
                             AnyValue.newBuilder().setIntValue(9000).build()).build(),
+                        KeyValue.newBuilder().setKey("otel.scope.name").setValue(
+                                AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
+                            .build(),
+                        KeyValue.newBuilder().setKey("otel.scope.version").setValue(
+                            AnyValue.newBuilder().setStringValue("0.0.1").build()).build(),
+                        KeyValue.newBuilder().setKey("otel.library.name").setValue(
+                                AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
+                            .build(),
+                        KeyValue.newBuilder().setKey("otel.library.version").setValue(
+                            AnyValue.newBuilder().setStringValue("0.0.1").build()).build(),
                         KeyValue.newBuilder().setKey("clnt/finagle.version").setValue(
                             AnyValue.newBuilder().setStringValue("6.45.0").build()).build(),
                         KeyValue.newBuilder().setKey("http.path").setValue(
@@ -79,6 +91,7 @@ class SpanTranslatorTest {
                     Event.newBuilder().setTimeUnixNano(TimeUnit.MILLISECONDS.toNanos(
                             Instant.ofEpochSecond(1472470996, 403_000_000).toEpochMilli()))
                         .setName("bar").build()))
+                .setStatus(Status.newBuilder().setCode(StatusCode.STATUS_CODE_OK).build())
                 .build());
   }
 
