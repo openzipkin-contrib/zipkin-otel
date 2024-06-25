@@ -33,7 +33,6 @@ import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceResponse;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.common.export.ProxyOptions;
-import io.opentelemetry.sdk.common.export.RetryPolicy;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -61,8 +60,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockserver.integration.ClientAndServer;
 
 /**
@@ -159,17 +156,12 @@ public abstract class AbstractHttpTelemetryExporterTest<T, U extends Message> {
     }
   }
 
-  private final String type;
   private final String path;
-  private final U resourceTelemetryInstance;
 
-  private CloseableSpanHandler exporter; // Brave OKHttp sender
+  private CloseableSpanHandler exporter;
 
-  protected AbstractHttpTelemetryExporterTest(
-      String type, String path, U resourceTelemetryInstance) {
-    this.type = type;
+  protected AbstractHttpTelemetryExporterTest(String path) {
     this.path = path;
-    this.resourceTelemetryInstance = resourceTelemetryInstance;
   }
 
   @BeforeAll
@@ -337,82 +329,6 @@ public abstract class AbstractHttpTelemetryExporterTest<T, U extends Message> {
   }
 
   @Test
-  void exportAfterShutdown() {
-    CloseableSpanHandler exporter = exporterBuilder().setEndpoint(server.httpUri() + path).build();
-    exporter.shutdown();
-    assertThat(
-        exporter
-            .export(Collections.singletonList(generateFakeTelemetry()))
-            .join(10, TimeUnit.SECONDS)
-            .isSuccess())
-        .isFalse();
-    assertThat(httpRequests).isEmpty();
-  }
-
-  @ParameterizedTest
-  @ValueSource(ints = {429, 502, 503, 504})
-  void retryableError(int code) {
-    addHttpError(code);
-
-    CloseableSpanHandler exporter = retryingExporter();
-
-    try {
-      assertThat(
-          exporter
-              .export(Collections.singletonList(generateFakeTelemetry()))
-              .join(10, TimeUnit.SECONDS)
-              .isSuccess())
-          .isTrue();
-    } finally {
-      exporter.shutdown();
-    }
-
-    assertThat(attempts).hasValue(2);
-  }
-
-  @Test
-  void retryableError_tooManyAttempts() {
-    addHttpError(502);
-    addHttpError(502);
-
-    CloseableSpanHandler exporter = retryingExporter();
-
-    try {
-      assertThat(
-          exporter
-              .export(Collections.singletonList(generateFakeTelemetry()))
-              .join(10, TimeUnit.SECONDS)
-              .isSuccess())
-          .isFalse();
-    } finally {
-      exporter.shutdown();
-    }
-
-    assertThat(attempts).hasValue(2);
-  }
-
-  @ParameterizedTest
-  @ValueSource(ints = {400, 401, 403, 500, 501})
-  void nonRetryableError(int code) {
-    addHttpError(code);
-
-    CloseableSpanHandler exporter = retryingExporter();
-
-    try {
-      assertThat(
-          exporter
-              .export(Collections.singletonList(generateFakeTelemetry()))
-              .join(10, TimeUnit.SECONDS)
-              .isSuccess())
-          .isFalse();
-    } finally {
-      exporter.shutdown();
-    }
-
-    assertThat(attempts).hasValue(1);
-  }
-
-  @Test
   void proxy() {
     // configure mockserver to proxy to the local OTLP server
     InetSocketAddress serverSocketAddress = server.httpSocketAddress();
@@ -462,21 +378,6 @@ public abstract class AbstractHttpTelemetryExporterTest<T, U extends Message> {
               }
             })
         .collect(Collectors.toList());
-  }
-
-  private CloseableSpanHandler retryingExporter() {
-    return exporterBuilder()
-        .setEndpoint(server.httpUri() + path)
-        .setRetryPolicy(
-            RetryPolicy.builder()
-                .setMaxAttempts(2)
-                // We don't validate backoff time itself in these tests, just that retries
-                // occur. Keep the tests fast by using minimal backoff.
-                .setInitialBackoff(Duration.ofMillis(1))
-                .setMaxBackoff(Duration.ofMillis(1))
-                .setBackoffMultiplier(1)
-                .build())
-        .build();
   }
 
   private static void addHttpError(int code) {

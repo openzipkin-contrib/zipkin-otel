@@ -1,21 +1,27 @@
 /*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2024 The OpenZipkin Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
-
 package zipkin2.reporter.otel.brave;
 
 import brave.Tags;
 import brave.handler.MutableSpan;
 import io.opentelemetry.sdk.common.export.ProxyOptions;
-import io.opentelemetry.sdk.common.export.RetryPolicy;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import okhttp3.Headers;
 import okhttp3.Request;
+import okhttp3.Request.Builder;
 import zipkin2.reporter.AsyncReporter;
 import zipkin2.reporter.Encoding;
 import zipkin2.reporter.InMemoryReporterMetrics;
@@ -29,7 +35,7 @@ public class HttpSpanExporterBuilderWrapper implements TelemetryExporterBuilder<
   private final OkHttpSender.Builder builder;
 
   public HttpSpanExporterBuilderWrapper(OkHttpSender.Builder builder) {
-    this.builder = builder.encoding(Encoding.PROTO3);
+    this.builder = builder.encoding(Encoding.PROTO3).compressionEnabled(false);
     this.builder.clientBuilder()
         .addInterceptor(chain -> {
           // TODO: This should be added to the docs or somewhere to wrap OkHttp Sender
@@ -46,20 +52,8 @@ public class HttpSpanExporterBuilderWrapper implements TelemetryExporterBuilder<
   }
 
   @Override
-  public TelemetryExporterBuilder<MutableSpan> setTimeout(long timeout, TimeUnit unit) {
-    builder.readTimeout(Math.toIntExact(unit.toMillis(timeout)));
-    return this;
-  }
-
-  @Override
   public TelemetryExporterBuilder<MutableSpan> setTimeout(Duration timeout) {
     builder.readTimeout(Math.toIntExact(timeout.toMillis()));
-    return this;
-  }
-
-  @Override
-  public TelemetryExporterBuilder<MutableSpan> setConnectTimeout(long timeout, TimeUnit unit) {
-    builder.connectTimeout(Math.toIntExact(unit.toMillis(timeout)));
     return this;
   }
 
@@ -98,17 +92,11 @@ public class HttpSpanExporterBuilderWrapper implements TelemetryExporterBuilder<
       Supplier<Map<String, String>> headerSupplier) {
     builder.clientBuilder().addInterceptor(chain -> {
       Request request = chain.request();
-      Request newRequest = request.newBuilder()
-          .headers(Headers.of(headerSupplier.get()))
-          .build();
+      Builder newBuilder = request.newBuilder();
+      headerSupplier.get().forEach(newBuilder::addHeader);
+      Request newRequest = newBuilder.build();
       return chain.proceed(newRequest);
     });
-    return this;
-  }
-
-  @Override
-  public TelemetryExporterBuilder<MutableSpan> setRetryPolicy(RetryPolicy retryPolicy) {
-    builder.clientBuilder().retryOnConnectionFailure(true);
     return this;
   }
 
