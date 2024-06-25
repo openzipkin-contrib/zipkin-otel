@@ -15,6 +15,7 @@ package zipkin2.translation.zipkin;
 
 import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.KeyValue;
+import io.opentelemetry.proto.trace.v1.Span;
 import java.util.Map;
 
 /**
@@ -38,9 +39,8 @@ final class AttributesExtractor {
     this.renamedLabels = renamedLabels;
   }
 
-  void addTag(KeyValue.Builder target, String key, String value) {
-    target.setKey(getLabelName(key)).setValue(
-        AnyValue.newBuilder().setStringValue(value).build());
+  void addTag(Span.Builder target, String key, String value) {
+    target.addAttributes(KeyValue.newBuilder().setKey(getLabelName(key)).setValue(AnyValue.newBuilder().setStringValue(value).build()).build()).build();
   }
 
   private String getLabelName(String zipkinName) {
