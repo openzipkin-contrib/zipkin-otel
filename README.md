@@ -16,7 +16,6 @@ persists them to a configured collector component.
 
 | Collector                          | Description                                                                             |
 |------------------------------------|-----------------------------------------------------------------------------------------|
-| [collector-grpc](./collector-grpc) | Implements the [OTLP/gRPC protocol](https://opentelemetry.io/docs/specs/otlp/#otlpgrpc) |
 | [collector-http](./collector-http) | Implements the [OTLP/HTTP protocol](https://opentelemetry.io/docs/specs/otlp/#otlphttp) |
 
 ## Server integration
