@@ -8,7 +8,6 @@
 !build-bin/maven/maven_unjar
 
 # Allow on-demand "mvn package". <modules> referenced in pom.xml must be added even if not built
-!collector-grpc/src/main/**
 !collector-http/src/main/**
 !module/src/main/**
 !**/pom.xml
