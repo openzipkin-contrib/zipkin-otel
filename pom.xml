@@ -30,7 +30,6 @@
     <module>encoder-otel-brave</module>
     <module>encoder-otel-zipkin</module>
     <module>collector-http</module>
-    <module>tests</module>
   </modules>
 
   <distributionManagement>
