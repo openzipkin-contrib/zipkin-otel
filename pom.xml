@@ -27,7 +27,6 @@
   <modules>
     <module>module</module>
     <module>translation-otel</module>
-    <module>encoder-otel-brave</module>
     <module>encoder-otel-zipkin</module>
     <module>collector-http</module>
   </modules>
