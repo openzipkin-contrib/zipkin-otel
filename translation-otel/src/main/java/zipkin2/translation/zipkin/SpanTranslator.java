@@ -15,6 +15,9 @@ package zipkin2.translation.zipkin;
 
 import static io.opentelemetry.api.common.AttributeKey.longKey;
 import static io.opentelemetry.api.common.AttributeKey.stringKey;
+import static io.opentelemetry.semconv.SemanticAttributes.NET_SOCK_PEER_ADDR;
+import static io.opentelemetry.semconv.SemanticAttributes.NET_SOCK_PEER_NAME;
+import static io.opentelemetry.semconv.SemanticAttributes.NET_SOCK_PEER_PORT;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.joining;
 
@@ -70,7 +73,6 @@ public final class SpanTranslator {
   private static final AttributeKey<String> SERVER_SOCKET_ADDRESS =
       stringKey("server.socket.address");
   private static final AttributeKey<Long> SERVER_SOCKET_PORT = longKey("server.socket.port");
-
 
   static final String KEY_INSTRUMENTATION_SCOPE_NAME = "otel.scope.name";
   static final String KEY_INSTRUMENTATION_SCOPE_VERSION = "otel.scope.version";
@@ -177,7 +179,7 @@ public final class SpanTranslator {
     String peerName = span.remoteServiceName();
     if (peerName != null) {
       spanBuilder.addAttributes(
-          KeyValue.newBuilder().setKey(SemanticAttributes.NET_SOCK_PEER_NAME.getKey())
+          KeyValue.newBuilder().setKey(NET_SOCK_PEER_NAME.getKey())
               .setValue(AnyValue.newBuilder().setStringValue(peerName).build()).build());
     }
     String peerIp = span.remoteEndpoint() != null ? span.remoteEndpoint().ipv4() : null;
@@ -204,7 +206,6 @@ public final class SpanTranslator {
     return spanBuilder;
   }
 
-  // TODO: Write better tests
   /**
    * Converts OpenTelemetry Spans into Zipkin spans.
    *
@@ -252,7 +253,7 @@ public final class SpanTranslator {
             .localEndpoint(getLocalEndpoint(resourceSpans))
             .remoteEndpoint(getRemoteEndpoint(spanData));
 
-    if (spanData.getParentSpanId().isEmpty() || OtelEncodingUtils.spanIdFromBytes(
+    if (!spanData.getParentSpanId().isEmpty() && !OtelEncodingUtils.spanIdFromBytes(
         spanData.getParentSpanId().toByteArray()).equals(SpanContext.getInvalid().getSpanId())) {
       spanBuilder.parentId(
           OtelEncodingUtils.spanIdFromBytes(spanData.getParentSpanId().toByteArray()));
@@ -260,7 +261,7 @@ public final class SpanTranslator {
 
     List<KeyValue> spanAttributes = spanData.getAttributesList();
     spanAttributes.forEach(
-        (kv) -> spanBuilder.putTag(kv.getKey(), valueToString(kv, kv.getValue())));
+        (kv) -> spanBuilder.putTag(kv.getKey(), valueToString(kv.getValue())));
     int droppedAttributes = spanData.getAttributesCount() - spanAttributes.size();
     if (droppedAttributes > 0) {
       spanBuilder.putTag(OTEL_DROPPED_ATTRIBUTES_COUNT, String.valueOf(droppedAttributes));
@@ -317,7 +318,7 @@ public final class SpanTranslator {
     List<KeyValue> resourceAttributes = spanData.getResource().getAttributesList();
 
     Endpoint.Builder endpoint = Endpoint.newBuilder();
-    endpoint.ip(LocalInetAddressSupplier.findLocalIp());
+    endpoint.ip(LocalInetAddressSupplier.getInstance().get());
 
     // use the service.name from the Resource, if it's been set.
     KeyValue serviceNameValue = resourceAttributes.stream().filter(keyValue -> SERVICE_NAME.getKey().equals(
@@ -325,6 +326,8 @@ public final class SpanTranslator {
     String serviceName = null;
     if (serviceNameValue == null) {
       serviceName = Resource.getDefault().getAttribute(SERVICE_NAME);
+    } else {
+      serviceName = serviceNameValue.getValue().getStringValue();
     }
     // In practice should never be null unless the default Resource spec is changed.
     if (serviceName != null) {
@@ -332,6 +335,9 @@ public final class SpanTranslator {
     }
     return endpoint.build();
   }
+  /*
+  localEndpoint":{"serviceName":"frontend"},"remoteEndpoint":{"serviceName":"backend","ipv4":"192.168.99.101","port":9000}
+   */
 
   @Nullable
   private static Endpoint getRemoteEndpoint(Span spanData) {
@@ -340,14 +346,14 @@ public final class SpanTranslator {
       // TODO: Implement fallback mechanism:
       // https://opentelemetry.io/docs/reference/specification/trace/sdk_exporters/zipkin/#otlp---zipkin
       List<KeyValue> attributes = spanData.getAttributesList();
-      String serviceName = attributes.stream().filter(keyValue -> PEER_SERVICE.getKey().equals(keyValue.getKey())).map(keyValue -> keyValue.getValue().getStringValue()).findFirst().orElse(null);
+      String serviceName = attributes.stream().filter(keyValue -> PEER_SERVICE.getKey().equals(keyValue.getKey()) || NET_SOCK_PEER_NAME.getKey().equals(keyValue.getKey())).map(keyValue -> keyValue.getValue().getStringValue()).findFirst().orElse(null);
 
       if (serviceName != null) {
         Endpoint.Builder endpoint = Endpoint.newBuilder();
         endpoint.serviceName(serviceName);
-        endpoint.ip(attributes.stream().filter(keyValue -> SERVER_SOCKET_ADDRESS.getKey().equals(keyValue.getKey())).map(keyValue -> keyValue.getValue().getStringValue()).findFirst().orElse(null));
+        endpoint.ip(attributes.stream().filter(keyValue -> SERVER_SOCKET_ADDRESS.getKey().equals(keyValue.getKey()) || NET_SOCK_PEER_ADDR.getKey().equals(keyValue.getKey())).map(keyValue -> keyValue.getValue().getStringValue()).findFirst().orElse(null));
         attributes.stream()
-            .filter(keyValue -> SERVER_SOCKET_PORT.getKey().equals(keyValue.getKey()))
+            .filter(keyValue -> SERVER_SOCKET_PORT.getKey().equals(keyValue.getKey()) || NET_SOCK_PEER_PORT.getKey().equals(keyValue.getKey()))
             .map(keyValue -> keyValue.getValue().getIntValue()).findFirst()
             .ifPresent(port -> endpoint.port(port.intValue()));
 
@@ -385,15 +391,20 @@ public final class SpanTranslator {
     return NANOSECONDS.toMicros(epochNanos);
   }
 
-  private static String valueToString(KeyValue key, AnyValue attributeValue) {
+  private static String valueToString(AnyValue attributeValue) {
     if (attributeValue.hasArrayValue()) {
       return commaSeparated(attributeValue.getArrayValue().getValuesList().stream().map(
           AnyValue::getStringValue).collect(
           Collectors.toList()));
-    } else if (attributeValue.hasStringValue()) {
-      return attributeValue.getStringValue();
     }
-    throw new IllegalStateException("Unknown attribute type");
+    if (attributeValue.hasBoolValue()) {
+      return String.valueOf(attributeValue.getBoolValue());
+    } else if (attributeValue.hasDoubleValue()) {
+      return String.valueOf(attributeValue.getDoubleValue());
+    } else if (attributeValue.hasIntValue()) {
+      return String.valueOf(attributeValue.getIntValue());
+    }
+    return attributeValue.getStringValue();
   }
 
   private static String commaSeparated(List<?> values) {
@@ -439,11 +450,11 @@ public final class SpanTranslator {
   static class LocalInetAddressSupplier implements Supplier<InetAddress> {
 
     private static final Logger logger = Logger.getLogger(LocalInetAddressSupplier.class.getName());
-    private static final LocalInetAddressSupplier INSTANCE =
+    private static LocalInetAddressSupplier INSTANCE =
         new LocalInetAddressSupplier(findLocalIp());
     @Nullable private final InetAddress inetAddress;
 
-    private LocalInetAddressSupplier(@Nullable InetAddress inetAddress) {
+    LocalInetAddressSupplier(@Nullable InetAddress inetAddress) {
       this.inetAddress = inetAddress;
     }
 
@@ -477,6 +488,10 @@ public final class SpanTranslator {
 
     static LocalInetAddressSupplier getInstance() {
       return INSTANCE;
+    }
+
+    static void setInstance(LocalInetAddressSupplier supplier) {
+      INSTANCE = supplier;
     }
   }
 

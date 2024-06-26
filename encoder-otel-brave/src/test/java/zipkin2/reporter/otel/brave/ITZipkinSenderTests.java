@@ -101,11 +101,11 @@ class ITZipkinSenderTests {
       this.braveTraceIdGenerator = new BraveTraceIdGenerator(otlpPort);
     }
 
-    public String queryUrl() {
+    String queryUrl() {
       return "http://localhost:" + jaegerAllInOne.getQueryPort() + "/api/traces/";
     }
 
-    public List<String> exportedTraceIds() throws Exception {
+    List<String> exportedTraceIds() throws Exception {
       return braveTraceIdGenerator.traceIds();
     }
 
@@ -117,7 +117,7 @@ class ITZipkinSenderTests {
   /**
    * Actual testing logic that uses Brave to generate spans and send them to the backend.
    */
-  static class BraveTraceIdGenerator implements Closeable {
+  static class BraveTraceIdGenerator {
 
     private final BraveHttpSenderProvider braveHttpSenderProvider = new BraveHttpSenderProvider();
 
@@ -167,11 +167,10 @@ class ITZipkinSenderTests {
       return traceIds;
     }
 
-    void flush() {
+    private void flush() {
       braveHttpSenderProvider.flush();
     }
 
-    @Override
     public void close() {
       braveHttpSenderProvider.close();
       tracing.close();
@@ -216,7 +215,7 @@ class ITZipkinSenderTests {
         return spanHandler;
       }
 
-      void flush() {
+      private void flush() {
         reporter.flush();
       }
     }

@@ -96,7 +96,6 @@ class ZipkinCollectorTests {
   void shouldSendOtlpHttpSpansToOtlpEndpoint() throws Exception {
     List<String> traceIds = exportedTraceIds();
 
-    // Then
     Awaitility.await().untilAsserted(() -> {
       BDDAssertions.then(traceIds).hasSize(EXPECTED_TRACE_SIZE);
       thenAllTraceIdsPresentInBackend(queryUrl(), traceIds);

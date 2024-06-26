@@ -4,7 +4,7 @@
 
 This is a module that can be added to
 a [Zipkin Server](https://github.com/openzipkin/zipkin/tree/master/zipkin-server)
-deployment to receive Spans to OpenTelemetry's OLTP/GRPC and OLTP/HTTP protocols.
+deployment to receive Spans to OpenTelemetry's OLTP/HTTP protocols.
 
 ## Experimental
 
@@ -21,7 +21,7 @@ Fetch the latest released
 [executable jar for Zipkin server](https://search.maven.org/remote_content?g=io.zipkin&a=zipkin-server&v=LATEST&c=exec)
 and
 [module jar for otel](https://search.maven.org/remote_content?g=io.zipkin.contrib.otel&a=zipkin-module-otel&v=LATEST&c=module).
-Run Zipkin server with the StackDriver Storage enabled.
+Run Zipkin server with the Zipkin OTel module enabled.
 
 For example:
 
@@ -49,7 +49,6 @@ for users that prefer a file based approach.
 
 | Property                             | Environment Variable          | Description                                              |
 |--------------------------------------|-------------------------------|----------------------------------------------------------|
-| `zipkin.collector.otel.grpc.enabled` | `COLLECTOR_GRPC_OTEL_ENABLED` | `false` disables the GRPC collector. Defaults to `true`. |
 | `zipkin.collector.otel.http.enabled` | `COLLECTOR_HTTP_OTEL_ENABLED` | `false` disables the HTTP collector. Defaults to `true`. |
 
 ### Running
