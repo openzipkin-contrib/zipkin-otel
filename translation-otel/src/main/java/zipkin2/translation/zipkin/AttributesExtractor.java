@@ -40,12 +40,13 @@ final class AttributesExtractor {
   }
 
   void addTag(Span.Builder target, String key, String value) {
-    target.addAttributes(KeyValue.newBuilder().setKey(getLabelName(key)).setValue(AnyValue.newBuilder().setStringValue(value).build()).build()).build();
+    if (!LinkUtils.isApplicable(key)) {
+      target.addAttributes(KeyValue.newBuilder().setKey(getLabelName(key)).setValue(AnyValue.newBuilder().setStringValue(value).build()).build()).build();
+    }
   }
 
   private String getLabelName(String zipkinName) {
     String renamed = renamedLabels.get(zipkinName);
     return renamed != null ? renamed : zipkinName;
   }
-
 }

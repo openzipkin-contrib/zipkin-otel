@@ -22,6 +22,7 @@ import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.Span.Event;
+import io.opentelemetry.proto.trace.v1.Span.Link;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.TracesData;
 import java.util.List;
@@ -57,6 +58,9 @@ public class SpanTranslatorTest {
             .addAnnotation(1_123_000L, "foo")
             .putTag("http.path", "/api")
             .putTag("clnt/finagle.version", "6.45.0")
+            .putTag("links[0].traceId", "8291c278b62e8f6a216a2aea45d08fc8")
+            .putTag("links[0].spanId", "6c5295666d50f69c")
+            .putTag("links[0].tags[foo]", "bar")
             .build();
 
     TracesData translated = SpanTranslator.translate(zipkinSpan);
@@ -99,6 +103,12 @@ public class SpanTranslatorTest {
                             .addEvents(Event.newBuilder()
                                 .setTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(1_123_000L))
                                 .setName("foo").build())
+                            .addLinks(Link.newBuilder()
+                                .setSpanId(ByteString.fromHex("6c5295666d50f69c"))
+                                .setTraceId(ByteString.fromHex("8291c278b62e8f6a216a2aea45d08fc8"))
+                                .addAttributes(KeyValue.newBuilder().setKey("foo").setValue(
+                                    AnyValue.newBuilder().setStringValue("bar").build()).build())
+                                .build())
                             .build())
                         .build())
                     .build()).build());

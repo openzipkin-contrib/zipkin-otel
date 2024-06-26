@@ -24,6 +24,7 @@ import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.trace.v1.Span;
 import io.opentelemetry.proto.trace.v1.Span.Event;
+import io.opentelemetry.proto.trace.v1.Span.Link;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.Status.StatusCode;
@@ -92,6 +93,12 @@ class SpanTranslatorTest {
                             Instant.ofEpochSecond(1472470996, 403_000_000).toEpochMilli()))
                         .setName("bar").build()))
                 .setStatus(Status.newBuilder().setCode(StatusCode.STATUS_CODE_OK).build())
+                .addLinks(Link.newBuilder()
+                    .setSpanId(ByteString.fromHex("6c5295666d50f69c"))
+                    .setTraceId(ByteString.fromHex("8291c278b62e8f6a216a2aea45d08fc8"))
+                    .addAttributes(KeyValue.newBuilder().setKey("foo").setValue(
+                        AnyValue.newBuilder().setStringValue("bar").build()).build())
+                    .build())
                 .build());
   }
 

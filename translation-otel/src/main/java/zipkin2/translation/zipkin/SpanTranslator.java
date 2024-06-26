@@ -29,6 +29,7 @@ import io.opentelemetry.proto.trace.v1.ResourceSpans.Builder;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.Span;
 import io.opentelemetry.proto.trace.v1.Span.Event;
+import io.opentelemetry.proto.trace.v1.Span.Link;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.Status.StatusCode;
@@ -63,7 +64,6 @@ import zipkin2.internal.Nullable;
 public final class SpanTranslator {
 
   static final AttributesExtractor ATTRIBUTES_EXTRACTOR;
-
 
   private static final AttributeKey<String> SERVICE_NAME = AttributeKey.stringKey("service.name");
   private static final AttributeKey<String> PEER_SERVICE = stringKey("peer.service");
@@ -194,12 +194,17 @@ public final class SpanTranslator {
     }
     span.tags()
         .forEach((key, value) -> ATTRIBUTES_EXTRACTOR.addTag(spanBuilder, key, value));
+
+    List<Link> links = LinkUtils.toLinks(span.tags());
+    links.forEach(spanBuilder::addLinks);
+
     span.annotations().forEach(annotation -> spanBuilder.addEventsBuilder()
         .setTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(annotation.timestamp()))
         .setName(annotation.value()));
     return spanBuilder;
   }
 
+  // TODO: Write better tests
   /**
    * Converts OpenTelemetry Spans into Zipkin spans.
    *
@@ -289,6 +294,16 @@ public final class SpanTranslator {
     int droppedEvents = spanData.getEventsCount() - spanData.getEventsList().size();
     if (droppedEvents > 0) {
       spanBuilder.putTag(OTEL_DROPPED_EVENTS_COUNT, String.valueOf(droppedEvents));
+    }
+
+    for (int i = 0; i < spanData.getLinksCount(); i++) {
+      Link link = spanData.getLinks(i);
+      spanBuilder.putTag(LinkUtils.spanIdKey(i), OtelEncodingUtils.spanIdFromBytes(link.getSpanId().toByteArray()));
+      spanBuilder.putTag(LinkUtils.traceIdKey(i), OtelEncodingUtils.traceIdFromBytes(link.getTraceId().toByteArray()));
+      for (int j = 0; j < link.getAttributesCount(); j++) {
+        KeyValue attributes = link.getAttributes(j);
+        spanBuilder.putTag(LinkUtils.tagKey(j, attributes.getKey()), attributes.getValue().getStringValue());
+      }
     }
 
     return spanBuilder.shared(false).build();
