@@ -34,11 +34,6 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-collector-otel-grpc</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-collector-otel-http</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -65,12 +60,6 @@
     <dependency>
       <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-junit5</artifactId>
-      <version>${armeria.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-grpc</artifactId>
       <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>

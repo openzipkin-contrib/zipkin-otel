@@ -26,7 +26,6 @@
 
   <modules>
     <module>module</module>
-    <module>collector-grpc</module>
     <module>collector-http</module>
   </modules>
 

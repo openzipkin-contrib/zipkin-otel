@@ -20,7 +20,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
-import zipkin2.collector.otel.grpc.OpenTelemetryGrpcCollector;
 import zipkin2.collector.otel.http.OpenTelemetryHttpCollector;
 import zipkin2.storage.StorageComponent;
 
