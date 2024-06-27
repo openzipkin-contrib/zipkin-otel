@@ -50,7 +50,9 @@ class ITOpenTelemetryHttpCollector {
   InMemoryCollectorMetrics metrics;
   CollectorComponent collector;
 
-  SpanExporter spanExporter = OtlpHttpSpanExporter.builder().build();
+  SpanExporter spanExporter = OtlpHttpSpanExporter.builder()
+      .setCompression("gzip")
+      .build();
 
   SdkTracerProvider sdkTracerProvider = SdkTracerProvider.builder()
       .setSampler(alwaysOn())

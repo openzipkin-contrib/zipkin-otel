@@ -19,10 +19,13 @@ import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.ResponseHeaders;
+import com.linecorp.armeria.common.encoding.StreamDecoderFactory;
 import com.linecorp.armeria.server.AbstractHttpService;
+import com.linecorp.armeria.server.HttpServiceWithRoutes;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.ServerConfigurator;
 import com.linecorp.armeria.server.ServiceRequestContext;
+import com.linecorp.armeria.server.encoding.DecodingService;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
@@ -108,6 +111,7 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
    */
   @Override
   public void reconfigure(ServerBuilder sb) {
+    sb.decorator(DecodingService.newDecorator(StreamDecoderFactory.gzip()));
     sb.service("/v1/traces", new HttpService(this));
   }
 
@@ -139,13 +143,7 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
           final ByteBuffer nioBuffer = byteBuf.nioBuffer();
           try (ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(nioBuffer)) {
             try {
-              InputStream inputStream = readBuffer;
-              if ("gzip".equalsIgnoreCase(req.headers().get("content-encoding"))) {
-                inputStream = new GZIPInputStream(content.toInputStream());
-              } else if ("base64".equalsIgnoreCase(req.headers().get("content-encoding"))) {
-                inputStream = Base64.getDecoder().wrap(content.toInputStream());
-              }
-              ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(inputStream);
+              ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(readBuffer);
               List<Span> spans = SpanTranslator.translate(request);
               collector.collector.accept(spans, result);
             } catch (IOException e) {
