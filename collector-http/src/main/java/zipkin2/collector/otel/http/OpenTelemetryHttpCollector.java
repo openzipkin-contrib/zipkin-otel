@@ -134,7 +134,7 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
           }
 
           try {
-            ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(content.toInputStream());
+            ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(CodedInputStream.newInstance(content.byteBuf().nioBuffer()));
             List<Span> spans = SpanTranslator.translate(request);
             collector.collector.accept(spans, result);
           } catch (IOException e) {
