@@ -13,10 +13,10 @@
  */
 package zipkin2.collector.otel.http;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import zipkin2.storage.InMemoryStorage;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class OpenTelemetryHttpCollectorTest {
   OpenTelemetryHttpCollector collector = OpenTelemetryHttpCollector.newBuilder()
