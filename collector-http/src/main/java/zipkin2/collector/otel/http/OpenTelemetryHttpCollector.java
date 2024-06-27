@@ -13,6 +13,7 @@
  */
 package zipkin2.collector.otel.http;
 
+import com.google.protobuf.CodedInputStream;
 import com.linecorp.armeria.common.AggregationOptions;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpRequest;
@@ -25,11 +26,9 @@ import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.ServerConfigurator;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.encoding.DecodingService;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import zipkin2.Callback;
@@ -38,7 +37,6 @@ import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
-import zipkin2.internal.ReadBuffer;
 import zipkin2.storage.StorageComponent;
 import zipkin2.translation.zipkin.SpanTranslator;
 
@@ -135,16 +133,12 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
             return null;
           }
 
-          ByteBuf byteBuf = content.byteBuf();
-          final ByteBuffer nioBuffer = byteBuf.nioBuffer();
-          try (ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(nioBuffer)) {
-            try {
-              ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(readBuffer);
-              List<Span> spans = SpanTranslator.translate(request);
-              collector.collector.accept(spans, result);
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
+          try {
+            ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(content.toInputStream());
+            List<Span> spans = SpanTranslator.translate(request);
+            collector.collector.accept(spans, result);
+          } catch (IOException e) {
+            throw new RuntimeException(e);
           }
           return null;
         }
