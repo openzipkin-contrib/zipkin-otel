@@ -13,6 +13,9 @@
  */
 package zipkin.module.otel;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
+
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -26,9 +29,6 @@ import zipkin2.collector.CollectorSampler;
 import zipkin2.collector.otel.http.OpenTelemetryHttpCollector;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
 class ZipkinOpenTelemetryHttpCollectorModuleTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();

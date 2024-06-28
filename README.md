@@ -18,6 +18,17 @@ persists them to a configured collector component.
 |------------------------------------|-----------------------------------------------------------------------------------------|
 | [collector-http](./collector-http) | Implements the [OTLP/HTTP protocol](https://opentelemetry.io/docs/specs/otlp/#otlphttp) |
 
+### Encoders
+
+Encoding is library-specific, as some libraries use `zipkin2.Span` and others
+`brave.handler.MutableSpan`. Both options are available to encode to the
+OTLP format.
+
+| Encoder                                   | Description                                    |
+|-------------------------------------------|------------------------------------------------|
+| [`OtelEncoder.V1`](./encoder-otel-zipkin) | zipkin-reporter `AsyncReporter<Span>`          |
+| [`OtelEncoder`](./encoder-otel-brave)     | zipkin-reporter-brave `AsyncZipkinSpanHandler` |
+
 ## Server integration
 
 If you cannot use our [Docker image](./docker/README.md), you can still integrate
