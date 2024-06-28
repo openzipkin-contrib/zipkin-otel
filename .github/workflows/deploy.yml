@@ -2,7 +2,7 @@
 ---
 name: deploy
 
-# We deploy on master and release versions, regardless of if the commit is
+# We deploy on main and release versions, regardless of if the commit is
 # documentation-only or not.
 on:  # yamllint disable-line rule:truthy
   push:
