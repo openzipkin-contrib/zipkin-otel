@@ -19,7 +19,7 @@ import io.opentelemetry.proto.trace.v1.Span;
 import java.util.Map;
 
 /**
- * LabelExtractor extracts the set of OTel Span labels equivalent to the annotations in a
+ * AttributesExtractor extracts the set of OTel Span labels equivalent to the annotations in a
  * given Zipkin Span.
  *
  * <p>Zipkin annotations are converted to OTel Span labels by using annotation.value as the

@@ -29,6 +29,7 @@ import com.linecorp.armeria.server.encoding.DecodingService;
 import io.netty.buffer.ByteBufAllocator;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import zipkin2.Callback;
@@ -138,7 +139,7 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
             List<Span> spans = SpanTranslator.translate(request);
             collector.collector.accept(spans, result);
           } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
           }
           return null;
         }

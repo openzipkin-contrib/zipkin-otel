@@ -25,7 +25,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-class LinkUtils {
+final class LinkUtils {
 
   private static final String LINKS_PREFIX = "links[";
 
