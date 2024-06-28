@@ -1,0 +1,10 @@
+# When enabled, this allows shorter env properties (ex -Dspring.profiles.active=otel)
+zipkin:
+  internal:
+    module:
+      http: zipkin.module.otel.ZipkinOpenTelemetryHttpCollectorModule
+  collector:
+    otel:
+      http:
+        # Set to false to disable creation of spans via OLTP/HTTP protocol
+        enabled: ${COLLECTOR_HTTP_ENABLED:${COLLECTOR_OTEL_HTTP_ENABLED:true}}

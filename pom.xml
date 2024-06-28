@@ -25,6 +25,8 @@
   <packaging>pom</packaging>
 
   <modules>
+    <module>module</module>
+    <module>collector-http</module>
     <module>encoder-otel-brave</module>
   </modules>
 
