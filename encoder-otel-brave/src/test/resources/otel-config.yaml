@@ -1,0 +1,23 @@
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+  zipkin:
+    endpoint: 0.0.0.0:9411
+exporters:
+  logging:
+  # verbosity: detailed
+  otlphttp:
+    endpoint: ${OTLP_EXPORTER_ENDPOINT}
+    tls:
+      insecure: true
+service:
+  extensions: [ health_check ]
+  pipelines:
+    traces:
+      receivers: [ otlp, zipkin ]
+      exporters: [ logging, otlphttp ]

@@ -69,11 +69,6 @@ class SpanTranslatorTest {
                             AnyValue.newBuilder().setStringValue("192.168.99.101").build()).build(),
                         KeyValue.newBuilder().setKey("net.sock.peer.port").setValue(
                             AnyValue.newBuilder().setIntValue(9000).build()).build(),
-                        KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                            .build(),
-                        KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                            AnyValue.newBuilder().setStringValue("0.0.1").build()).build(),
                         KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                 AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                             .build(),

@@ -23,6 +23,7 @@ import brave.handler.MutableSpan;
 import com.google.protobuf.ByteString;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.proto.common.v1.AnyValue;
+import io.opentelemetry.proto.common.v1.InstrumentationScope;
 import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
@@ -69,6 +70,8 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(data.id()))
                             .setTraceId(ByteString.fromHex(data.traceId()))
@@ -76,11 +79,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -114,6 +112,8 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(data.id()))
                             .setTraceId(ByteString.fromHex(data.traceId()))
@@ -121,11 +121,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794_194009000L) // We lose precision
                             .setEndTimeUnixNano(1505855794_194009000L) // We lose precision
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -157,6 +152,8 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(data.id()))
                             .setTraceId(ByteString.fromHex(data.traceId()))
@@ -164,11 +161,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -200,6 +192,8 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(data.id()))
                             .setTraceId(ByteString.fromHex(data.traceId()))
@@ -207,11 +201,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -243,6 +232,8 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(data.id()))
                             .setTraceId(ByteString.fromHex(data.traceId()))
@@ -251,11 +242,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setKind(SpanKind.SPAN_KIND_INTERNAL)
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -287,6 +273,8 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(data.id()))
                             .setTraceId(ByteString.fromHex(data.traceId()))
@@ -294,11 +282,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -330,6 +313,8 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(data.id()))
                             .setTraceId(ByteString.fromHex(data.traceId()))
@@ -337,11 +322,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -374,6 +354,8 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(data.id()))
                             .setTraceId(ByteString.fromHex(data.traceId()))
@@ -381,11 +363,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -419,6 +396,8 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(data.id()))
                             .setTraceId(ByteString.fromHex(data.traceId()))
@@ -426,11 +405,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -470,6 +444,8 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(SpanContext.getInvalid().getSpanId()))
                             .setTraceId(ByteString.fromHex(SpanContext.getInvalid().getTraceId()))
@@ -484,11 +460,6 @@ class OtelToZipkinSpanTransformerTest {
                                 .build())
                             .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.port")
                                 .setValue(AnyValue.newBuilder().setIntValue(42).build()).build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -525,6 +496,8 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(SpanContext.getInvalid().getSpanId()))
                             .setTraceId(ByteString.fromHex(SpanContext.getInvalid().getTraceId()))
@@ -539,11 +512,6 @@ class OtelToZipkinSpanTransformerTest {
                                 .build())
                             .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.port")
                                 .setValue(AnyValue.newBuilder().setIntValue(42).build()).build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -579,6 +547,8 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                            .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(SpanContext.getInvalid().getSpanId()))
                             .setTraceId(ByteString.fromHex(SpanContext.getInvalid().getTraceId()))
@@ -590,11 +560,6 @@ class OtelToZipkinSpanTransformerTest {
                                 .build())
                             .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.port")
                                 .setValue(AnyValue.newBuilder().setIntValue(42).build()).build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -602,7 +567,7 @@ class OtelToZipkinSpanTransformerTest {
                                 KeyValue.newBuilder().setKey("otel.library.version").setValue(
                                     AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .setStatus(
-                                Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
+                                Status.newBuilder().setCode(StatusCode.STATUS_CODE_OK).build())
                             .build())
                         .build())
                     .build())
@@ -630,6 +595,8 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(SpanContext.getInvalid().getSpanId()))
                             .setTraceId(ByteString.fromHex(SpanContext.getInvalid().getTraceId()))
@@ -642,11 +609,6 @@ class OtelToZipkinSpanTransformerTest {
                             .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.addr")
                                 .setValue(AnyValue.newBuilder().setStringValue("8.8.8.8").build())
                                 .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -681,6 +643,8 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(SpanContext.getInvalid().getSpanId()))
                             .setTraceId(ByteString.fromHex(SpanContext.getInvalid().getTraceId()))
@@ -690,11 +654,6 @@ class OtelToZipkinSpanTransformerTest {
                             .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.name").setValue(
                                     AnyValue.newBuilder().setStringValue("remote-test-service").build())
                                 .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -733,17 +692,14 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(SpanContext.getInvalid().getSpanId()))
                             .setTraceId(ByteString.fromHex(SpanContext.getInvalid().getTraceId()))
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(Kind.CLIENT))
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -790,17 +746,14 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(SpanContext.getInvalid().getSpanId()))
                             .setTraceId(ByteString.fromHex(SpanContext.getInvalid().getTraceId()))
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(Kind.CLIENT))
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -833,17 +786,14 @@ class OtelToZipkinSpanTransformerTest {
                             .build()
                     ).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                             .setName("zipkin2.reporter.otel").setVersion("0.0.1").build())
                         .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
                             .setSpanId(ByteString.fromHex(SpanContext.getInvalid().getSpanId()))
                             .setTraceId(ByteString.fromHex(SpanContext.getInvalid().getTraceId()))
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(Kind.CLIENT))
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("otel.scope.version").setValue(
-                                AnyValue.newBuilder().setStringValue("0.0.1").build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())

@@ -22,6 +22,7 @@ import brave.handler.MutableSpan.AnnotationConsumer;
 import brave.handler.MutableSpan.TagConsumer;
 import com.google.protobuf.ByteString;
 import io.opentelemetry.proto.common.v1.AnyValue;
+import io.opentelemetry.proto.common.v1.InstrumentationScope;
 import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.ResourceSpans.Builder;
@@ -31,6 +32,7 @@ import io.opentelemetry.proto.trace.v1.Span.Event;
 import io.opentelemetry.proto.trace.v1.Span.Link;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.TracesData;
+import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.NetworkAttributes;
 import io.opentelemetry.semconv.SemanticAttributes;
@@ -96,10 +98,29 @@ final class SpanTranslator {
     Span.Builder spanBuilder = builderForSingleSpan(braveSpan, resourceSpansBuilder);
     scopeSpanBuilder.addSpans(spanBuilder
         .build());
+    InstrumentationScope.Builder scopeBuilder = InstrumentationScope.newBuilder();
+    // TODO: What should we put here?
+    scopeBuilder.setName("zipkin2.reporter.otel");
+    // TODO: Hardcoded library version
+    scopeBuilder.setVersion("0.0.1");
+    scopeSpanBuilder.setScope(scopeBuilder.build());
     resourceSpansBuilder.addScopeSpans(scopeSpanBuilder
         .build());
     tracesDataBuilder.addResourceSpans(resourceSpansBuilder.build());
     return tracesDataBuilder.build();
+  }
+
+  static KeyValue stringAttribute(String key, String value) {
+    return KeyValue.newBuilder()
+            .setKey(key)
+            .setValue(AnyValue.newBuilder().setStringValue(value))
+            .build();
+  }
+  static KeyValue intAttribute(String key, int value) {
+    return KeyValue.newBuilder()
+            .setKey(key)
+            .setValue(AnyValue.newBuilder().setIntValue(value))
+            .build();
   }
 
   private Span.Builder builderForSingleSpan(MutableSpan span, Builder resourceSpansBuilder) {
@@ -138,55 +159,36 @@ final class SpanTranslator {
       spanBuilder.setKind(SpanKind.SPAN_KIND_INTERNAL); //TODO: Should it work like this?
     }
     String localServiceName = span.localServiceName();
-    if (localServiceName != null) {
-      resourceSpansBuilder.getResourceBuilder().addAttributes(
-          KeyValue.newBuilder().setKey(ServiceAttributes.SERVICE_NAME.getKey())
-              .setValue(AnyValue.newBuilder().setStringValue(localServiceName).build()).build());
-    } else {
-      resourceSpansBuilder.getResourceBuilder()
-          .addAttributes(KeyValue.newBuilder().setKey("service.name").setValue(
-              AnyValue.newBuilder().setStringValue(
-                  io.opentelemetry.sdk.resources.Resource.getDefault().getAttribute(stringKey("service.name"))).build()).build());
+    if (localServiceName == null) {
+      localServiceName = Resource.getDefault().getAttribute(ServiceAttributes.SERVICE_NAME);
     }
+    resourceSpansBuilder.getResourceBuilder()
+        .addAttributes(stringAttribute(ServiceAttributes.SERVICE_NAME.getKey(), localServiceName));
     String localIp = span.localIp();
     if (localIp != null) {
-      spanBuilder.addAttributes(KeyValue.newBuilder().setKey(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey())
-          .setValue(AnyValue.newBuilder().setStringValue(localIp).build()).build());
+      spanBuilder.addAttributes(stringAttribute(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), localIp));
     }
     int localPort = span.localPort();
     if (localPort != 0) {
-      spanBuilder.addAttributes(KeyValue.newBuilder().setKey(ServerAttributes.SERVER_PORT.getKey())
-          .setValue(AnyValue.newBuilder().setIntValue(localPort).build()).build());
+      spanBuilder.addAttributes(intAttribute(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), localPort));
     }
     String peerName = span.remoteServiceName();
     if (peerName != null) {
-      spanBuilder.addAttributes(KeyValue.newBuilder().setKey(SemanticAttributes.NET_SOCK_PEER_NAME.getKey())
-          .setValue(AnyValue.newBuilder().setStringValue(peerName).build()).build());
+      spanBuilder.addAttributes(stringAttribute(SemanticAttributes.NET_SOCK_PEER_NAME.getKey(), peerName));
     }
     String peerIp = span.remoteIp();
     if (peerIp != null) {
-      spanBuilder.addAttributes(KeyValue.newBuilder().setKey(SemanticAttributes.NET_SOCK_PEER_ADDR.getKey())
-          .setValue(AnyValue.newBuilder().setStringValue(peerIp).build()).build());
+      spanBuilder.addAttributes(stringAttribute(SemanticAttributes.NET_SOCK_PEER_ADDR.getKey(), peerIp));
     }
     int peerPort = span.remotePort();
     if (peerPort != 0) {
-      spanBuilder.addAttributes(KeyValue.newBuilder().setKey(SemanticAttributes.NET_SOCK_PEER_PORT.getKey())
-          .setValue(AnyValue.newBuilder().setIntValue(peerPort).build()).build());
+      spanBuilder.addAttributes(intAttribute(SemanticAttributes.NET_SOCK_PEER_PORT.getKey(), peerPort));
     }
-    // TODO: What should we put here?
-    // tags taken from OtelToZipkinSpanTransformer
-    spanBuilder.addAttributes(KeyValue.newBuilder().setKey(KEY_INSTRUMENTATION_SCOPE_NAME).setValue(
-        AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build()).build());
-    // TODO: Hardcoded library version
-    spanBuilder.addAttributes(KeyValue.newBuilder().setKey(KEY_INSTRUMENTATION_SCOPE_VERSION).setValue(
-        AnyValue.newBuilder().setStringValue("0.0.1").build()).build());
     // Include instrumentation library name for backwards compatibility
-    spanBuilder.addAttributes(KeyValue.newBuilder().setKey(KEY_INSTRUMENTATION_LIBRARY_NAME).setValue(
-        AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build()).build());
+    spanBuilder.addAttributes(stringAttribute(KEY_INSTRUMENTATION_LIBRARY_NAME, "zipkin2.reporter.otel"));
     // TODO: Hardcoded library version
     // Include instrumentation library name for backwards compatibility
-    spanBuilder.addAttributes(KeyValue.newBuilder().setKey(KEY_INSTRUMENTATION_LIBRARY_VERSION).setValue(
-        AnyValue.newBuilder().setStringValue("0.0.1").build()).build());
+    spanBuilder.addAttributes(stringAttribute(KEY_INSTRUMENTATION_LIBRARY_VERSION, "0.0.1"));
 
     span.forEachTag(consumer, spanBuilder);
     span.forEachAnnotation(consumer, spanBuilder);
