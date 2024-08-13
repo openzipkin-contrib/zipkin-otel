@@ -46,8 +46,6 @@ import java.util.stream.Collectors;
  */
 final class SpanTranslator {
 
-  static final String KEY_INSTRUMENTATION_SCOPE_NAME = "otel.scope.name";
-  static final String KEY_INSTRUMENTATION_SCOPE_VERSION = "otel.scope.version";
   static final String KEY_INSTRUMENTATION_LIBRARY_NAME = "otel.library.name";
   static final String KEY_INSTRUMENTATION_LIBRARY_VERSION = "otel.library.version";
   static final String OTEL_STATUS_CODE = "otel.status_code";
