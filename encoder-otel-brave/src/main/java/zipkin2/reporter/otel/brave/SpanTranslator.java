@@ -4,8 +4,6 @@
  */
 package zipkin2.reporter.otel.brave;
 
-import static io.opentelemetry.api.common.AttributeKey.stringKey;
-
 import brave.Span.Kind;
 import brave.Tag;
 import brave.handler.MutableSpan;
@@ -26,7 +24,6 @@ import io.opentelemetry.proto.trace.v1.TracesData;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.NetworkAttributes;
-import io.opentelemetry.semconv.SemanticAttributes;
 import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.ServiceAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
@@ -160,18 +157,6 @@ final class SpanTranslator {
     int localPort = span.localPort();
     if (localPort != 0) {
       spanBuilder.addAttributes(intAttribute(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), localPort));
-    }
-    String peerName = span.remoteServiceName();
-    if (peerName != null) {
-      spanBuilder.addAttributes(stringAttribute(SemanticAttributes.NET_SOCK_PEER_NAME.getKey(), peerName));
-    }
-    String peerIp = span.remoteIp();
-    if (peerIp != null) {
-      spanBuilder.addAttributes(stringAttribute(SemanticAttributes.NET_SOCK_PEER_ADDR.getKey(), peerIp));
-    }
-    int peerPort = span.remotePort();
-    if (peerPort != 0) {
-      spanBuilder.addAttributes(intAttribute(SemanticAttributes.NET_SOCK_PEER_PORT.getKey(), peerPort));
     }
     // Include instrumentation library name for backwards compatibility
     spanBuilder.addAttributes(stringAttribute(KEY_INSTRUMENTATION_LIBRARY_NAME, "zipkin2.reporter.otel"));
