@@ -137,6 +137,7 @@ public class ITOtelEncoderTest {
       span.tag("http.path", "/rs/A");
       span.tag("location", "T67792");
       span.tag("other", "A");
+      span.annotate(1510256710021866L + 1000L, "Foo");
       spanHandler.end(context, span, null);
       spanHandler.flush();
     }
@@ -179,6 +180,8 @@ public class ITOtelEncoderTest {
       assertThat(span.getAttributesList()).contains(stringAttribute("location", "T67792"));
       assertThat(span.getAttributesList()).contains(stringAttribute("other", "A"));
       assertThat(span.getKind()).isEqualTo(Span.SpanKind.SPAN_KIND_SERVER);
+      assertThat(span.getEventsList()).hasSize(1);
+      assertThat(span.getEventsList()).contains(Span.Event.newBuilder().setName("Foo").setTimeUnixNano((1510256710021866L + 1000L) * 1_000).build());
     }
     else {
       Assertions.fail("Traces not sent");
