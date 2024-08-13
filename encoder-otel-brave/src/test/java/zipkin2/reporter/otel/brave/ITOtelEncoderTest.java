@@ -33,6 +33,7 @@ import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.testing.junit5.server.ServerExtension;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 import io.opentelemetry.proto.common.v1.InstrumentationScope;
+import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.resource.v1.Resource;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
@@ -189,7 +190,8 @@ public class ITOtelEncoderTest {
           .addScopeSpans(scopeSpanBuilder.addSpans(spanBuilder))
           .build();
       List<ResourceSpans> receivedSpans = otlpHttpServer.receivedSpans();
-      assertThat(receivedSpans).containsExactly(resourceSpans);
+      assertThat(receivedSpans.size()).isEqualTo(1);
+      compareResourceSpans(receivedSpans.get(0), resourceSpans);
     }
     else {
       Assertions.fail("Traces not sent");
@@ -253,6 +255,7 @@ public class ITOtelEncoderTest {
             .addAttributes(stringAttribute("error", "Unexpected Exception!"))
             .addAttributes(stringAttribute("http.path", "/order"))
             .addAttributes(stringAttribute("http.status_code", "500"))
+            .addAttributes(stringAttribute("http.host", "zipkin.example.com"))
             .addAttributes(stringAttribute("net.host.ip", "10.99.99.99"))
             .addAttributes(intAttribute("net.host.port", 43210))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
@@ -262,10 +265,40 @@ public class ITOtelEncoderTest {
           .addScopeSpans(scopeSpanBuilder.addSpans(spanBuilder))
           .build();
       List<ResourceSpans> receivedSpans = otlpHttpServer.receivedSpans();
-      assertThat(receivedSpans).containsExactly(resourceSpans);
+      assertThat(receivedSpans.size()).isEqualTo(1);
+      compareResourceSpans(receivedSpans.get(0), resourceSpans);
     }
     else {
       Assertions.fail("Traces not sent");
+    }
+  }
+
+
+  void compareResourceSpans(ResourceSpans actual, ResourceSpans expected) {
+    assertThat(actual.getResource()).isEqualTo(expected.getResource());
+    assertThat(actual.getScopeSpansCount()).isEqualTo(expected.getScopeSpansCount());
+    for (int i = 0; i < expected.getScopeSpansCount(); i++) {
+      ScopeSpans actualScopeSpans = actual.getScopeSpans(i);
+      ScopeSpans expectedScopeSpans = expected.getScopeSpans(i);
+      assertThat(actualScopeSpans.getScope()).isEqualTo(expectedScopeSpans.getScope());
+      assertThat(actualScopeSpans.getSpansCount()).isEqualTo(expectedScopeSpans.getSpansCount());
+      for (int j = 0; j < expectedScopeSpans.getSpansCount(); j++) {
+        Span actualSpan = actualScopeSpans.getSpans(j);
+        Span expectedSpan = expectedScopeSpans.getSpans(j);
+        assertThat(actualSpan.getName()).isEqualTo(expectedSpan.getName());
+        assertThat(actualSpan.getStartTimeUnixNano()).isEqualTo(expectedSpan.getStartTimeUnixNano());
+        assertThat(actualSpan.getEndTimeUnixNano()).isEqualTo(expectedSpan.getEndTimeUnixNano());
+        assertThat(actualSpan.getTraceId()).isEqualTo(expectedSpan.getTraceId());
+        assertThat(actualSpan.getSpanId()).isEqualTo(expectedSpan.getSpanId());
+        assertThat(actualSpan.getKind()).isEqualTo(expectedSpan.getKind());
+        assertThat(actualSpan.getEventsList()).isEqualTo(expectedSpan.getEventsList());
+        assertThat(actualSpan.getAttributesCount()).isEqualTo(expectedSpan.getAttributesCount());
+        for (int k = 0; k < expectedSpan.getAttributesCount(); k++) {
+          KeyValue attribute = expectedSpan.getAttributes(k);
+          // The order of attributes sent by the Zipkin encoder is not fixed.
+          assertThat(actualSpan.getAttributesList()).contains(attribute);
+        }
+      }
     }
   }
 
