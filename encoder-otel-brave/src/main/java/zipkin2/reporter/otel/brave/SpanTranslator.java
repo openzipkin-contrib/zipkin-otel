@@ -18,7 +18,6 @@ import io.opentelemetry.proto.trace.v1.ResourceSpans.Builder;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.Span;
 import io.opentelemetry.proto.trace.v1.Span.Event;
-import io.opentelemetry.proto.trace.v1.Span.Link;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.TracesData;
 import io.opentelemetry.sdk.resources.Resource;
@@ -27,15 +26,9 @@ import io.opentelemetry.semconv.NetworkAttributes;
 import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.ServiceAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 
 /**
@@ -168,9 +161,6 @@ final class SpanTranslator {
     span.forEachAnnotation(consumer, spanBuilder);
     consumer.addErrorTag(spanBuilder, span);
 
-    List<Link> links = LinkUtils.toLinks(span.tags());
-    spanBuilder.addAllLinks(links);
-
     return spanBuilder;
   }
 
@@ -184,9 +174,7 @@ final class SpanTranslator {
 
     @Override
     public void accept(Span.Builder target, String key, String value) {
-      if (!LinkUtils.isApplicable(key)) {
-        attributesExtractor.addTag(target, key, value);
-      }
+      attributesExtractor.addTag(target, key, value);
     }
 
     void addErrorTag(Span.Builder target, MutableSpan span) {
@@ -198,81 +186,6 @@ final class SpanTranslator {
       target.addEvents(Event.newBuilder().setTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(timestamp))
           .setName(value).build());
     }
-  }
-
-  static class LinkUtils {
-
-    private static final String LINKS_PREFIX = "links[";
-
-    private static final Pattern LINKS_ID = Pattern.compile("^links\\[(.*)]\\..*$");
-
-    private static final Pattern TAG_KEY = Pattern.compile("^links\\[.*]\\.tags\\[(.*)]$");
-
-    static boolean isApplicable(Map.Entry<String, String> entry) {
-      return isApplicable(entry.getKey());
-    }
-
-    private static boolean isApplicable(String key) {
-      return key.startsWith(LINKS_PREFIX);
-    }
-
-    private static int linkGroup(Map.Entry<String, String> entry) {
-      Matcher matcher = LINKS_ID.matcher(entry.getKey());
-      if (matcher.matches()) {
-        return Integer.parseInt(matcher.group(1));
-      }
-      return -1;
-    }
-
-    static List<Link> toLinks(Map<String, String> tags) {
-      return tags.entrySet()
-          .stream()
-          .filter(LinkUtils::isApplicable)
-          .collect(Collectors.groupingBy(LinkUtils::linkGroup))
-          .values()
-          .stream().map(LinkUtils::toLink)
-          .collect(Collectors.toList());
-    }
-
-    private static Link toLink(List<Entry<String, String>> groupedTags) {
-      String traceId = "";
-      String spanId = "";
-      Map<String, Object> tags = new HashMap<>();
-      for (Map.Entry<String, String> groupedTag : groupedTags) {
-        if (groupedTag.getKey().endsWith(".traceId")) {
-          traceId = groupedTag.getValue();
-        }
-        else if (groupedTag.getKey().endsWith(".spanId")) {
-          spanId = groupedTag.getValue();
-        }
-        else if (groupedTag.getKey().contains("tags")) {
-          String tagKey = tagKeyNameFromString(groupedTag.getKey());
-          if (tagKey != null) {
-            tags.put(tagKey, groupedTag.getValue());
-          }
-        }
-      }
-      if (traceId != null && !traceId.isEmpty()) {
-        List<KeyValue> keyValues = tags.entrySet().stream().map(e -> KeyValue.newBuilder().setKey(e.getKey()).setValue(
-            AnyValue.newBuilder().setStringValue(String.valueOf(e.getValue())).build()).build()).collect(
-            Collectors.toList());
-        return Link.newBuilder()
-            .setSpanId(ByteString.fromHex(spanId))
-            .setTraceId(ByteString.fromHex(traceId))
-            .addAllAttributes(keyValues)
-            .build();
-      }
-      return null;
-    }
-
-    static String tagKeyNameFromString(String tag) {
-      Matcher matcher = TAG_KEY.matcher(tag);
-      if (matcher.matches()) {
-        return matcher.group(1);
-      }
-      return null;
-    }
-
   }
 
 }
