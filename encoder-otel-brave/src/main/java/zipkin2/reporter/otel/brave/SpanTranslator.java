@@ -183,7 +183,7 @@ final class SpanTranslator {
 
     @Override
     public void accept(Span.Builder target, String key, String value) {
-      target.addAttributes(stringAttribute(key, value));
+      target.addAttributes(stringAttribute(getLabelName(key), value));
     }
 
     void addErrorTag(Span.Builder target, MutableSpan span) {

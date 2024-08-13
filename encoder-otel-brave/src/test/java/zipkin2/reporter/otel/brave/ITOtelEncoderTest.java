@@ -135,6 +135,9 @@ public class ITOtelEncoderTest {
       span.localServiceName("isao01");
       span.localIp("10.23.14.72");
       span.localPort(12345);
+      span.tag("http.host", "zipkin.example.com");
+      span.tag("http.method", "GET");
+      span.tag("http.url", "https://zipkin.example.com/rs/A");
       span.tag("http.path", "/rs/A");
       span.tag("location", "T67792");
       span.tag("other", "A");
@@ -158,6 +161,9 @@ public class ITOtelEncoderTest {
             .addAttributes(intAttribute("network.local.port", 12345))
             .addAttributes(stringAttribute("otel.library.name", "zipkin2.reporter.otel"))
             .addAttributes(stringAttribute("otel.library.version", "0.0.1"))
+            .addAttributes(stringAttribute("server.address", "zipkin.example.com"))
+            .addAttributes(stringAttribute("http.request.method", "GET"))
+            .addAttributes(stringAttribute("url.full", "https://zipkin.example.com/rs/A"))
             .addAttributes(stringAttribute("http.path", "/rs/A"))
             .addAttributes(stringAttribute("location", "T67792"))
             .addAttributes(stringAttribute("other", "A"))
@@ -165,9 +171,12 @@ public class ITOtelEncoderTest {
       }
       else {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().build() /* empty */);
-        spanBuilder.addAttributes(stringAttribute("http.path", "/rs/A"))
+        spanBuilder.addAttributes(stringAttribute("http.method", "GET"))
+            .addAttributes(stringAttribute("http.url", "https://zipkin.example.com/rs/A"))
+            .addAttributes(stringAttribute("http.path", "/rs/A"))
             .addAttributes(stringAttribute("location", "T67792"))
             .addAttributes(stringAttribute("other", "A"))
+            .addAttributes(stringAttribute("http.host", "zipkin.example.com"))
             .addAttributes(stringAttribute("net.host.ip", "10.23.14.72"))
             .addAttributes(intAttribute("net.host.port", 12345))
             .setStatus(Status.newBuilder().build() /* empty */);
@@ -202,6 +211,9 @@ public class ITOtelEncoderTest {
       span.localServiceName("test-api");
       span.localIp("10.99.99.99");
       span.localPort(43210);
+      span.tag("http.host", "zipkin.example.com");
+      span.tag("http.method", "POST");
+      span.tag("http.url", "https://zipkin.example.com/order");
       span.tag("http.path", "/order");
       span.error(new RuntimeException("Unexpected Exception!"));
       spanHandler.end(context, span, null);
@@ -222,13 +234,18 @@ public class ITOtelEncoderTest {
             .addAttributes(intAttribute("network.local.port", 43210))
             .addAttributes(stringAttribute("otel.library.name", "zipkin2.reporter.otel"))
             .addAttributes(stringAttribute("otel.library.version", "0.0.1"))
+            .addAttributes(stringAttribute("server.address", "zipkin.example.com"))
+            .addAttributes(stringAttribute("http.request.method", "POST"))
+            .addAttributes(stringAttribute("url.full", "https://zipkin.example.com/order"))
             .addAttributes(stringAttribute("http.path", "/order"))
             .addAttributes(stringAttribute("error", "Unexpected Exception!"))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
       }
       else {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().build() /* empty */);
-        spanBuilder.addAttributes(stringAttribute("error", "Unexpected Exception!"))
+        spanBuilder.addAttributes(stringAttribute("http.method", "POST"))
+            .addAttributes(stringAttribute("http.url", "https://zipkin.example.com/order"))
+            .addAttributes(stringAttribute("error", "Unexpected Exception!"))
             .addAttributes(stringAttribute("http.path", "/order"))
             .addAttributes(stringAttribute("net.host.ip", "10.99.99.99"))
             .addAttributes(intAttribute("net.host.port", 43210))
