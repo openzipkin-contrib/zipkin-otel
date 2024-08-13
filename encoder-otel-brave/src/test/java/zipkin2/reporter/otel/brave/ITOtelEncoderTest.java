@@ -184,6 +184,68 @@ public class ITOtelEncoderTest {
     }
   }
 
+  @ParameterizedTest
+  @MethodSource("encoderAndEndpoint")
+  void testEncoderWithException(Encoding encoding, BytesEncoder<MutableSpan> encoder, String endpoint) throws Exception {
+    try (BytesMessageSender okHttpSender = OkHttpSender.newBuilder()
+        .encoding(encoding)
+        .endpoint(endpoint)
+        .build();
+       AsyncZipkinSpanHandler spanHandler = AsyncZipkinSpanHandler.newBuilder(okHttpSender).build(encoder);
+    ) {
+      TraceContext context = B3SingleFormat.parseB3SingleFormat("123caa480c3fa187dd37f5d5c991f2c7-5d64683224ba9b17-1").context();
+      MutableSpan span = new MutableSpan(context, null);
+      span.name("post");
+      span.startTimestamp(1510256710021866L);
+      span.finishTimestamp(1510256710021866L + 1117L);
+      span.kind(Kind.CLIENT);
+      span.localServiceName("test-api");
+      span.localIp("10.99.99.99");
+      span.localPort(43210);
+      span.tag("http.path", "/order");
+      span.error(new RuntimeException("Unexpected Exception!"));
+      spanHandler.end(context, span, null);
+      spanHandler.flush();
+    }
+    if (otlpHttpServer.waitUntilTraceRequestsAreSent(Duration.ofSeconds(3))) {
+      Span.Builder spanBuilder = Span.newBuilder()
+          .setName("post")
+          .setStartTimeUnixNano(milliToNanos(1510256710021866L))
+          .setEndTimeUnixNano(milliToNanos(1510256710021866L + 1117L))
+          .setTraceId(ByteString.fromHex("123caa480c3fa187dd37f5d5c991f2c7"))
+          .setSpanId(ByteString.fromHex("5d64683224ba9b17"))
+          .setKind(Span.SpanKind.SPAN_KIND_CLIENT);
+      ScopeSpans.Builder scopeSpanBuilder = ScopeSpans.newBuilder();
+      if (encoder instanceof OtelEncoder) {
+        scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName("zipkin2.reporter.otel").setVersion("0.0.1"));
+        spanBuilder.addAttributes(stringAttribute("network.local.address", "10.99.99.99"))
+            .addAttributes(intAttribute("network.local.port", 43210))
+            .addAttributes(stringAttribute("otel.library.name", "zipkin2.reporter.otel"))
+            .addAttributes(stringAttribute("otel.library.version", "0.0.1"))
+            .addAttributes(stringAttribute("http.path", "/order"))
+            .addAttributes(stringAttribute("error", "Unexpected Exception!"))
+            .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
+      }
+      else {
+        scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().build() /* empty */);
+        spanBuilder.addAttributes(stringAttribute("error", "Unexpected Exception!"))
+            .addAttributes(stringAttribute("http.path", "/order"))
+            .addAttributes(stringAttribute("net.host.ip", "10.99.99.99"))
+            .addAttributes(intAttribute("net.host.port", 43210))
+            .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
+      }
+      ResourceSpans resourceSpans = ResourceSpans.newBuilder()
+          .setResource(Resource.newBuilder().addAttributes(stringAttribute("service.name", "test-api")))
+          .addScopeSpans(scopeSpanBuilder.addSpans(spanBuilder))
+          .build();
+      List<ResourceSpans> receivedSpans = otlpHttpServer.receivedSpans();
+      assertThat(receivedSpans).containsExactly(resourceSpans);
+    }
+    else {
+      Assertions.fail("Traces not sent");
+    }
+  }
+
   private static long milliToNanos(long millis) {
     return millis * 1_000L;
   }
