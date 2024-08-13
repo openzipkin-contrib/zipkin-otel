@@ -15,7 +15,6 @@ import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.trace.v1.Span;
 import io.opentelemetry.proto.trace.v1.Span.Event;
-import io.opentelemetry.proto.trace.v1.Span.Link;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.Status.StatusCode;
@@ -54,12 +53,6 @@ class SpanTranslatorTest {
                 .addAllAttributes(
                     Arrays.asList(KeyValue.newBuilder().setKey("network.local.address").setValue(
                             AnyValue.newBuilder().setStringValue("127.0.0.1").build()).build(),
-                        KeyValue.newBuilder().setKey("net.sock.peer.name").setValue(
-                            AnyValue.newBuilder().setStringValue("backend").build()).build(),
-                        KeyValue.newBuilder().setKey("net.sock.peer.addr").setValue(
-                            AnyValue.newBuilder().setStringValue("192.168.99.101").build()).build(),
-                        KeyValue.newBuilder().setKey("net.sock.peer.port").setValue(
-                            AnyValue.newBuilder().setIntValue(9000).build()).build(),
                         KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                 AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                             .build(),
@@ -79,12 +72,6 @@ class SpanTranslatorTest {
                             Instant.ofEpochSecond(1472470996, 403_000_000).toEpochMilli()))
                         .setName("bar").build()))
                 .setStatus(Status.newBuilder().setCode(StatusCode.STATUS_CODE_OK).build())
-                .addLinks(Link.newBuilder()
-                    .setSpanId(ByteString.fromHex("6c5295666d50f69c"))
-                    .setTraceId(ByteString.fromHex("8291c278b62e8f6a216a2aea45d08fc8"))
-                    .addAttributes(KeyValue.newBuilder().setKey("foo").setValue(
-                        AnyValue.newBuilder().setStringValue("bar").build()).build())
-                    .build())
                 .build());
   }
 

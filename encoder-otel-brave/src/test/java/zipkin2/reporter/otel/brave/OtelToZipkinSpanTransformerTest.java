@@ -443,14 +443,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(spanKind))
-                            .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("remote-test-service").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.addr")
-                                .setValue(AnyValue.newBuilder().setStringValue("8.8.8.8").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.port")
-                                .setValue(AnyValue.newBuilder().setIntValue(42).build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -495,14 +487,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(spanKind))
-                            .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("remote-test-service").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.addr")
-                                .setValue(AnyValue.newBuilder().setStringValue("8.8.8.8").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.port")
-                                .setValue(AnyValue.newBuilder().setIntValue(42).build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -546,11 +530,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(spanKind))
-                            .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.addr")
-                                .setValue(AnyValue.newBuilder().setStringValue("8.8.8.8").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.port")
-                                .setValue(AnyValue.newBuilder().setIntValue(42).build()).build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -594,12 +573,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(spanKind))
-                            .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("remote-test-service").build())
-                                .build())
-                            .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.addr")
-                                .setValue(AnyValue.newBuilder().setStringValue("8.8.8.8").build())
-                                .build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
@@ -642,9 +615,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(spanKind))
-                            .addAttributes(KeyValue.newBuilder().setKey("net.sock.peer.name").setValue(
-                                    AnyValue.newBuilder().setStringValue("remote-test-service").build())
-                                .build())
                             .addAttributes(KeyValue.newBuilder().setKey("otel.library.name").setValue(
                                     AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
                                 .build())
