@@ -5,14 +5,13 @@
 package zipkin2.reporter.otel.brave;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.reporter.otel.brave.SpanTranslator.stringAttribute;
 import static zipkin2.reporter.otel.brave.TestObjects.clientSpan;
 
 import brave.Tags;
 import brave.handler.MutableSpan;
 import brave.propagation.TraceContext;
 import com.google.protobuf.ByteString;
-import io.opentelemetry.proto.common.v1.AnyValue;
-import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.trace.v1.Span;
 import io.opentelemetry.proto.trace.v1.Span.Event;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
@@ -51,17 +50,11 @@ class SpanTranslatorTest {
                     TimeUnit.MILLISECONDS.toNanos(
                         Instant.ofEpochSecond(1472470996, 406_000_000).toEpochMilli()))
                 .addAllAttributes(
-                    Arrays.asList(KeyValue.newBuilder().setKey("network.local.address").setValue(
-                            AnyValue.newBuilder().setStringValue("127.0.0.1").build()).build(),
-                        KeyValue.newBuilder().setKey("otel.library.name").setValue(
-                                AnyValue.newBuilder().setStringValue("zipkin2.reporter.otel").build())
-                            .build(),
-                        KeyValue.newBuilder().setKey("otel.library.version").setValue(
-                            AnyValue.newBuilder().setStringValue("0.0.1").build()).build(),
-                        KeyValue.newBuilder().setKey("clnt/finagle.version").setValue(
-                            AnyValue.newBuilder().setStringValue("6.45.0").build()).build(),
-                        KeyValue.newBuilder().setKey("http.path").setValue(
-                            AnyValue.newBuilder().setStringValue("/api").build()).build())
+                    Arrays.asList(stringAttribute("network.local.address", "127.0.0.1"),
+                        stringAttribute("otel.library.name", "zipkin2.reporter.otel"),
+                        stringAttribute("otel.library.version", "0.0.1"),
+                        stringAttribute("clnt/finagle.version", "6.45.0"),
+                        stringAttribute("http.path", "/api"))
                 )
                 .addAllEvents(Arrays.asList(
                     Event.newBuilder().setTimeUnixNano(
