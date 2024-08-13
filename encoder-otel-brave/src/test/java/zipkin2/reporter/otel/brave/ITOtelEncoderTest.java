@@ -139,6 +139,7 @@ public class ITOtelEncoderTest {
       span.tag("http.method", "GET");
       span.tag("http.url", "https://zipkin.example.com/rs/A");
       span.tag("http.path", "/rs/A");
+      span.tag("http.status_code", "200");
       span.tag("location", "T67792");
       span.tag("other", "A");
       span.annotate(1510256710021866L + 1000L, "Foo");
@@ -165,6 +166,7 @@ public class ITOtelEncoderTest {
             .addAttributes(stringAttribute("http.request.method", "GET"))
             .addAttributes(stringAttribute("url.full", "https://zipkin.example.com/rs/A"))
             .addAttributes(stringAttribute("http.path", "/rs/A"))
+            .addAttributes(stringAttribute("http.response.status_code", "200"))
             .addAttributes(stringAttribute("location", "T67792"))
             .addAttributes(stringAttribute("other", "A"))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build());
@@ -174,6 +176,7 @@ public class ITOtelEncoderTest {
         spanBuilder.addAttributes(stringAttribute("http.method", "GET"))
             .addAttributes(stringAttribute("http.url", "https://zipkin.example.com/rs/A"))
             .addAttributes(stringAttribute("http.path", "/rs/A"))
+            .addAttributes(stringAttribute("http.status_code", "200"))
             .addAttributes(stringAttribute("location", "T67792"))
             .addAttributes(stringAttribute("other", "A"))
             .addAttributes(stringAttribute("http.host", "zipkin.example.com"))
@@ -215,6 +218,7 @@ public class ITOtelEncoderTest {
       span.tag("http.method", "POST");
       span.tag("http.url", "https://zipkin.example.com/order");
       span.tag("http.path", "/order");
+      span.tag("http.status_code", "500");
       span.error(new RuntimeException("Unexpected Exception!"));
       spanHandler.end(context, span, null);
       spanHandler.flush();
@@ -238,6 +242,7 @@ public class ITOtelEncoderTest {
             .addAttributes(stringAttribute("http.request.method", "POST"))
             .addAttributes(stringAttribute("url.full", "https://zipkin.example.com/order"))
             .addAttributes(stringAttribute("http.path", "/order"))
+            .addAttributes(stringAttribute("http.response.status_code", "500"))
             .addAttributes(stringAttribute("error", "Unexpected Exception!"))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
       }
@@ -247,6 +252,7 @@ public class ITOtelEncoderTest {
             .addAttributes(stringAttribute("http.url", "https://zipkin.example.com/order"))
             .addAttributes(stringAttribute("error", "Unexpected Exception!"))
             .addAttributes(stringAttribute("http.path", "/order"))
+            .addAttributes(stringAttribute("http.status_code", "500"))
             .addAttributes(stringAttribute("net.host.ip", "10.99.99.99"))
             .addAttributes(intAttribute("net.host.port", 43210))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
