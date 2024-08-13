@@ -33,10 +33,11 @@ import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.testing.junit5.server.ServerExtension;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 import io.opentelemetry.proto.common.v1.InstrumentationScope;
-import io.opentelemetry.proto.common.v1.KeyValue;
+import io.opentelemetry.proto.resource.v1.Resource;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.Span;
+import io.opentelemetry.proto.trace.v1.Status;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -142,50 +143,49 @@ public class ITOtelEncoderTest {
       spanHandler.flush();
     }
     if (otlpHttpServer.waitUntilTraceRequestsAreSent(Duration.ofSeconds(3))) {
+      Span.Builder spanBuilder = Span.newBuilder()
+          .setName("get")
+          .setStartTimeUnixNano(milliToNanos(1510256710021866L))
+          .setEndTimeUnixNano(milliToNanos(1510256710021866L + 1117L))
+          .setTraceId(ByteString.fromHex("0af7651916cd43dd8448eb211c80319c"))
+          .setSpanId(ByteString.fromHex("b7ad6b7169203331"))
+          .setKind(Span.SpanKind.SPAN_KIND_SERVER)
+          .addEvents(Span.Event.newBuilder().setName("Foo").setTimeUnixNano(milliToNanos(1510256710021866L + 1000L)).build());
+      ScopeSpans.Builder scopeSpanBuilder = ScopeSpans.newBuilder();
+      if (encoder instanceof OtelEncoder) {
+        scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName("zipkin2.reporter.otel").setVersion("0.0.1"));
+        spanBuilder.addAttributes(stringAttribute("network.local.address", "10.23.14.72"))
+            .addAttributes(intAttribute("network.local.port", 12345))
+            .addAttributes(stringAttribute("otel.library.name", "zipkin2.reporter.otel"))
+            .addAttributes(stringAttribute("otel.library.version", "0.0.1"))
+            .addAttributes(stringAttribute("http.path", "/rs/A"))
+            .addAttributes(stringAttribute("location", "T67792"))
+            .addAttributes(stringAttribute("other", "A"))
+            .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build());
+      }
+      else {
+        scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().build() /* empty */);
+        spanBuilder.addAttributes(stringAttribute("http.path", "/rs/A"))
+            .addAttributes(stringAttribute("location", "T67792"))
+            .addAttributes(stringAttribute("other", "A"))
+            .addAttributes(stringAttribute("net.host.ip", "10.23.14.72"))
+            .addAttributes(intAttribute("net.host.port", 12345))
+            .setStatus(Status.newBuilder().build() /* empty */);
+      }
+      ResourceSpans resourceSpans = ResourceSpans.newBuilder()
+          .setResource(Resource.newBuilder().addAttributes(stringAttribute("service.name", "isao01")))
+          .addScopeSpans(scopeSpanBuilder.addSpans(spanBuilder))
+          .build();
       List<ResourceSpans> receivedSpans = otlpHttpServer.receivedSpans();
-      assertThat(receivedSpans).hasSize(1);
-      ResourceSpans resourceSpans = receivedSpans.get(0);
-      assertThat(resourceSpans.getResource().getAttributesCount()).isEqualTo(1);
-      KeyValue attribute = resourceSpans.getResource().getAttributes(0);
-      assertThat(attribute.getKey()).isEqualTo("service.name");
-      assertThat(attribute.getValue().getStringValue()).isEqualTo("isao01");
-      assertThat(resourceSpans.getScopeSpansCount()).isEqualTo(1);
-      ScopeSpans scopeSpans = resourceSpans.getScopeSpans(0);
-      InstrumentationScope scope = scopeSpans.getScope();
-      if (encoder instanceof OtelEncoder) {
-        assertThat(scope.getName()).isEqualTo("zipkin2.reporter.otel");
-        assertThat(scope.getVersion()).isEqualTo("0.0.1");
-      }
-      else {
-        assertThat(scope.getName()).isEmpty();
-        assertThat(scope.getVersion()).isEmpty();
-      }
-      assertThat(scopeSpans.getSpansCount()).isEqualTo(1);
-      Span span = scopeSpans.getSpans(0);
-      assertThat(span.getTraceId()).isEqualTo(ByteString.fromHex("0af7651916cd43dd8448eb211c80319c"));
-      assertThat(span.getSpanId()).isEqualTo(ByteString.fromHex("b7ad6b7169203331"));
-      if (encoder instanceof OtelEncoder) {
-        assertThat(span.getAttributesCount()).isEqualTo(7);
-        assertThat(span.getAttributesList()).contains(stringAttribute("otel.library.name", "zipkin2.reporter.otel"));
-        assertThat(span.getAttributesList()).contains(stringAttribute("otel.library.version", "0.0.1"));
-        assertThat(span.getAttributesList()).contains(stringAttribute("network.local.address", "10.23.14.72"));
-        assertThat(span.getAttributesList()).contains(intAttribute("network.local.port", 12345));
-      }
-      else {
-        assertThat(span.getAttributesCount()).isEqualTo(5);
-        assertThat(span.getAttributesList()).contains(stringAttribute("net.host.ip", "10.23.14.72"));
-        assertThat(span.getAttributesList()).contains(intAttribute("net.host.port", 12345));
-      }
-      assertThat(span.getAttributesList()).contains(stringAttribute("http.path", "/rs/A"));
-      assertThat(span.getAttributesList()).contains(stringAttribute("location", "T67792"));
-      assertThat(span.getAttributesList()).contains(stringAttribute("other", "A"));
-      assertThat(span.getKind()).isEqualTo(Span.SpanKind.SPAN_KIND_SERVER);
-      assertThat(span.getEventsList()).hasSize(1);
-      assertThat(span.getEventsList()).contains(Span.Event.newBuilder().setName("Foo").setTimeUnixNano((1510256710021866L + 1000L) * 1_000).build());
+      assertThat(receivedSpans).containsExactly(resourceSpans);
     }
     else {
       Assertions.fail("Traces not sent");
     }
+  }
+
+  private static long milliToNanos(long millis) {
+    return millis * 1_000L;
   }
 
   private static class OtlpHttpServer extends ServerExtension {
