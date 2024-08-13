@@ -4,6 +4,10 @@
  */
 package zipkin2.reporter.otel.brave;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import brave.Span.Kind;
 import brave.Tag;
 import brave.handler.MutableSpan;
@@ -19,6 +23,7 @@ import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.Span;
 import io.opentelemetry.proto.trace.v1.Span.Event;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
+import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.TracesData;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.semconv.HttpAttributes;
@@ -26,9 +31,6 @@ import io.opentelemetry.semconv.NetworkAttributes;
 import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.ServiceAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -37,7 +39,9 @@ import java.util.concurrent.TimeUnit;
 final class SpanTranslator {
 
   static final String KEY_INSTRUMENTATION_LIBRARY_NAME = "otel.library.name";
+
   static final String KEY_INSTRUMENTATION_LIBRARY_VERSION = "otel.library.version";
+
   static final String OTEL_STATUS_CODE = "otel.status_code";
 
   private static final Map<String, String> RENAMED_LABELS;
@@ -55,7 +59,7 @@ final class SpanTranslator {
   private final Consumer consumer;
 
   SpanTranslator(Tag<Throwable> errorTag) {
-    this.consumer = new Consumer(new AttributesExtractor(errorTag, RENAMED_LABELS));
+    this.consumer = new Consumer(errorTag, RENAMED_LABELS);
   }
 
   /**
@@ -91,15 +95,16 @@ final class SpanTranslator {
 
   static KeyValue stringAttribute(String key, String value) {
     return KeyValue.newBuilder()
-            .setKey(key)
-            .setValue(AnyValue.newBuilder().setStringValue(value))
-            .build();
+        .setKey(key)
+        .setValue(AnyValue.newBuilder().setStringValue(value))
+        .build();
   }
+
   static KeyValue intAttribute(String key, int value) {
     return KeyValue.newBuilder()
-            .setKey(key)
-            .setValue(AnyValue.newBuilder().setIntValue(value))
-            .build();
+        .setKey(key)
+        .setValue(AnyValue.newBuilder().setIntValue(value))
+        .build();
   }
 
   private Span.Builder builderForSingleSpan(MutableSpan span, Builder resourceSpansBuilder) {
@@ -134,7 +139,8 @@ final class SpanTranslator {
         default:
           spanBuilder.setKind(SpanKind.SPAN_KIND_INTERNAL); //TODO: Should it work like this?
       }
-    } else {
+    }
+    else {
       spanBuilder.setKind(SpanKind.SPAN_KIND_INTERNAL); //TODO: Should it work like this?
     }
     String localServiceName = span.localServiceName();
@@ -164,27 +170,42 @@ final class SpanTranslator {
     return spanBuilder;
   }
 
-  class Consumer implements TagConsumer<Span.Builder>, AnnotationConsumer<Span.Builder> {
+  static final class Consumer implements TagConsumer<Span.Builder>, AnnotationConsumer<Span.Builder> {
 
-    private final AttributesExtractor attributesExtractor;
+    private final Tag<Throwable> errorTag;
 
-    Consumer(AttributesExtractor attributesExtractor) {
-      this.attributesExtractor = attributesExtractor;
+    private final Map<String, String> renamedLabels;
+
+    Consumer(Tag<Throwable> errorTag, Map<String, String> renamedLabels) {
+      this.errorTag = errorTag;
+      this.renamedLabels = renamedLabels;
     }
 
     @Override
     public void accept(Span.Builder target, String key, String value) {
-      attributesExtractor.addTag(target, key, value);
+      target.addAttributes(stringAttribute(key, value));
     }
 
     void addErrorTag(Span.Builder target, MutableSpan span) {
-      attributesExtractor.addErrorTag(target, span);
+      String errorValue = errorTag.value(span.error(), null);
+      if (errorValue != null) {
+        target.addAttributes(stringAttribute(getLabelName("error"), errorValue));
+        target.setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
+      }
+      else {
+        target.setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build());
+      }
     }
 
     @Override
     public void accept(Span.Builder target, long timestamp, String value) {
       target.addEvents(Event.newBuilder().setTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(timestamp))
           .setName(value).build());
+    }
+
+    private String getLabelName(String zipkinName) {
+      String renamed = renamedLabels.get(zipkinName);
+      return renamed != null ? renamed : zipkinName;
     }
   }
 
