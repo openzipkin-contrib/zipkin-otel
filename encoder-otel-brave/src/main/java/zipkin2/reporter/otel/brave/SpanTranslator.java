@@ -157,7 +157,6 @@ final class SpanTranslator {
     }
     // Include instrumentation library name for backwards compatibility
     spanBuilder.addAttributes(stringAttribute(KEY_INSTRUMENTATION_LIBRARY_NAME, BraveScope.getName()));
-    // TODO: Hardcoded library version
     // Include instrumentation library name for backwards compatibility
     spanBuilder.addAttributes(stringAttribute(KEY_INSTRUMENTATION_LIBRARY_VERSION, BraveScope.getVersion()));
 
