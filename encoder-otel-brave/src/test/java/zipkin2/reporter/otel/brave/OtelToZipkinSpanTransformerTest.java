@@ -31,6 +31,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import static io.opentelemetry.api.common.AttributeKey.stringKey;
 import static io.opentelemetry.proto.trace.v1.Span.newBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.reporter.otel.brave.SpanTranslator.intAttribute;
 import static zipkin2.reporter.otel.brave.SpanTranslator.stringAttribute;
 
 // Adopted from https://github.com/open-telemetry/opentelemetry-java/blob/v1.39.0/exporters/zipkin/src/test/java/io/opentelemetry/exporter/zipkin/OtelToZipkinSpanTransformerTest.java
@@ -378,6 +379,8 @@ class OtelToZipkinSpanTransformerTest {
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(spanKind))
+                            .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
+                            .addAttributes(intAttribute("network.peer.port", 42))
                             .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
                             .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setStatus(
@@ -414,6 +417,8 @@ class OtelToZipkinSpanTransformerTest {
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(spanKind))
+                            .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
+                            .addAttributes(intAttribute("network.peer.port", 42))
                             .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
                             .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setStatus(
@@ -449,6 +454,8 @@ class OtelToZipkinSpanTransformerTest {
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(spanKind))
+                            .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
+                            .addAttributes(intAttribute("network.peer.port", 42))
                             .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
                             .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setStatus(
@@ -484,6 +491,7 @@ class OtelToZipkinSpanTransformerTest {
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(spanKind))
+                            .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
                             .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
                             .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setStatus(

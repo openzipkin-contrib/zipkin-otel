@@ -4,9 +4,9 @@
  */
 package zipkin2.reporter.otel.brave;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin2.reporter.otel.brave.SpanTranslator.stringAttribute;
-import static zipkin2.reporter.otel.brave.TestObjects.clientSpan;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 import brave.Tags;
 import brave.handler.MutableSpan;
@@ -18,10 +18,12 @@ import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.Status.StatusCode;
 import io.opentelemetry.proto.trace.v1.TracesData;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.reporter.otel.brave.SpanTranslator.intAttribute;
+import static zipkin2.reporter.otel.brave.SpanTranslator.stringAttribute;
+import static zipkin2.reporter.otel.brave.TestObjects.clientSpan;
 
 class SpanTranslatorTest {
 
@@ -51,6 +53,8 @@ class SpanTranslatorTest {
                         Instant.ofEpochSecond(1472470996, 406_000_000).toEpochMilli()))
                 .addAllAttributes(
                     Arrays.asList(stringAttribute("network.local.address", "127.0.0.1"),
+                        stringAttribute("network.peer.address", "192.168.99.101"),
+                        intAttribute("network.peer.port", 9000),
                         stringAttribute("otel.library.name", BraveScope.getName()),
                         stringAttribute("otel.library.version", BraveScope.getVersion()),
                         stringAttribute("clnt/finagle.version", "6.45.0"),

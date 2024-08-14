@@ -155,6 +155,14 @@ final class SpanTranslator {
     if (localPort != 0) {
       spanBuilder.addAttributes(intAttribute(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), localPort));
     }
+    String remoteIp = span.remoteIp();
+    if (remoteIp != null) {
+      spanBuilder.addAttributes(stringAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), remoteIp));
+    }
+    int remotePort = span.remotePort();
+    if (remotePort != 0) {
+      spanBuilder.addAttributes(intAttribute(NetworkAttributes.NETWORK_PEER_PORT.getKey(), remotePort));
+    }
     // Include instrumentation library name for backwards compatibility
     spanBuilder.addAttributes(stringAttribute(KEY_INSTRUMENTATION_LIBRARY_NAME, BraveScope.getName()));
     // Include instrumentation library name for backwards compatibility
