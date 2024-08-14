@@ -201,7 +201,7 @@ final class SpanTranslator {
     void addErrorTag(Span.Builder target, MutableSpan span) {
       String errorValue = errorTag.value(span.error(), null);
       if (errorValue != null) {
-        target.addAttributes(stringAttribute(getLabelName("error"), errorValue));
+        target.addAttributes(stringAttribute("error", errorValue));
         target.setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
       }
       else {
