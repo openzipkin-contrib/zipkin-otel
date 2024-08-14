@@ -54,7 +54,7 @@ class SpanTranslatorTest {
                         stringAttribute("otel.library.name", "zipkin2.reporter.otel"),
                         stringAttribute("otel.library.version", "0.0.1"),
                         stringAttribute("clnt/finagle.version", "6.45.0"),
-                        stringAttribute("http.path", "/api"))
+                        stringAttribute("url.path", "/api"))
                 )
                 .addAllEvents(Arrays.asList(
                     Event.newBuilder().setTimeUnixNano(

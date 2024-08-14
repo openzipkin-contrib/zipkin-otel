@@ -166,7 +166,7 @@ public class ITOtelEncoderTest {
             .addAttributes(stringAttribute("server.address", "zipkin.example.com"))
             .addAttributes(stringAttribute("http.request.method", "GET"))
             .addAttributes(stringAttribute("url.full", "https://zipkin.example.com/rs/A"))
-            .addAttributes(stringAttribute("http.path", "/rs/A"))
+            .addAttributes(stringAttribute("url.path", "/rs/A"))
             .addAttributes(stringAttribute("http.response.status_code", "200"))
             .addAttributes(stringAttribute("location", "T67792"))
             .addAttributes(stringAttribute("other", "A"))
@@ -243,7 +243,7 @@ public class ITOtelEncoderTest {
             .addAttributes(stringAttribute("server.address", "zipkin.example.com"))
             .addAttributes(stringAttribute("http.request.method", "POST"))
             .addAttributes(stringAttribute("url.full", "https://zipkin.example.com/order"))
-            .addAttributes(stringAttribute("http.path", "/order"))
+            .addAttributes(stringAttribute("url.path", "/order"))
             .addAttributes(stringAttribute("http.response.status_code", "500"))
             .addAttributes(stringAttribute("error", "Unexpected Exception!"))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());

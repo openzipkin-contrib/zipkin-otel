@@ -13,6 +13,7 @@ import brave.Tag;
 import brave.handler.MutableSpan;
 import brave.handler.MutableSpan.AnnotationConsumer;
 import brave.handler.MutableSpan.TagConsumer;
+import brave.http.HttpTags;
 import com.google.protobuf.ByteString;
 import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.InstrumentationScope;
@@ -42,18 +43,17 @@ final class SpanTranslator {
 
   static final String KEY_INSTRUMENTATION_LIBRARY_VERSION = "otel.library.version";
 
-  static final String OTEL_STATUS_CODE = "otel.status_code";
-
   private static final Map<String, String> RENAMED_LABELS;
 
   static {
     RENAMED_LABELS = new LinkedHashMap<>();
+    // "http.host" is not defined in HttpTags, but is a well-known tag.
     RENAMED_LABELS.put("http.host", ServerAttributes.SERVER_ADDRESS.getKey());
-    RENAMED_LABELS.put("http.method", HttpAttributes.HTTP_REQUEST_METHOD.getKey());
-    RENAMED_LABELS.put("http.status_code", HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey());
-    RENAMED_LABELS.put("http.request.size", "http.request.body.size");
-    RENAMED_LABELS.put("http.response.size", "http.response.body.size");
-    RENAMED_LABELS.put("http.url", UrlAttributes.URL_FULL.getKey());
+    RENAMED_LABELS.put(HttpTags.METHOD.key(), HttpAttributes.HTTP_REQUEST_METHOD.getKey());
+    RENAMED_LABELS.put(HttpTags.PATH.key(), UrlAttributes.URL_PATH.getKey());
+    RENAMED_LABELS.put(HttpTags.ROUTE.key(), HttpAttributes.HTTP_ROUTE.getKey());
+    RENAMED_LABELS.put(HttpTags.URL.key(), UrlAttributes.URL_FULL.getKey());
+    RENAMED_LABELS.put(HttpTags.STATUS_CODE.key(), HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey());
   }
 
   private final Consumer consumer;

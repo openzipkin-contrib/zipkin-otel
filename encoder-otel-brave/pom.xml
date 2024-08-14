@@ -60,6 +60,13 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>${brave.groupId}</groupId>
+      <artifactId>brave-instrumentation-http</artifactId>
+      <version>${brave.version}</version>
+      <!-- Don't pin Brave -->
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>io.opentelemetry</groupId>
       <artifactId>opentelemetry-sdk</artifactId>
       <scope>test</scope>
