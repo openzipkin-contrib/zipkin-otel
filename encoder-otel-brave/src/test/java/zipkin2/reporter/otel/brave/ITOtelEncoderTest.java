@@ -291,13 +291,8 @@ public class ITOtelEncoderTest {
         assertThat(actualSpan.getTraceId()).isEqualTo(expectedSpan.getTraceId());
         assertThat(actualSpan.getSpanId()).isEqualTo(expectedSpan.getSpanId());
         assertThat(actualSpan.getKind()).isEqualTo(expectedSpan.getKind());
-        assertThat(actualSpan.getEventsList()).isEqualTo(expectedSpan.getEventsList());
-        assertThat(actualSpan.getAttributesCount()).isEqualTo(expectedSpan.getAttributesCount());
-        for (int k = 0; k < expectedSpan.getAttributesCount(); k++) {
-          KeyValue attribute = expectedSpan.getAttributes(k);
-          // The order of attributes sent by the Zipkin encoder is not fixed.
-          assertThat(actualSpan.getAttributesList()).contains(attribute);
-        }
+        assertThat(actualSpan.getEventsList()).containsExactlyInAnyOrderElementsOf(expectedSpan.getEventsList());
+        assertThat(actualSpan.getAttributesList()).containsExactlyInAnyOrderElementsOf(expectedSpan.getAttributesList());
       }
     }
   }
