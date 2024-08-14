@@ -158,11 +158,11 @@ public class ITOtelEncoderTest {
           .addEvents(Span.Event.newBuilder().setName("Foo").setTimeUnixNano(milliToNanos(1510256710021866L + 1000L)).build());
       ScopeSpans.Builder scopeSpanBuilder = ScopeSpans.newBuilder();
       if (encoder instanceof OtelEncoder) {
-        scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName("zipkin2.reporter.otel").setVersion("0.0.1"));
+        scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.getName()).setVersion(BraveScope.getVersion()));
         spanBuilder.addAttributes(stringAttribute("network.local.address", "10.23.14.72"))
             .addAttributes(intAttribute("network.local.port", 12345))
-            .addAttributes(stringAttribute("otel.library.name", "zipkin2.reporter.otel"))
-            .addAttributes(stringAttribute("otel.library.version", "0.0.1"))
+            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
+            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
             .addAttributes(stringAttribute("server.address", "zipkin.example.com"))
             .addAttributes(stringAttribute("http.request.method", "GET"))
             .addAttributes(stringAttribute("url.full", "https://zipkin.example.com/rs/A"))
@@ -235,11 +235,11 @@ public class ITOtelEncoderTest {
           .setKind(Span.SpanKind.SPAN_KIND_CLIENT);
       ScopeSpans.Builder scopeSpanBuilder = ScopeSpans.newBuilder();
       if (encoder instanceof OtelEncoder) {
-        scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName("zipkin2.reporter.otel").setVersion("0.0.1"));
+        scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.getName()).setVersion(BraveScope.getVersion()));
         spanBuilder.addAttributes(stringAttribute("network.local.address", "10.99.99.99"))
             .addAttributes(intAttribute("network.local.port", 43210))
-            .addAttributes(stringAttribute("otel.library.name", "zipkin2.reporter.otel"))
-            .addAttributes(stringAttribute("otel.library.version", "0.0.1"))
+            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
+            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
             .addAttributes(stringAttribute("server.address", "zipkin.example.com"))
             .addAttributes(stringAttribute("http.request.method", "POST"))
             .addAttributes(stringAttribute("url.full", "https://zipkin.example.com/order"))

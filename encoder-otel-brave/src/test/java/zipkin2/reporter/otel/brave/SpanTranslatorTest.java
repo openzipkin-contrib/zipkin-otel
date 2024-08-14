@@ -51,8 +51,8 @@ class SpanTranslatorTest {
                         Instant.ofEpochSecond(1472470996, 406_000_000).toEpochMilli()))
                 .addAllAttributes(
                     Arrays.asList(stringAttribute("network.local.address", "127.0.0.1"),
-                        stringAttribute("otel.library.name", "zipkin2.reporter.otel"),
-                        stringAttribute("otel.library.version", "0.0.1"),
+                        stringAttribute("otel.library.name", BraveScope.getName()),
+                        stringAttribute("otel.library.version", BraveScope.getVersion()),
                         stringAttribute("clnt/finagle.version", "6.45.0"),
                         stringAttribute("url.path", "/api"))
                 )

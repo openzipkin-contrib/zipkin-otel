@@ -82,10 +82,8 @@ final class SpanTranslator {
     scopeSpanBuilder.addSpans(spanBuilder
         .build());
     InstrumentationScope.Builder scopeBuilder = InstrumentationScope.newBuilder();
-    // TODO: What should we put here?
-    scopeBuilder.setName("zipkin2.reporter.otel");
-    // TODO: Hardcoded library version
-    scopeBuilder.setVersion("0.0.1");
+    scopeBuilder.setName(BraveScope.getName());
+    scopeBuilder.setVersion(BraveScope.getVersion());
     scopeSpanBuilder.setScope(scopeBuilder.build());
     resourceSpansBuilder.addScopeSpans(scopeSpanBuilder
         .build());
@@ -158,10 +156,10 @@ final class SpanTranslator {
       spanBuilder.addAttributes(intAttribute(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), localPort));
     }
     // Include instrumentation library name for backwards compatibility
-    spanBuilder.addAttributes(stringAttribute(KEY_INSTRUMENTATION_LIBRARY_NAME, "zipkin2.reporter.otel"));
+    spanBuilder.addAttributes(stringAttribute(KEY_INSTRUMENTATION_LIBRARY_NAME, BraveScope.getName()));
     // TODO: Hardcoded library version
     // Include instrumentation library name for backwards compatibility
-    spanBuilder.addAttributes(stringAttribute(KEY_INSTRUMENTATION_LIBRARY_VERSION, "0.0.1"));
+    spanBuilder.addAttributes(stringAttribute(KEY_INSTRUMENTATION_LIBRARY_VERSION, BraveScope.getVersion()));
 
     span.forEachTag(consumer, spanBuilder);
     span.forEachAnnotation(consumer, spanBuilder);
