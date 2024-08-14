@@ -70,8 +70,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setKind(SpanKind.SPAN_KIND_SERVER)
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
@@ -106,8 +104,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794_194009000L) // We lose precision
                             .setEndTimeUnixNano(1505855794_194009000L) // We lose precision
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setKind(SpanKind.SPAN_KIND_SERVER)
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
@@ -139,8 +135,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setKind(SpanKind.SPAN_KIND_SERVER)
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
@@ -172,8 +166,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setKind(SpanKind.SPAN_KIND_CLIENT)
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
@@ -206,8 +198,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setKind(SpanKind.SPAN_KIND_INTERNAL)
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setKind(SpanKind.SPAN_KIND_INTERNAL)
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
@@ -239,8 +229,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setKind(SpanKind.SPAN_KIND_CONSUMER)
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
@@ -272,8 +260,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setKind(SpanKind.SPAN_KIND_PRODUCER)
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
@@ -306,8 +292,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setKind(SpanKind.SPAN_KIND_PRODUCER)
                             .setStatus(
                                 Status.newBuilder().setCode(StatusCode.STATUS_CODE_OK).build())
@@ -340,8 +324,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName(data.name())
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setKind(SpanKind.SPAN_KIND_PRODUCER)
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
@@ -382,8 +364,6 @@ class OtelToZipkinSpanTransformerTest {
                             .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
                             .addAttributes(intAttribute("network.peer.port", 42))
                             .addAttributes(stringAttribute("peer.service", "remote-test-service"))
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
                             .build())
@@ -421,8 +401,6 @@ class OtelToZipkinSpanTransformerTest {
                             .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
                             .addAttributes(intAttribute("network.peer.port", 42))
                             .addAttributes(stringAttribute("peer.service", "remote-test-service"))
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
                             .build())
@@ -458,8 +436,6 @@ class OtelToZipkinSpanTransformerTest {
                                 toSpanKind(spanKind))
                             .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
                             .addAttributes(intAttribute("network.peer.port", 42))
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setStatus(
                                 Status.newBuilder().setCode(StatusCode.STATUS_CODE_OK).build())
                             .build())
@@ -495,8 +471,6 @@ class OtelToZipkinSpanTransformerTest {
                                 toSpanKind(spanKind))
                             .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
                             .addAttributes(stringAttribute("peer.service", "remote-test-service"))
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
                             .build())
@@ -530,8 +504,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setKind(
                                 toSpanKind(spanKind))
                             .addAttributes(stringAttribute("peer.service", "remote-test-service"))
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
                             .build())
@@ -568,8 +540,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(Kind.CLIENT))
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .addAttributes(stringAttribute("string", "string value"))
                             .addAttributes(stringAttribute("boolean", "false"))
                             .addAttributes(stringAttribute("long", "9999"))
@@ -606,8 +576,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(Kind.CLIENT))
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
                             .build())
@@ -638,8 +606,6 @@ class OtelToZipkinSpanTransformerTest {
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(Kind.CLIENT))
-                            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-                            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .addAttributes(stringAttribute("http.response.status.code", "404"))
                             .addAttributes(stringAttribute("error", "A user provided error"))
                             .setStatus(

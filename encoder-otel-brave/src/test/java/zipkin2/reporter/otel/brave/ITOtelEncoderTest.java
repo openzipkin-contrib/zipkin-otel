@@ -161,8 +161,6 @@ public class ITOtelEncoderTest {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.getName()).setVersion(BraveScope.getVersion()));
         spanBuilder.addAttributes(stringAttribute("network.local.address", "10.23.14.72"))
             .addAttributes(intAttribute("network.local.port", 12345))
-            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
             .addAttributes(stringAttribute("server.address", "zipkin.example.com"))
             .addAttributes(stringAttribute("http.request.method", "GET"))
             .addAttributes(stringAttribute("url.full", "https://zipkin.example.com/rs/A"))
@@ -244,8 +242,6 @@ public class ITOtelEncoderTest {
             .addAttributes(stringAttribute("network.peer.address", "1.2.3.4"))
             .addAttributes(intAttribute("network.peer.port", 9999))
             .addAttributes(stringAttribute("peer.service", "demo"))
-            .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
-            .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
             .addAttributes(stringAttribute("server.address", "zipkin.example.com"))
             .addAttributes(stringAttribute("http.request.method", "POST"))
             .addAttributes(stringAttribute("url.full", "https://zipkin.example.com/order"))
