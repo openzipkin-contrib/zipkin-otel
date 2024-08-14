@@ -381,6 +381,7 @@ class OtelToZipkinSpanTransformerTest {
                                 toSpanKind(spanKind))
                             .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
                             .addAttributes(intAttribute("network.peer.port", 42))
+                            .addAttributes(stringAttribute("peer.service", "remote-test-service"))
                             .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
                             .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setStatus(
@@ -419,6 +420,7 @@ class OtelToZipkinSpanTransformerTest {
                                 toSpanKind(spanKind))
                             .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
                             .addAttributes(intAttribute("network.peer.port", 42))
+                            .addAttributes(stringAttribute("peer.service", "remote-test-service"))
                             .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
                             .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setStatus(
@@ -492,6 +494,7 @@ class OtelToZipkinSpanTransformerTest {
                             .setKind(
                                 toSpanKind(spanKind))
                             .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
+                            .addAttributes(stringAttribute("peer.service", "remote-test-service"))
                             .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
                             .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setStatus(
@@ -526,6 +529,7 @@ class OtelToZipkinSpanTransformerTest {
                             .setName("unknown")
                             .setKind(
                                 toSpanKind(spanKind))
+                            .addAttributes(stringAttribute("peer.service", "remote-test-service"))
                             .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
                             .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
                             .setStatus(

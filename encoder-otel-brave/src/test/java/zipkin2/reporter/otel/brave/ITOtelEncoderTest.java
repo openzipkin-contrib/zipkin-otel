@@ -218,6 +218,7 @@ public class ITOtelEncoderTest {
       span.localPort(43210);
       span.remoteIp("1.2.3.4");
       span.remotePort(9999);
+      span.remoteServiceName("demo");
       span.tag("http.host", "zipkin.example.com");
       span.tag("http.method", "POST");
       span.tag("http.url", "https://zipkin.example.com/order");
@@ -242,6 +243,7 @@ public class ITOtelEncoderTest {
             .addAttributes(intAttribute("network.local.port", 43210))
             .addAttributes(stringAttribute("network.peer.address", "1.2.3.4"))
             .addAttributes(intAttribute("network.peer.port", 9999))
+            .addAttributes(stringAttribute("peer.service", "demo"))
             .addAttributes(stringAttribute("otel.library.name", BraveScope.getName()))
             .addAttributes(stringAttribute("otel.library.version", BraveScope.getVersion()))
             .addAttributes(stringAttribute("server.address", "zipkin.example.com"))
@@ -264,6 +266,7 @@ public class ITOtelEncoderTest {
             .addAttributes(intAttribute("net.host.port", 43210))
             .addAttributes(stringAttribute("net.peer.ip", "1.2.3.4"))
             .addAttributes(intAttribute("net.peer.port", 9999))
+            .addAttributes(stringAttribute("peer.service", "demo"))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
       }
       ResourceSpans resourceSpans = ResourceSpans.newBuilder()

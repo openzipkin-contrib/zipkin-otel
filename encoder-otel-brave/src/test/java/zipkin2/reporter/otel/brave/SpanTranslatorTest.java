@@ -55,6 +55,7 @@ class SpanTranslatorTest {
                     Arrays.asList(stringAttribute("network.local.address", "127.0.0.1"),
                         stringAttribute("network.peer.address", "192.168.99.101"),
                         intAttribute("network.peer.port", 9000),
+                        stringAttribute("peer.service", "backend"),
                         stringAttribute("otel.library.name", BraveScope.getName()),
                         stringAttribute("otel.library.version", BraveScope.getVersion()),
                         stringAttribute("clnt/finagle.version", "6.45.0"),

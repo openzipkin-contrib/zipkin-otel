@@ -43,6 +43,9 @@ final class SpanTranslator {
 
   static final String KEY_INSTRUMENTATION_LIBRARY_VERSION = "otel.library.version";
 
+  // Defined in the incubating SDK https://github.com/open-telemetry/semantic-conventions-java/blob/main/semconv-incubating/src/main/java/io/opentelemetry/semconv/incubating/PeerIncubatingAttributes.java
+  static final String PEER_SERVICE = "peer.service";
+
   private static final Map<String, String> RENAMED_LABELS;
 
   static {
@@ -162,6 +165,10 @@ final class SpanTranslator {
     int remotePort = span.remotePort();
     if (remotePort != 0) {
       spanBuilder.addAttributes(intAttribute(NetworkAttributes.NETWORK_PEER_PORT.getKey(), remotePort));
+    }
+    String remoteServiceName = span.remoteServiceName();
+    if (remoteServiceName != null) {
+      spanBuilder.addAttributes(stringAttribute(PEER_SERVICE, remoteServiceName));
     }
     // Include instrumentation library name for backwards compatibility
     spanBuilder.addAttributes(stringAttribute(KEY_INSTRUMENTATION_LIBRARY_NAME, BraveScope.getName()));
