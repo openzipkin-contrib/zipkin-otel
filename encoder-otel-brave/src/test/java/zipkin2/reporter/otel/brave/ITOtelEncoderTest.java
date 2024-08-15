@@ -33,7 +33,6 @@ import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.testing.junit5.server.ServerExtension;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 import io.opentelemetry.proto.common.v1.InstrumentationScope;
-import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.resource.v1.Resource;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
@@ -47,6 +46,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -82,9 +82,10 @@ public class ITOtelEncoderTest {
   static void beforeAll() {
     otlpHttpServer = new OtlpHttpServer();
     otlpHttpServer.start();
+    Testcontainers.exposeHostPorts(otlpHttpServer.httpPort());
     collector = new GenericContainer<>(DockerImageName.parse(COLLECTOR_IMAGE))
         .withImagePullPolicy(PullPolicy.alwaysPull())
-        .withEnv("OTLP_EXPORTER_ENDPOINT", "http://host.docker.internal:" + otlpHttpServer.httpPort())
+        .withEnv("OTLP_EXPORTER_ENDPOINT", "http://host.testcontainers.internal:" + otlpHttpServer.httpPort())
         .withClasspathResourceMapping("otel-config.yaml", "/otel-config.yaml", BindMode.READ_ONLY)
         .withCommand("--config", "/otel-config.yaml")
         .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger("otel-collector")))
