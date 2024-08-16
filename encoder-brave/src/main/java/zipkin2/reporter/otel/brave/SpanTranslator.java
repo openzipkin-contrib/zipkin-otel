@@ -42,23 +42,30 @@ final class SpanTranslator {
   // Defined in the incubating SDK https://github.com/open-telemetry/semantic-conventions-java/blob/main/semconv-incubating/src/main/java/io/opentelemetry/semconv/incubating/PeerIncubatingAttributes.java
   static final String PEER_SERVICE = "peer.service";
 
-  private static final Map<String, String> RENAMED_LABELS;
+  /**
+   * Tag to Attribute mappings which map brave data policy to otel semantics.
+   *
+   * @see <a href="https://opentelemetry.io/docs/specs/semconv/http/http-spans/">https://opentelemetry.io/docs/specs/semconv/http/http-spans/</a>
+   * @see brave.http.HttpTags
+   */
+  // TODO: brave also defines rpc and messaging data policy
+  private static final Map<String, String> RENAMED_ATTRIBUTES;
 
   static {
-    RENAMED_LABELS = new LinkedHashMap<>();
+    RENAMED_ATTRIBUTES = new LinkedHashMap<>();
     // "http.host" is not defined in HttpTags, but is a well-known tag.
-    RENAMED_LABELS.put("http.host", ServerAttributes.SERVER_ADDRESS.getKey());
-    RENAMED_LABELS.put(HttpTags.METHOD.key(), HttpAttributes.HTTP_REQUEST_METHOD.getKey());
-    RENAMED_LABELS.put(HttpTags.PATH.key(), UrlAttributes.URL_PATH.getKey());
-    RENAMED_LABELS.put(HttpTags.ROUTE.key(), HttpAttributes.HTTP_ROUTE.getKey());
-    RENAMED_LABELS.put(HttpTags.URL.key(), UrlAttributes.URL_FULL.getKey());
-    RENAMED_LABELS.put(HttpTags.STATUS_CODE.key(), HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey());
+    RENAMED_ATTRIBUTES.put("http.host", ServerAttributes.SERVER_ADDRESS.getKey());
+    RENAMED_ATTRIBUTES.put(HttpTags.METHOD.key(), HttpAttributes.HTTP_REQUEST_METHOD.getKey());
+    RENAMED_ATTRIBUTES.put(HttpTags.PATH.key(), UrlAttributes.URL_PATH.getKey());
+    RENAMED_ATTRIBUTES.put(HttpTags.ROUTE.key(), HttpAttributes.HTTP_ROUTE.getKey());
+    RENAMED_ATTRIBUTES.put(HttpTags.URL.key(), UrlAttributes.URL_FULL.getKey());
+    RENAMED_ATTRIBUTES.put(HttpTags.STATUS_CODE.key(), HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey());
   }
 
   private final Consumer consumer;
 
   SpanTranslator(Tag<Throwable> errorTag) {
-    this.consumer = new Consumer(errorTag, RENAMED_LABELS);
+    this.consumer = new Consumer(errorTag, RENAMED_ATTRIBUTES);
   }
 
   /**
