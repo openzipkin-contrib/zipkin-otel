@@ -4,17 +4,42 @@
  */
 package zipkin2.reporter.otel.brave;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.util.Properties;
+
 /**
- * Define InstrumentationScope for brave-encoder-otel
+ * Define InstrumentationScope for encoder-brave
  */
-public class BraveScope {
+final class BraveScope {
+  private static final String name;
+
+  private static final String version;
+
+  static {
+    try (InputStream stream = BraveScope.class.getClassLoader().getResourceAsStream("scope.properties")) {
+      if (stream != null) {
+        Properties props = new Properties();
+        props.load(stream);
+        name = props.getProperty("name");
+        version = props.getProperty("version");
+      }
+      else {
+        name = "unknown";
+        version = "unknown";
+      }
+    }
+    catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
   public static String getName() {
-    // TODO: What should we put here?
-    return "zipkin2.reporter.otel";
+    return name;
   }
 
   public static String getVersion() {
-    // TODO: Hardcoded library version
-    return "0.0.1";
+    return version;
   }
 }
