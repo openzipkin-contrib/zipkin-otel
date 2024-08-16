@@ -64,7 +64,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.reporter.otel.brave.SpanTranslator.intAttribute;
 import static zipkin2.reporter.otel.brave.SpanTranslator.stringAttribute;
 
-public class ITOtelEncoderTest {
+public class ITOtlpProtoV1EncoderTest {
   private static GenericContainer<?> collector;
 
   private static OtlpHttpServer otlpHttpServer;
@@ -112,9 +112,9 @@ public class ITOtelEncoderTest {
   static Stream<Arguments> encoderAndEndpoint() {
     return Stream.of(
         /* existing sender + new encoder -> otlp with otel collector */
-        Arguments.of(Encoding.PROTO3, new OtelEncoder(Tags.ERROR), String.format("http://localhost:%d/v1/traces", collector.getMappedPort(COLLECTOR_OTLP_HTTP_PORT))),
+        Arguments.of(Encoding.PROTO3, new OtlpProtoV1Encoder(Tags.ERROR), String.format("http://localhost:%d/v1/traces", collector.getMappedPort(COLLECTOR_OTLP_HTTP_PORT))),
         /* existing sender + new encoder -> otlp without otel collector */
-        Arguments.of(Encoding.PROTO3, new OtelEncoder(Tags.ERROR), String.format("http://localhost:%d/v1/traces", otlpHttpServer.httpPort())),
+        Arguments.of(Encoding.PROTO3, new OtlpProtoV1Encoder(Tags.ERROR), String.format("http://localhost:%d/v1/traces", otlpHttpServer.httpPort())),
         /* existing sender + zipkin encoder -> zipkin endpoint on collector */
         Arguments.of(Encoding.JSON, MutableSpanBytesEncoder.create(Encoding.JSON, Tags.ERROR), String.format("http://localhost:%d/api/v2/spans", collector.getMappedPort(COLLECTOR_ZIPKIN_PORT))));
   }
@@ -158,7 +158,7 @@ public class ITOtelEncoderTest {
           .setKind(Span.SpanKind.SPAN_KIND_SERVER)
           .addEvents(Span.Event.newBuilder().setName("Foo").setTimeUnixNano(milliToNanos(1510256710021866L + 1000L)).build());
       ScopeSpans.Builder scopeSpanBuilder = ScopeSpans.newBuilder();
-      if (encoder instanceof OtelEncoder) {
+      if (encoder instanceof OtlpProtoV1Encoder) {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.getName()).setVersion(BraveScope.getVersion()));
         spanBuilder.addAttributes(stringAttribute("network.local.address", "10.23.14.72"))
             .addAttributes(intAttribute("network.local.port", 12345))
@@ -236,7 +236,7 @@ public class ITOtelEncoderTest {
           .setSpanId(ByteString.fromHex("5d64683224ba9b17"))
           .setKind(Span.SpanKind.SPAN_KIND_CLIENT);
       ScopeSpans.Builder scopeSpanBuilder = ScopeSpans.newBuilder();
-      if (encoder instanceof OtelEncoder) {
+      if (encoder instanceof OtlpProtoV1Encoder) {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.getName()).setVersion(BraveScope.getVersion()));
         spanBuilder.addAttributes(stringAttribute("network.local.address", "10.99.99.99"))
             .addAttributes(intAttribute("network.local.port", 43210))

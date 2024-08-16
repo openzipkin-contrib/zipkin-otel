@@ -10,11 +10,10 @@ import io.opentelemetry.proto.trace.v1.TracesData;
 import zipkin2.reporter.BytesEncoder;
 import zipkin2.reporter.Encoding;
 
-@SuppressWarnings("ImmutableEnumChecker") // because span is immutable
-public class OtelEncoder implements BytesEncoder<MutableSpan> {
+public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
   final SpanTranslator spanTranslator;
 
-  public OtelEncoder(Tag<Throwable> errorTag) {
+  public OtlpProtoV1Encoder(Tag<Throwable> errorTag) {
     if (errorTag == null) throw new NullPointerException("errorTag == null");
     this.spanTranslator = new SpanTranslator(errorTag);
   }

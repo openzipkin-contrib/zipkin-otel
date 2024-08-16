@@ -43,11 +43,11 @@ class OtelToZipkinSpanTransformerTest {
 
   static final String PARENT_SPAN_ID = "8b03ab423da481c5";
 
-  private OtelEncoder transformer;
+  private OtlpProtoV1Encoder transformer;
 
   @BeforeEach
   void setup() {
-    transformer = new OtelEncoder(Tags.ERROR);
+    transformer = new OtlpProtoV1Encoder(Tags.ERROR);
   }
 
   @Test
