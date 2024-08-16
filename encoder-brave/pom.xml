@@ -14,7 +14,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>brave-encoder-otel</artifactId>
+  <artifactId>encoder-brave</artifactId>
   <name>Brave Encoder: OpenTelemetry Trace</name>
 
   <properties>

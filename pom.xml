@@ -18,7 +18,7 @@
   <modules>
     <module>module</module>
     <module>collector-http</module>
-    <module>encoder-otel-brave</module>
+    <module>encoder-brave</module>
   </modules>
 
   <distributionManagement>
