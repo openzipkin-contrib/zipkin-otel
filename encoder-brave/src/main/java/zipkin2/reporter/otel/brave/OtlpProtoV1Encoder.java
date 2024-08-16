@@ -24,7 +24,7 @@ public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
   }
 
   @Override public int sizeInBytes(MutableSpan span) {
-    // TODO: Optimize this by caching?
+    // TODO: Create a proto size function to avoid allocations here
     TracesData convert = translate(span);
     return encoding().listSizeInBytes(convert.getSerializedSize());
   }
