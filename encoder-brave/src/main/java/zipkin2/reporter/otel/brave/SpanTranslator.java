@@ -68,18 +68,6 @@ final class SpanTranslator {
     this.consumer = new Consumer(errorTag, RENAMED_ATTRIBUTES);
   }
 
-  /**
-   * Converts a Zipkin Span into a OpenTelemetry Span.
-   *
-   * <p>Ex.
-   *
-   * <pre>{@code
-   * tracesData = SpanTranslator.translate(braveSpan);
-   * }</pre>
-   *
-   * @param braveSpan The Zipkin Span.
-   * @return A OpenTelemetry Span.
-   */
   TracesData translate(MutableSpan braveSpan) {
     TracesData.Builder tracesDataBuilder = TracesData.newBuilder();
     Builder resourceSpansBuilder = ResourceSpans.newBuilder();
