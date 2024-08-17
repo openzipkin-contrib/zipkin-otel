@@ -136,8 +136,6 @@ final class SpanTranslator {
         case CONSUMER:
           spanBuilder.setKind(SpanKind.SPAN_KIND_CONSUMER);
           break;
-        default:
-          spanBuilder.setKind(SpanKind.SPAN_KIND_INTERNAL); //TODO: Should it work like this?
       }
     }
     else {
