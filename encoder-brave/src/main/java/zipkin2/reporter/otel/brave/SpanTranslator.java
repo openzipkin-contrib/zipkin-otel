@@ -117,9 +117,7 @@ final class SpanTranslator {
     long start = span.startTimestamp();
     long finish = span.finishTimestamp();
     spanBuilder.setStartTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(start));
-    if (start != 0 && finish != 0L) {
-      spanBuilder.setEndTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(finish));
-    }
+    spanBuilder.setEndTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(finish));
     Kind kind = span.kind();
     if (kind != null) {
       switch (kind) {
