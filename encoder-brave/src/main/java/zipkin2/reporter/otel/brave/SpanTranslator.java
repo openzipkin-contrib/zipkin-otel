@@ -146,33 +146,29 @@ final class SpanTranslator {
     if (localServiceName == null) {
       localServiceName = Resource.getDefault().getAttribute(ServiceAttributes.SERVICE_NAME);
     }
-    resourceSpansBuilder.getResourceBuilder()
-        .addAttributes(stringAttribute(ServiceAttributes.SERVICE_NAME.getKey(), localServiceName));
-    String localIp = span.localIp();
-    if (localIp != null) {
-      spanBuilder.addAttributes(stringAttribute(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), localIp));
-    }
-    int localPort = span.localPort();
-    if (localPort != 0) {
-      spanBuilder.addAttributes(intAttribute(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), localPort));
-    }
-    String remoteIp = span.remoteIp();
-    if (remoteIp != null) {
-      spanBuilder.addAttributes(stringAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), remoteIp));
-    }
-    int remotePort = span.remotePort();
-    if (remotePort != 0) {
-      spanBuilder.addAttributes(intAttribute(NetworkAttributes.NETWORK_PEER_PORT.getKey(), remotePort));
-    }
-    String remoteServiceName = span.remoteServiceName();
-    if (remoteServiceName != null) {
-      spanBuilder.addAttributes(stringAttribute(PEER_SERVICE, remoteServiceName));
-    }
+    resourceSpansBuilder.getResourceBuilder().addAttributes(stringAttribute(ServiceAttributes.SERVICE_NAME.getKey(), localServiceName));
+    maybeAddStringAttribute(spanBuilder, NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), span.localIp());
+    maybeAddIntAttribute(spanBuilder, NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), span.localPort());
+    maybeAddStringAttribute(spanBuilder, NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), span.remoteIp());
+    maybeAddIntAttribute(spanBuilder, NetworkAttributes.NETWORK_PEER_PORT.getKey(), span.remotePort());
+    maybeAddStringAttribute(spanBuilder, PEER_SERVICE, span.remoteServiceName());
     span.forEachTag(consumer, spanBuilder);
     span.forEachAnnotation(consumer, spanBuilder);
     consumer.addErrorTag(spanBuilder, span);
 
     return spanBuilder;
+  }
+
+  private static void maybeAddStringAttribute(Span.Builder spanBuilder, String key, String value) {
+    if (value != null) {
+      spanBuilder.addAttributes(stringAttribute(key, value));
+    }
+  }
+
+  private static void maybeAddIntAttribute(Span.Builder spanBuilder, String key, int value) {
+    if (value != 0) {
+      spanBuilder.addAttributes(intAttribute(key, value));
+    }
   }
 
   static final class Consumer implements TagConsumer<Span.Builder>, AnnotationConsumer<Span.Builder> {
