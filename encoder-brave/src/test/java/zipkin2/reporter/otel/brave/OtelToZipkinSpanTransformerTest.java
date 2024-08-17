@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.reporter.otel.brave.SpanTranslator.intAttribute;
 import static zipkin2.reporter.otel.brave.SpanTranslator.stringAttribute;
 
-// Adopted from https://github.com/open-telemetry/opentelemetry-java/blob/v1.39.0/exporters/zipkin/src/test/java/io/opentelemetry/exporter/zipkin/OtelToZipkinSpanTransformerTest.java
+// Adapted from https://github.com/open-telemetry/opentelemetry-java/blob/v1.39.0/exporters/zipkin/src/test/java/io/opentelemetry/exporter/zipkin/OtelToZipkinSpanTransformerTest.java
 class OtelToZipkinSpanTransformerTest {
 
   static final String TRACE_ID = "d239036e7d5cec116b562147388b35bf";
