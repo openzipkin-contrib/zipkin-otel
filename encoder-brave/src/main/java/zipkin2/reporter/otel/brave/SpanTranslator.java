@@ -174,11 +174,11 @@ final class SpanTranslator {
 
     private final Tag<Throwable> errorTag;
 
-    private final Map<String, String> renamedLabels;
+    private final Map<String, String> renamedAttributes;
 
-    Consumer(Tag<Throwable> errorTag, Map<String, String> renamedLabels) {
+    Consumer(Tag<Throwable> errorTag, Map<String, String> renamedAttributes) {
       this.errorTag = errorTag;
-      this.renamedLabels = renamedLabels;
+      this.renamedAttributes = renamedAttributes;
     }
 
     @Override
@@ -204,7 +204,7 @@ final class SpanTranslator {
     }
 
     private String getLabelName(String zipkinName) {
-      String renamed = renamedLabels.get(zipkinName);
+      String renamed = renamedAttributes.get(zipkinName);
       return renamed != null ? renamed : zipkinName;
     }
   }
