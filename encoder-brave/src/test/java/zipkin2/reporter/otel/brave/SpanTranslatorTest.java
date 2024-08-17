@@ -77,7 +77,7 @@ class SpanTranslatorTest {
         new MutableSpan(TraceContext.newBuilder().traceId(3).spanId(2).build(), null);
     TracesData translated = spanTranslator.translate(braveSpan);
 
-    assertThat(firstSpan(translated).getName()).isEqualTo("unknown");
+    assertThat(firstSpan(translated).getName()).isEqualTo("");
   }
 
   @Test
@@ -87,7 +87,7 @@ class SpanTranslatorTest {
     braveSpan.name("");
     TracesData translated = spanTranslator.translate(braveSpan);
 
-    assertThat(firstSpan(translated).getName()).isEqualTo("unknown");
+    assertThat(firstSpan(translated).getName()).isEqualTo("");
   }
 
   private static Span firstSpan(TracesData translated) {

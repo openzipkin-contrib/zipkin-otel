@@ -15,6 +15,7 @@ import brave.handler.MutableSpan.AnnotationConsumer;
 import brave.handler.MutableSpan.TagConsumer;
 import brave.http.HttpTags;
 import com.google.protobuf.ByteString;
+import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.InstrumentationScope;
 import io.opentelemetry.proto.common.v1.KeyValue;
@@ -41,6 +42,10 @@ final class SpanTranslator {
 
   // Defined in the incubating SDK https://github.com/open-telemetry/semantic-conventions-java/blob/main/semconv-incubating/src/main/java/io/opentelemetry/semconv/incubating/PeerIncubatingAttributes.java
   static final String PEER_SERVICE = "peer.service";
+
+  static final ByteString INVALID_TRACE_ID = ByteString.fromHex(SpanContext.getInvalid().getTraceId());
+
+  static final ByteString INVALID_SPAN_ID = ByteString.fromHex(SpanContext.getInvalid().getSpanId());
 
   /**
    * Tag to Attribute mappings which map brave data policy to otel semantics.
@@ -101,9 +106,11 @@ final class SpanTranslator {
 
   private Span.Builder builderForSingleSpan(MutableSpan span, Builder resourceSpansBuilder) {
     Span.Builder spanBuilder = Span.newBuilder()
-        .setTraceId(ByteString.fromHex(span.traceId() != null ? span.traceId() : io.opentelemetry.api.trace.SpanContext.getInvalid().getTraceId()))
-        .setSpanId(ByteString.fromHex(span.id() != null ? span.id() : io.opentelemetry.api.trace.SpanContext.getInvalid().getSpanId()))
-        .setName((span.name() == null || span.name().isEmpty()) ? "unknown" : span.name());
+        .setTraceId(span.traceId() != null ? ByteString.fromHex(span.traceId()) : INVALID_TRACE_ID)
+        .setSpanId(span.id() != null ? ByteString.fromHex(span.id()) : INVALID_SPAN_ID);
+    if (span.name() != null) {
+      spanBuilder.setName(span.name());
+    }
     if (span.parentId() != null) {
       spanBuilder.setParentSpanId(ByteString.fromHex(span.parentId()));
     }
