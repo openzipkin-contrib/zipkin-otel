@@ -47,6 +47,9 @@ final class SpanTranslator {
 
   static final ByteString INVALID_SPAN_ID = ByteString.fromHex(SpanContext.getInvalid().getSpanId());
 
+  // "INTERNAL" is the default value https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/api.md#spankind
+  static final SpanKind DEFAULT_KIND = SpanKind.SPAN_KIND_INTERNAL;
+
   /**
    * Tag to Attribute mappings which map brave data policy to otel semantics.
    *
@@ -138,7 +141,7 @@ final class SpanTranslator {
       }
     }
     else {
-      spanBuilder.setKind(SpanKind.SPAN_KIND_INTERNAL); //TODO: Should it work like this?
+      spanBuilder.setKind(DEFAULT_KIND);
     }
     String localServiceName = span.localServiceName();
     if (localServiceName == null) {

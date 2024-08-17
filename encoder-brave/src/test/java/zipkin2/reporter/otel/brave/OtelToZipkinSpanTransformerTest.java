@@ -178,7 +178,7 @@ class OtelToZipkinSpanTransformerTest {
   }
 
   @Test
-  void generateSpan_InternalKind() {
+  void generateSpan_DefaultKind() {
     MutableSpan data = span(null);
 
     assertThat(transformer.translate(data))
@@ -195,10 +195,9 @@ class OtelToZipkinSpanTransformerTest {
                             .setTraceId(ByteString.fromHex(data.traceId()))
                             .setParentSpanId(ByteString.fromHex(data.parentId()))
                             .setName(data.name())
-                            .setKind(SpanKind.SPAN_KIND_INTERNAL)
+                            .setKind(SpanTranslator.DEFAULT_KIND)
                             .setStartTimeUnixNano(1505855794194009000L)
                             .setEndTimeUnixNano(1505855799465726000L)
-                            .setKind(SpanKind.SPAN_KIND_INTERNAL)
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
                             .addEvents(Event.newBuilder().setName("\"RECEIVED\":{}").setTimeUnixNano(1505855799433901000L).build())
@@ -635,6 +634,6 @@ class OtelToZipkinSpanTransformerTest {
       case CONSUMER:
         return SpanKind.SPAN_KIND_CONSUMER;
     }
-    return SpanKind.SPAN_KIND_INTERNAL;
+    return SpanTranslator.DEFAULT_KIND;
   }
 }
