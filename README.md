@@ -24,7 +24,7 @@ The encoder encodes brave spans into OTLP proto format.
 
 | Encoder                                   | Description                                    |
 |-------------------------------------------|------------------------------------------------|
-| [`OtelEncoder`](./encoder-brave)     | zipkin-reporter-brave `AsyncZipkinSpanHandler` |
+| [`OtlpProtoV1Encoder`](./encoder-brave)     | zipkin-reporter-brave `AsyncZipkinSpanHandler` |
 
 ## Server integration
 
