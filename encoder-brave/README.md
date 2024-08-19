@@ -1,4 +1,4 @@
-# encoder-otel-brave
+# encoder-brave
 
 This encodes brave spans into OTLP proto format.
 
