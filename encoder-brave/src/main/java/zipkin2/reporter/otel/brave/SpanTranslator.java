@@ -121,26 +121,7 @@ final class SpanTranslator {
     long finish = span.finishTimestamp();
     spanBuilder.setStartTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(start));
     spanBuilder.setEndTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(finish));
-    Kind kind = span.kind();
-    if (kind != null) {
-      switch (kind) {
-        case CLIENT:
-          spanBuilder.setKind(SpanKind.SPAN_KIND_CLIENT);
-          break;
-        case SERVER:
-          spanBuilder.setKind(SpanKind.SPAN_KIND_SERVER);
-          break;
-        case PRODUCER:
-          spanBuilder.setKind(SpanKind.SPAN_KIND_PRODUCER);
-          break;
-        case CONSUMER:
-          spanBuilder.setKind(SpanKind.SPAN_KIND_CONSUMER);
-          break;
-      }
-    }
-    else {
-      spanBuilder.setKind(DEFAULT_KIND);
-    }
+    spanBuilder.setKind(translateKind(span.kind()));
     String localServiceName = span.localServiceName();
     if (localServiceName == null) {
       localServiceName = Resource.getDefault().getAttribute(ServiceAttributes.SERVICE_NAME);
@@ -156,6 +137,22 @@ final class SpanTranslator {
     consumer.addErrorTag(spanBuilder, span);
 
     return spanBuilder;
+  }
+
+  private static SpanKind translateKind(Kind kind) {
+    if (kind != null) {
+      switch (kind) {
+        case CLIENT:
+          return SpanKind.SPAN_KIND_CLIENT;
+        case SERVER:
+          return SpanKind.SPAN_KIND_SERVER;
+        case PRODUCER:
+          return SpanKind.SPAN_KIND_PRODUCER;
+        case CONSUMER:
+          return SpanKind.SPAN_KIND_CONSUMER;
+      }
+    }
+    return DEFAULT_KIND;
   }
 
   private static void maybeAddStringAttribute(Span.Builder spanBuilder, String key, String value) {
