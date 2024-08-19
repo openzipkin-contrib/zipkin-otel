@@ -12,6 +12,6 @@ class BraveScopeTest {
 
   @Test
   void getName() {
-    assertThat(BraveScope.getName()).isEqualTo("io.zipkin.contrib.otel:encoder-brave");
+    assertThat(BraveScope.NAME).isEqualTo("io.zipkin.contrib.otel:encoder-brave");
   }
 }

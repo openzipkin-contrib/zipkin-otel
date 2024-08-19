@@ -84,8 +84,8 @@ final class SpanTranslator {
     scopeSpanBuilder.addSpans(spanBuilder
         .build());
     InstrumentationScope.Builder scopeBuilder = InstrumentationScope.newBuilder();
-    scopeBuilder.setName(BraveScope.getName());
-    scopeBuilder.setVersion(BraveScope.getVersion());
+    scopeBuilder.setName(BraveScope.NAME);
+    scopeBuilder.setVersion(BraveScope.VERSION);
     scopeSpanBuilder.setScope(scopeBuilder.build());
     resourceSpansBuilder.addScopeSpans(scopeSpanBuilder
         .build());

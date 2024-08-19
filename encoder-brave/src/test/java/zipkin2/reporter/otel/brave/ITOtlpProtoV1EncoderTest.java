@@ -159,7 +159,7 @@ public class ITOtlpProtoV1EncoderTest {
           .addEvents(Span.Event.newBuilder().setName("Foo").setTimeUnixNano(milliToNanos(1510256710021866L + 1000L)).build());
       ScopeSpans.Builder scopeSpanBuilder = ScopeSpans.newBuilder();
       if (encoder instanceof OtlpProtoV1Encoder) {
-        scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.getName()).setVersion(BraveScope.getVersion()));
+        scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.NAME).setVersion(BraveScope.VERSION));
         spanBuilder.addAttributes(stringAttribute("network.local.address", "10.23.14.72"))
             .addAttributes(intAttribute("network.local.port", 12345))
             .addAttributes(stringAttribute("server.address", "zipkin.example.com"))
@@ -237,7 +237,7 @@ public class ITOtlpProtoV1EncoderTest {
           .setKind(Span.SpanKind.SPAN_KIND_CLIENT);
       ScopeSpans.Builder scopeSpanBuilder = ScopeSpans.newBuilder();
       if (encoder instanceof OtlpProtoV1Encoder) {
-        scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.getName()).setVersion(BraveScope.getVersion()));
+        scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.NAME).setVersion(BraveScope.VERSION));
         spanBuilder.addAttributes(stringAttribute("network.local.address", "10.99.99.99"))
             .addAttributes(intAttribute("network.local.port", 43210))
             .addAttributes(stringAttribute("network.peer.address", "1.2.3.4"))

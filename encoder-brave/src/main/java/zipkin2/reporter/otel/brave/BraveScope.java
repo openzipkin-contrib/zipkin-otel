@@ -13,21 +13,21 @@ import java.util.Properties;
  * Define InstrumentationScope for encoder-brave
  */
 final class BraveScope {
-  static final String name;
+  static final String NAME;
 
-  static final String version;
+  static final String VERSION;
 
   static {
     try (InputStream stream = BraveScope.class.getClassLoader().getResourceAsStream("scope.properties")) {
       if (stream != null) {
         Properties props = new Properties();
         props.load(stream);
-        name = props.getProperty("name");
-        version = props.getProperty("version");
+        NAME = props.getProperty("name");
+        VERSION = props.getProperty("version");
       }
       else {
-        name = "unknown";
-        version = "unknown";
+        NAME = "unknown";
+        VERSION = "unknown";
       }
     }
     catch (IOException e) {
@@ -35,11 +35,4 @@ final class BraveScope {
     }
   }
 
-  public static String getName() {
-    return name;
-  }
-
-  public static String getVersion() {
-    return version;
-  }
 }
