@@ -57,7 +57,7 @@ final class SpanTranslator {
    * @see brave.http.HttpTags
    */
   // TODO: brave also defines rpc and messaging data policy
-  private static final Map<String, String> RENAMED_ATTRIBUTES;
+  static final Map<String, String> RENAMED_ATTRIBUTES;
 
   static {
     RENAMED_ATTRIBUTES = new LinkedHashMap<>();
@@ -172,9 +172,9 @@ final class SpanTranslator {
 
   static final class Consumer implements TagConsumer<Span.Builder>, AnnotationConsumer<Span.Builder> {
 
-    private final Tag<Throwable> errorTag;
+    final Tag<Throwable> errorTag;
 
-    private final Map<String, String> renamedAttributes;
+    final Map<String, String> renamedAttributes;
 
     Consumer(Tag<Throwable> errorTag, Map<String, String> renamedAttributes) {
       this.errorTag = errorTag;

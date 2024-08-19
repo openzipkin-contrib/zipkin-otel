@@ -13,9 +13,9 @@ import java.util.Properties;
  * Define InstrumentationScope for encoder-brave
  */
 final class BraveScope {
-  private static final String name;
+  static final String name;
 
-  private static final String version;
+  static final String version;
 
   static {
     try (InputStream stream = BraveScope.class.getClassLoader().getResourceAsStream("scope.properties")) {
