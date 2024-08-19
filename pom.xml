@@ -70,8 +70,6 @@
     <opentelemetry-semconv.version>1.25.0-alpha</opentelemetry-semconv.version>
     <!-- from grpc-protobuf -->
     <protobuf.version>3.25.1</protobuf.version>
-    <!-- Netty -->
-    <netty.version>4.1.108.Final</netty.version>
 
     <assertj.version>3.25.3</assertj.version>
     <awaitility.version>4.2.1</awaitility.version>
