@@ -21,6 +21,7 @@ import io.opentelemetry.proto.trace.v1.TracesData;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.reporter.otel.brave.SpanTranslator.DEFAULT_SPAN_NAME;
 import static zipkin2.reporter.otel.brave.SpanTranslator.intAttribute;
 import static zipkin2.reporter.otel.brave.SpanTranslator.stringAttribute;
 import static zipkin2.reporter.otel.brave.TestObjects.clientSpan;
@@ -77,7 +78,7 @@ class SpanTranslatorTest {
         new MutableSpan(TraceContext.newBuilder().traceId(3).spanId(2).build(), null);
     TracesData translated = spanTranslator.translate(braveSpan);
 
-    assertThat(firstSpan(translated).getName()).isEqualTo("");
+    assertThat(firstSpan(translated).getName()).isEqualTo(DEFAULT_SPAN_NAME);
   }
 
   @Test
@@ -87,7 +88,7 @@ class SpanTranslatorTest {
     braveSpan.name("");
     TracesData translated = spanTranslator.translate(braveSpan);
 
-    assertThat(firstSpan(translated).getName()).isEqualTo("");
+    assertThat(firstSpan(translated).getName()).isEqualTo(DEFAULT_SPAN_NAME);
   }
 
   private static Span firstSpan(TracesData translated) {

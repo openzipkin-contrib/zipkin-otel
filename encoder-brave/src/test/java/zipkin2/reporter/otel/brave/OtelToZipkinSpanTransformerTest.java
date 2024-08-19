@@ -355,6 +355,7 @@ class OtelToZipkinSpanTransformerTest {
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
                         .addSpans(newBuilder()
+                            .setName(SpanTranslator.DEFAULT_SPAN_NAME)
                             .setSpanId(SpanTranslator.INVALID_SPAN_ID)
                             .setTraceId(SpanTranslator.INVALID_TRACE_ID)
                             .setKind(
@@ -391,6 +392,7 @@ class OtelToZipkinSpanTransformerTest {
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
                         .addSpans(newBuilder()
+                            .setName(SpanTranslator.DEFAULT_SPAN_NAME)
                             .setSpanId(SpanTranslator.INVALID_SPAN_ID)
                             .setTraceId(SpanTranslator.INVALID_TRACE_ID)
                             .setKind(
@@ -426,6 +428,7 @@ class OtelToZipkinSpanTransformerTest {
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
                         .addSpans(newBuilder()
+                            .setName(SpanTranslator.DEFAULT_SPAN_NAME)
                             .setSpanId(SpanTranslator.INVALID_SPAN_ID)
                             .setTraceId(SpanTranslator.INVALID_TRACE_ID)
                             .setKind(
@@ -460,6 +463,7 @@ class OtelToZipkinSpanTransformerTest {
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
                         .addSpans(newBuilder()
+                            .setName(SpanTranslator.DEFAULT_SPAN_NAME)
                             .setSpanId(SpanTranslator.INVALID_SPAN_ID)
                             .setTraceId(SpanTranslator.INVALID_TRACE_ID)
                             .setKind(
@@ -493,6 +497,7 @@ class OtelToZipkinSpanTransformerTest {
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
                         .addSpans(newBuilder()
+                            .setName(SpanTranslator.DEFAULT_SPAN_NAME)
                             .setSpanId(SpanTranslator.INVALID_SPAN_ID)
                             .setTraceId(SpanTranslator.INVALID_TRACE_ID)
                             .setKind(
@@ -529,6 +534,7 @@ class OtelToZipkinSpanTransformerTest {
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
                         .addSpans(newBuilder()
+                            .setName(SpanTranslator.DEFAULT_SPAN_NAME)
                             .setSpanId(SpanTranslator.INVALID_SPAN_ID)
                             .setTraceId(SpanTranslator.INVALID_TRACE_ID)
                             .setKind(
@@ -564,6 +570,7 @@ class OtelToZipkinSpanTransformerTest {
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
                         .addSpans(newBuilder()
+                            .setName(SpanTranslator.DEFAULT_SPAN_NAME)
                             .setSpanId(SpanTranslator.INVALID_SPAN_ID)
                             .setTraceId(SpanTranslator.INVALID_TRACE_ID)
                             .setKind(
@@ -593,6 +600,7 @@ class OtelToZipkinSpanTransformerTest {
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
                         .addSpans(newBuilder()
+                            .setName(SpanTranslator.DEFAULT_SPAN_NAME)
                             .setSpanId(SpanTranslator.INVALID_SPAN_ID)
                             .setTraceId(SpanTranslator.INVALID_TRACE_ID)
                             .setKind(

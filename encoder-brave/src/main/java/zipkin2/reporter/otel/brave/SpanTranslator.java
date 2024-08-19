@@ -47,6 +47,9 @@ final class SpanTranslator {
 
   static final ByteString INVALID_SPAN_ID = ByteString.fromHex(SpanContext.getInvalid().getSpanId());
 
+  // Required to be set to non-empty string. https://github.com/open-telemetry/opentelemetry-proto/blob/14afbd4e133ee8a8a5a9f7a0fd3a09d5a9456340/opentelemetry/proto/trace/v1/trace.proto#L142-L143
+  static final String DEFAULT_SPAN_NAME = "unknown";
+
   // "INTERNAL" is the default value https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/api.md#spankind
   static final SpanKind DEFAULT_KIND = SpanKind.SPAN_KIND_INTERNAL;
 
@@ -96,10 +99,8 @@ final class SpanTranslator {
   private Span.Builder builderForSingleSpan(MutableSpan span, Builder resourceSpansBuilder) {
     Span.Builder spanBuilder = Span.newBuilder()
         .setTraceId(span.traceId() != null ? ByteString.fromHex(span.traceId()) : INVALID_TRACE_ID)
-        .setSpanId(span.id() != null ? ByteString.fromHex(span.id()) : INVALID_SPAN_ID);
-    if (span.name() != null) {
-      spanBuilder.setName(span.name());
-    }
+        .setSpanId(span.id() != null ? ByteString.fromHex(span.id()) : INVALID_SPAN_ID)
+        .setName(span.name() == null || span.name().isEmpty() ?  DEFAULT_SPAN_NAME : span.name());
     if (span.parentId() != null) {
       spanBuilder.setParentSpanId(ByteString.fromHex(span.parentId()));
     }
