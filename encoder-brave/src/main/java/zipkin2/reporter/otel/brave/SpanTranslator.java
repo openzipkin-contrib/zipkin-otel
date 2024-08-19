@@ -57,23 +57,23 @@ final class SpanTranslator {
    * @see brave.http.HttpTags
    */
   // TODO: brave also defines rpc and messaging data policy
-  static final Map<String, String> RENAMED_ATTRIBUTES;
+  static final Map<String, String> TAG_TO_ATTRIBUTE;
 
   static {
-    RENAMED_ATTRIBUTES = new LinkedHashMap<>();
+    TAG_TO_ATTRIBUTE = new LinkedHashMap<>();
     // "http.host" is not defined in HttpTags, but is a well-known tag.
-    RENAMED_ATTRIBUTES.put("http.host", ServerAttributes.SERVER_ADDRESS.getKey());
-    RENAMED_ATTRIBUTES.put(HttpTags.METHOD.key(), HttpAttributes.HTTP_REQUEST_METHOD.getKey());
-    RENAMED_ATTRIBUTES.put(HttpTags.PATH.key(), UrlAttributes.URL_PATH.getKey());
-    RENAMED_ATTRIBUTES.put(HttpTags.ROUTE.key(), HttpAttributes.HTTP_ROUTE.getKey());
-    RENAMED_ATTRIBUTES.put(HttpTags.URL.key(), UrlAttributes.URL_FULL.getKey());
-    RENAMED_ATTRIBUTES.put(HttpTags.STATUS_CODE.key(), HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey());
+    TAG_TO_ATTRIBUTE.put("http.host", ServerAttributes.SERVER_ADDRESS.getKey());
+    TAG_TO_ATTRIBUTE.put(HttpTags.METHOD.key(), HttpAttributes.HTTP_REQUEST_METHOD.getKey());
+    TAG_TO_ATTRIBUTE.put(HttpTags.PATH.key(), UrlAttributes.URL_PATH.getKey());
+    TAG_TO_ATTRIBUTE.put(HttpTags.ROUTE.key(), HttpAttributes.HTTP_ROUTE.getKey());
+    TAG_TO_ATTRIBUTE.put(HttpTags.URL.key(), UrlAttributes.URL_FULL.getKey());
+    TAG_TO_ATTRIBUTE.put(HttpTags.STATUS_CODE.key(), HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey());
   }
 
-  private final Consumer consumer;
+  private final TagMapper tagMapper;
 
   SpanTranslator(Tag<Throwable> errorTag) {
-    this.consumer = new Consumer(errorTag, RENAMED_ATTRIBUTES);
+    this.tagMapper = new TagMapper(errorTag, TAG_TO_ATTRIBUTE);
   }
 
   TracesData translate(MutableSpan braveSpan) {
@@ -118,9 +118,9 @@ final class SpanTranslator {
     maybeAddStringAttribute(spanBuilder, NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), span.remoteIp());
     maybeAddIntAttribute(spanBuilder, NetworkAttributes.NETWORK_PEER_PORT.getKey(), span.remotePort());
     maybeAddStringAttribute(spanBuilder, PEER_SERVICE, span.remoteServiceName());
-    span.forEachTag(consumer, spanBuilder);
-    span.forEachAnnotation(consumer, spanBuilder);
-    consumer.addErrorTag(spanBuilder, span);
+    span.forEachTag(tagMapper, spanBuilder);
+    span.forEachAnnotation(tagMapper, spanBuilder);
+    tagMapper.addErrorTag(spanBuilder, span);
 
     return spanBuilder;
   }
@@ -167,20 +167,20 @@ final class SpanTranslator {
     }
   }
 
-  static final class Consumer implements TagConsumer<Span.Builder>, AnnotationConsumer<Span.Builder> {
+  static final class TagMapper implements TagConsumer<Span.Builder>, AnnotationConsumer<Span.Builder> {
 
     final Tag<Throwable> errorTag;
 
-    final Map<String, String> renamedAttributes;
+    final Map<String, String> tagToAttribute;
 
-    Consumer(Tag<Throwable> errorTag, Map<String, String> renamedAttributes) {
+    TagMapper(Tag<Throwable> errorTag, Map<String, String> tagToAttribute) {
       this.errorTag = errorTag;
-      this.renamedAttributes = renamedAttributes;
+      this.tagToAttribute = tagToAttribute;
     }
 
     @Override
-    public void accept(Span.Builder target, String key, String value) {
-      target.addAttributes(stringAttribute(getLabelName(key), value));
+    public void accept(Span.Builder target, String tagKey, String value) {
+      target.addAttributes(stringAttribute(convertTagToAttribute(tagKey), value));
     }
 
     void addErrorTag(Span.Builder target, MutableSpan span) {
@@ -200,9 +200,9 @@ final class SpanTranslator {
           .setName(value).build());
     }
 
-    private String getLabelName(String zipkinName) {
-      String renamed = renamedAttributes.get(zipkinName);
-      return renamed != null ? renamed : zipkinName;
+    private String convertTagToAttribute(String tagKey) {
+      String attributeKey = tagToAttribute.get(tagKey);
+      return attributeKey != null ? attributeKey : tagKey;
     }
   }
 
