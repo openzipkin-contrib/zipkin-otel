@@ -93,20 +93,6 @@ final class SpanTranslator {
     return tracesDataBuilder.build();
   }
 
-  static KeyValue stringAttribute(String key, String value) {
-    return KeyValue.newBuilder()
-        .setKey(key)
-        .setValue(AnyValue.newBuilder().setStringValue(value))
-        .build();
-  }
-
-  static KeyValue intAttribute(String key, int value) {
-    return KeyValue.newBuilder()
-        .setKey(key)
-        .setValue(AnyValue.newBuilder().setIntValue(value))
-        .build();
-  }
-
   private Span.Builder builderForSingleSpan(MutableSpan span, Builder resourceSpansBuilder) {
     Span.Builder spanBuilder = Span.newBuilder()
         .setTraceId(span.traceId() != null ? ByteString.fromHex(span.traceId()) : INVALID_TRACE_ID)
@@ -153,6 +139,20 @@ final class SpanTranslator {
       }
     }
     return DEFAULT_KIND;
+  }
+
+  static KeyValue stringAttribute(String key, String value) {
+    return KeyValue.newBuilder()
+            .setKey(key)
+            .setValue(AnyValue.newBuilder().setStringValue(value))
+            .build();
+  }
+
+  static KeyValue intAttribute(String key, int value) {
+    return KeyValue.newBuilder()
+            .setKey(key)
+            .setValue(AnyValue.newBuilder().setIntValue(value))
+            .build();
   }
 
   private static void maybeAddStringAttribute(Span.Builder spanBuilder, String key, String value) {
