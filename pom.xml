@@ -18,6 +18,7 @@
   <modules>
     <module>module</module>
     <module>collector-http</module>
+    <module>encoder-brave</module>
   </modules>
 
   <distributionManagement>
@@ -63,10 +64,10 @@
     <brave.groupId>io.zipkin.brave</brave.groupId>
     <brave.version>6.0.3</brave.version>
 
-    <opentelemetry.version>1.39.0</opentelemetry.version>
+    <opentelemetry.version>1.41.0</opentelemetry.version>
     <!-- Alpha jar! -->
-    <opentelemetry-proto.version>1.3.1-alpha</opentelemetry-proto.version>
-    <opentelemetry-semconv.version>1.25.0-alpha</opentelemetry-semconv.version>
+    <opentelemetry-proto.version>1.3.2-alpha</opentelemetry-proto.version>
+    <opentelemetry-semconv.version>1.26.0-alpha</opentelemetry-semconv.version>
     <!-- from grpc-protobuf -->
     <protobuf.version>3.25.1</protobuf.version>
 
@@ -141,27 +142,14 @@
   </developers>
 
   <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>io.opentelemetry</groupId>
-        <artifactId>opentelemetry-bom</artifactId>
-        <version>${opentelemetry.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>io.opentelemetry.proto</groupId>
-        <artifactId>opentelemetry-proto</artifactId>
-        <version>${opentelemetry-proto.version}</version>
-      </dependency>
-      <!-- Stable semantic conventions. Note: generated code is still subject to breaking changes while published with "-alpha" suffix. -->
-      <dependency>
-        <groupId>io.opentelemetry.semconv</groupId>
-        <artifactId>opentelemetry-semconv</artifactId>
-        <version>${opentelemetry-semconv.version}</version>
-      </dependency>
-    </dependencies>
+    <!-- Be careful here, especially to not import BOMs as io.zipkin.contrib.otel:encoder-brave has this parent.
+
+         For example, if you imported Netty's BOM here, using Brave would also download that BOM as
+         it depends indirectly on io.zipkin.contrib.otel:encoder-brave. As Brave itself is
+         indirectly used, this can be extremely confusing when people are troubleshooting library
+         version assignments. -->
   </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

@@ -18,6 +18,14 @@ persists them to a configured collector component.
 |------------------------------------|-----------------------------------------------------------------------------------------|
 | [collector-http](./collector-http) | Implements the [OTLP/HTTP protocol](https://opentelemetry.io/docs/specs/otlp/#otlphttp) |
 
+### Encoders
+
+The encoder encodes brave spans into OTLP proto format.
+
+| Encoder                                   | Description                                    |
+|-------------------------------------------|------------------------------------------------|
+| [`OtlpProtoV1Encoder`](./encoder-brave)     | zipkin-reporter-brave `AsyncZipkinSpanHandler` |
+
 ## Server integration
 
 If you cannot use our [Docker image](./docker/README.md), you can still integrate
