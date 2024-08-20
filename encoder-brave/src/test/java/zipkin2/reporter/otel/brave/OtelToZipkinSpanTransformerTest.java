@@ -13,7 +13,6 @@ import brave.Span.Kind;
 import brave.Tags;
 import brave.handler.MutableSpan;
 import com.google.protobuf.ByteString;
-import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.proto.common.v1.InstrumentationScope;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
@@ -22,7 +21,6 @@ import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.Status.StatusCode;
 import io.opentelemetry.proto.trace.v1.TracesData;
-import io.opentelemetry.sdk.resources.Resource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -312,7 +310,7 @@ class OtelToZipkinSpanTransformerTest {
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
                     .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", Resource.getDefault().getAttribute(stringKey("service.name")))))
+                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -350,7 +348,7 @@ class OtelToZipkinSpanTransformerTest {
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
                     .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", Resource.getDefault().getAttribute(stringKey("service.name")))))
+                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -387,7 +385,7 @@ class OtelToZipkinSpanTransformerTest {
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
                     .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", Resource.getDefault().getAttribute(stringKey("service.name")))))
+                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -423,7 +421,7 @@ class OtelToZipkinSpanTransformerTest {
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
                     .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", Resource.getDefault().getAttribute(stringKey("service.name")))))
+                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -458,7 +456,7 @@ class OtelToZipkinSpanTransformerTest {
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
                     .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", Resource.getDefault().getAttribute(stringKey("service.name")))))
+                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -492,7 +490,7 @@ class OtelToZipkinSpanTransformerTest {
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
                     .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", Resource.getDefault().getAttribute(stringKey("service.name")))))
+                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -529,7 +527,7 @@ class OtelToZipkinSpanTransformerTest {
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
                     .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", Resource.getDefault().getAttribute(stringKey("service.name")))))
+                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -565,7 +563,7 @@ class OtelToZipkinSpanTransformerTest {
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
                     .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", Resource.getDefault().getAttribute(stringKey("service.name")))))
+                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -595,7 +593,7 @@ class OtelToZipkinSpanTransformerTest {
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
                     .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", Resource.getDefault().getAttribute(stringKey("service.name")))))
+                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())

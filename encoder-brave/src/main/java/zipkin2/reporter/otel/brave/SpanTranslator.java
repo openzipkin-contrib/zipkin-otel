@@ -15,7 +15,6 @@ import brave.handler.MutableSpan.AnnotationConsumer;
 import brave.handler.MutableSpan.TagConsumer;
 import brave.http.HttpTags;
 import com.google.protobuf.ByteString;
-import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.InstrumentationScope;
 import io.opentelemetry.proto.common.v1.KeyValue;
@@ -27,7 +26,6 @@ import io.opentelemetry.proto.trace.v1.Span.Event;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.TracesData;
-import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.NetworkAttributes;
 import io.opentelemetry.semconv.ServerAttributes;
@@ -43,15 +41,20 @@ final class SpanTranslator {
   // Defined in the incubating SDK https://github.com/open-telemetry/semantic-conventions-java/blob/main/semconv-incubating/src/main/java/io/opentelemetry/semconv/incubating/PeerIncubatingAttributes.java
   static final String PEER_SERVICE = "peer.service";
 
-  static final ByteString INVALID_TRACE_ID = ByteString.fromHex(SpanContext.getInvalid().getTraceId());
+  // Same value as the API https://github.com/open-telemetry/opentelemetry-java/blob/3e8092d086967fa24a0559044651781403033313/api/all/src/main/java/io/opentelemetry/api/trace/TraceId.java#L32
+  static final ByteString INVALID_TRACE_ID = ByteString.fromHex("00000000000000000000000000000000");
 
-  static final ByteString INVALID_SPAN_ID = ByteString.fromHex(SpanContext.getInvalid().getSpanId());
+  // Same value as the API https://github.com/open-telemetry/opentelemetry-java/blob/3e8092d086967fa24a0559044651781403033313/api/all/src/main/java/io/opentelemetry/api/trace/SpanId.java#L28
+  static final ByteString INVALID_SPAN_ID = ByteString.fromHex("0000000000000000");
 
   // Required to be set to non-empty string. https://github.com/open-telemetry/opentelemetry-proto/blob/14afbd4e133ee8a8a5a9f7a0fd3a09d5a9456340/opentelemetry/proto/trace/v1/trace.proto#L142-L143
   static final String DEFAULT_SPAN_NAME = "unknown";
 
   // "INTERNAL" is the default value https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/api.md#spankind
   static final SpanKind DEFAULT_KIND = SpanKind.SPAN_KIND_INTERNAL;
+
+  // Same default value as the SDK https://github.com/open-telemetry/opentelemetry-java/blob/3e8092d086967fa24a0559044651781403033313/sdk/common/src/main/java/io/opentelemetry/sdk/resources/Resource.java#L46-L52
+  static final String DEFAULT_SERVICE_NAME = "unknown_service:java";
 
   /**
    * Tag to Attribute mappings which map brave data policy to otel semantics.
@@ -84,14 +87,12 @@ final class SpanTranslator {
     Builder resourceSpansBuilder = ResourceSpans.newBuilder();
     ScopeSpans.Builder scopeSpanBuilder = ScopeSpans.newBuilder();
     Span.Builder spanBuilder = builderForSingleSpan(braveSpan, resourceSpansBuilder);
-    scopeSpanBuilder.addSpans(spanBuilder
-        .build());
+    scopeSpanBuilder.addSpans(spanBuilder.build());
     InstrumentationScope.Builder scopeBuilder = InstrumentationScope.newBuilder();
     scopeBuilder.setName(BraveScope.NAME);
     scopeBuilder.setVersion(BraveScope.VERSION);
     scopeSpanBuilder.setScope(scopeBuilder.build());
-    resourceSpansBuilder.addScopeSpans(scopeSpanBuilder
-        .build());
+    resourceSpansBuilder.addScopeSpans(scopeSpanBuilder.build());
     tracesDataBuilder.addResourceSpans(resourceSpansBuilder.build());
     return tracesDataBuilder.build();
   }
@@ -110,8 +111,8 @@ final class SpanTranslator {
     spanBuilder.setEndTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(finish));
     spanBuilder.setKind(translateKind(span.kind()));
     String localServiceName = span.localServiceName();
-    if (localServiceName == null) {
-      localServiceName = Resource.getDefault().getAttribute(ServiceAttributes.SERVICE_NAME);
+    if (localServiceName == null || localServiceName.isEmpty()) {
+      localServiceName = DEFAULT_SERVICE_NAME;
     }
     resourceSpansBuilder.getResourceBuilder().addAttributes(stringAttribute(ServiceAttributes.SERVICE_NAME.getKey(), localServiceName));
     maybeAddStringAttribute(spanBuilder, NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), span.localIp());
