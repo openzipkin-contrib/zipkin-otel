@@ -43,11 +43,6 @@
       <version>${opentelemetry.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.opentelemetry</groupId>
-      <artifactId>opentelemetry-sdk-common</artifactId>
-      <version>${opentelemetry.version}</version>
-    </dependency>
-    <dependency>
       <groupId>io.opentelemetry.proto</groupId>
       <artifactId>opentelemetry-proto</artifactId>
       <version>${opentelemetry-proto.version}</version>
