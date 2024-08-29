@@ -1,5 +1,3 @@
-# zipkin-collector-otel-http
+# collector-http
 
-This component implements
-the [OTLP/HTTP protocol](https://opentelemetry.io/docs/specs/otlp/#otlphttp)
-with [Armeria](https://armeria.dev/).
+This component implements the [OTLP/HTTP protocol](https://opentelemetry.io/docs/specs/otlp/#otlphttp) with [Armeria](https://armeria.dev/).

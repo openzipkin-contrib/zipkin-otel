@@ -25,7 +25,7 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-collector-otel-http</artifactId>
+      <artifactId>collector-http</artifactId>
       <version>${project.version}</version>
     </dependency>
 
