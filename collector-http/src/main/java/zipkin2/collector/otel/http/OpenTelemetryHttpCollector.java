@@ -136,7 +136,7 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
           }
           catch (IOException e) {
             LOG.log(Level.WARNING, "Unable to parse the request:", e);
-            throw new UncheckedIOException(e);
+            result.onError(new UncheckedIOException(e));
           }
           return null;
         }
