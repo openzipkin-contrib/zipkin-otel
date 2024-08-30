@@ -117,7 +117,7 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
     @Override
     protected HttpResponse doPost(ServiceRequestContext ctx, HttpRequest req) {
       CompletableCallback result = new CompletableCallback();
-      req.aggregate(AggregationOptions.usePooledObjects(ByteBufAllocator.DEFAULT, ctx.eventLoop()
+      req.aggregate(AggregationOptions.usePooledObjects(ctx.alloc(), ctx.eventLoop()
       )).handle((msg, t) -> {
         if (t != null) {
           result.onError(t);
