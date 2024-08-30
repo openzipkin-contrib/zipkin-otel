@@ -11,7 +11,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.UnsafeByteOperations;
 import com.linecorp.armeria.common.AggregationOptions;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpRequest;
@@ -24,7 +24,6 @@ import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.ServerConfigurator;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.encoding.DecodingService;
-import io.netty.buffer.ByteBufAllocator;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 import zipkin2.Callback;
 import zipkin2.Span;
