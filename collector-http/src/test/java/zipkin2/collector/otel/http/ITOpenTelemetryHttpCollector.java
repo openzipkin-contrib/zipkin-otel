@@ -141,7 +141,7 @@ class ITOpenTelemetryHttpCollector {
       assertThat(span.tags()).containsEntry("int", "100");
       assertThat(span.tags()).containsEntry("double", "10.5");
       assertThat(span.tags()).containsEntry("boolean", "true");
-      assertThat(span.tags()).containsEntry("array", "[\"a\",\"b\",\"c\"]");
+      assertThat(span.tags()).containsEntry("array", "a,b,c");
       assertThat(span.tags()).containsEntry(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "127.0.0.1");
       assertThat(span.tags()).containsEntry(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), "12345");
       assertThat(span.tags()).containsEntry(OtelAttributes.OTEL_SCOPE_NAME.getKey(), "io.zipkin.contrib.otel:zipkin-collector-otel-http");
@@ -303,7 +303,7 @@ class ITOpenTelemetryHttpCollector {
       assertThat(span.tags()).containsEntry("int", "100");
       assertThat(span.tags()).containsEntry("double", "10.5");
       assertThat(span.tags()).containsEntry("boolean", "true");
-      assertThat(span.tags()).containsEntry("array", "[\"a\",\"b\",\"c\"]");
+      assertThat(span.tags()).containsEntry("array", "a,b,c");
       assertThat(span.tags()).containsEntry(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "127.0.0.1");
       assertThat(span.tags()).containsEntry(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), "12345");
       assertThat(span.tags()).containsEntry(SpanTranslator.PEER_SERVICE.getKey(), "demo");

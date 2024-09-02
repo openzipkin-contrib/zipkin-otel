@@ -23,6 +23,16 @@ final class ProtoUtils {
     if (value.hasStringValue()) {
       return value.getStringValue();
     }
+    if (value.hasArrayValue()) {
+      // While https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/common/README.md#attribute says
+      // that an array should be encoded as a json,
+      // the Otel Zipkin Exporter doesn't implement like that https://github.com/open-telemetry/opentelemetry-java/blob/main/exporters/zipkin/src/test/java/io/opentelemetry/exporter/zipkin/OtelToZipkinSpanTransformerTest.java#L382-L385
+      // Also Brave doesn't use the json encoding.
+      // So follow the comma separator here.
+      return value.getArrayValue().getValuesList().stream()
+              .map(ProtoUtils::valueToString)
+              .collect(joining(","));
+    }
     return valueToJson(value);
   }
 
@@ -31,7 +41,6 @@ final class ProtoUtils {
       return "\"" + value.getStringValue() + "\"";
     }
     if (value.hasArrayValue()) {
-      // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/common/README.md#attribute
       return value.getArrayValue().getValuesList().stream()
           .map(ProtoUtils::valueToJson)
           .collect(joining(",", "[", "]"));

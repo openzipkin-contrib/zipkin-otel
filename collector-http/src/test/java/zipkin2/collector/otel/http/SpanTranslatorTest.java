@@ -306,10 +306,10 @@ class SpanTranslatorTest {
             .putTag("boolean", "false")
             .putTag("long", "9999")
             .putTag("double", "222.333")
-            .putTag("booleanArray", "[true,false]")
-            .putTag("stringArray", "[\"Hello\"]")
-            .putTag("doubleArray", "[32.33,-98.3]")
-            .putTag("longArray", "[32,999]")
+            .putTag("booleanArray", "true,false")
+            .putTag("stringArray", "Hello")
+            .putTag("doubleArray", "32.33,-98.3")
+            .putTag("longArray", "32,999")
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
