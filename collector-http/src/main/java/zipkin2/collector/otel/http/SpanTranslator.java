@@ -4,6 +4,7 @@
  */
 package zipkin2.collector.otel.http;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,8 @@ final class SpanTranslator {
 
   static final String ERROR_TAG = "error";
 
+  static final String INVALID_TRACE = "00000000000000000000000000000000";
+
   static List<zipkin2.Span> translate(ExportTraceServiceRequest otelSpans) {
     List<zipkin2.Span> spans = new ArrayList<>();
     List<ResourceSpans> spansList = otelSpans.getResourceSpansList();
@@ -70,9 +73,18 @@ final class SpanTranslator {
     long startTimestamp = nanoToMills(spanData.getStartTimeUnixNano());
     long endTimestamp = nanoToMills(spanData.getEndTimeUnixNano());
     Map<String, AnyValue> attributesMap = spanData.getAttributesList().stream().collect(Collectors.toMap(KeyValue::getKey, KeyValue::getValue));
-    zipkin2.Span.Builder spanBuilder = zipkin2.Span.newBuilder()
-        .traceId(OtelEncodingUtils.traceIdFromBytes(spanData.getTraceId().toByteArray()))
-        .id(OtelEncodingUtils.spanIdFromBytes(spanData.getSpanId().toByteArray()))
+    zipkin2.Span.Builder spanBuilder = zipkin2.Span.newBuilder();
+    byte[] traceIdBytes = spanData.getTraceId().toByteArray();
+    long high = bytesToLong(traceIdBytes, 0);
+    if (high == 0) {
+      spanBuilder.traceId(INVALID_TRACE);
+    }
+    else {
+      long low = bytesToLong(traceIdBytes, 8);
+      spanBuilder.traceId(high, low);
+    }
+    spanBuilder
+        .id(bytesToLong(spanData.getSpanId().toByteArray(), 0))
         .kind(toSpanKind(spanData.getKind()))
         .name(spanData.getName())
         .timestamp(nanoToMills(spanData.getStartTimeUnixNano()))
@@ -81,8 +93,8 @@ final class SpanTranslator {
         .remoteEndpoint(getRemoteEndpoint(attributesMap, spanData.getKind()));
     ByteString parentSpanId = spanData.getParentSpanId();
     if (!parentSpanId.isEmpty()) {
-      String parentId = OtelEncodingUtils.spanIdFromBytes(parentSpanId.toByteArray());
-      if (!parentId.equals(OtelEncodingUtils.INVALID_SPAN)) {
+      long parentId = bytesToLong(parentSpanId.toByteArray(), 0);
+      if (parentId != 0) {
         spanBuilder.parentId(parentId);
       }
     }
@@ -199,110 +211,10 @@ final class SpanTranslator {
     return NANOSECONDS.toMicros(epochNanos);
   }
 
-  /**
-   * Taken from OpenTelemetry codebase.
-   * https://github.com/open-telemetry/opentelemetry-java/blob/3e8092d086967fa24a0559044651781403033313/api/all/src/main/java/io/opentelemetry/api/internal/OtelEncodingUtils.java
-   */
-  static class OtelEncodingUtils {
-
-    static final String ALPHABET = "0123456789abcdef";
-
-    static final char[] ENCODING = buildEncodingArray();
-
-    static final String INVALID_TRACE = "00000000000000000000000000000000";
-
-    static final int TRACE_BYTES_LENGTH = 16;
-
-    static final int TRACE_HEX_LENGTH = 2 * TRACE_BYTES_LENGTH;
-
-    static final int SPAN_BYTES_LENGTH = 8;
-
-    static final int SPAN_HEX_LENGTH = 2 * SPAN_BYTES_LENGTH;
-
-    static final String INVALID_SPAN = "0000000000000000";
-
-    private static char[] buildEncodingArray() {
-      char[] encoding = new char[512];
-      for (int i = 0; i < 256; ++i) {
-        encoding[i] = ALPHABET.charAt(i >>> 4);
-        encoding[i | 0x100] = ALPHABET.charAt(i & 0xF);
-      }
-      return encoding;
+  static long bytesToLong(byte[] bytes, int offset) {
+    if (bytes == null || bytes.length < offset + 8) {
+      return 0;
     }
-
-    /**
-     * Fills {@code dest} with the hex encoding of {@code bytes}.
-     */
-    public static void bytesToBase16(byte[] bytes, char[] dest, int length) {
-      for (int i = 0; i < length; i++) {
-        byteToBase16(bytes[i], dest, i * 2);
-      }
-    }
-
-    /**
-     * Encodes the specified byte, and returns the encoded {@code String}.
-     *
-     * @param value      the value to be converted.
-     * @param dest       the destination char array.
-     * @param destOffset the starting offset in the destination char array.
-     */
-    public static void byteToBase16(byte value, char[] dest, int destOffset) {
-      int b = value & 0xFF;
-      dest[destOffset] = ENCODING[b];
-      dest[destOffset + 1] = ENCODING[b | 0x100];
-    }
-
-    /**
-     * Returns the lowercase hex (base16) representation of the {@code TraceId} converted from the
-     * given bytes representation, or {@link #INVALID_TRACE} if input is {@code null} or the given
-     * byte array is too short.
-     *
-     * <p>It converts the first 26 bytes of the given byte array.
-     *
-     * @param traceIdBytes the bytes (16-byte array) representation of the {@code TraceId}.
-     * @return the lowercase hex (base16) representation of the {@code TraceId}.
-     */
-    static String traceIdFromBytes(byte[] traceIdBytes) {
-      if (traceIdBytes == null || traceIdBytes.length < TRACE_BYTES_LENGTH) {
-        return INVALID_TRACE;
-      }
-      char[] result = TemporaryBuffers.chars(TRACE_HEX_LENGTH);
-      OtelEncodingUtils.bytesToBase16(traceIdBytes, result, TRACE_BYTES_LENGTH);
-      return new String(result, 0, TRACE_HEX_LENGTH);
-    }
-
-    static String spanIdFromBytes(byte[] spanIdBytes) {
-      if (spanIdBytes == null || spanIdBytes.length < SPAN_BYTES_LENGTH) {
-        return INVALID_SPAN;
-      }
-      char[] result = TemporaryBuffers.chars(SPAN_HEX_LENGTH);
-      OtelEncodingUtils.bytesToBase16(spanIdBytes, result, SPAN_BYTES_LENGTH);
-      return new String(result, 0, SPAN_HEX_LENGTH);
-    }
-
-    static final class TemporaryBuffers {
-
-      private static final ThreadLocal<char[]> CHAR_ARRAY = new ThreadLocal<>();
-
-      /**
-       * A {@link ThreadLocal} {@code char[]} of size {@code len}. Take care when using a large
-       * value of {@code len} as this buffer will remain for the lifetime of the thread. The
-       * returned buffer will not be zeroed and may be larger than the requested size, you must make
-       * sure to fill the entire content to the desired value and set the length explicitly when
-       * converting to a {@link String}.
-       */
-      public static char[] chars(int len) {
-        char[] buffer = CHAR_ARRAY.get();
-        if (buffer == null || buffer.length < len) {
-          buffer = new char[len];
-          CHAR_ARRAY.set(buffer);
-        }
-        return buffer;
-      }
-
-      private TemporaryBuffers() {
-      }
-    }
+    return ByteBuffer.wrap(bytes, offset, 8).getLong();
   }
-
 }
