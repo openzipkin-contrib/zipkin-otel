@@ -5,7 +5,6 @@
 package zipkin2.collector.otel.http;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
@@ -135,7 +134,7 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
           }
           catch (IOException e) {
             LOG.log(Level.WARNING, "Unable to parse the request:", e);
-            result.onError(new UncheckedIOException(e));
+            result.onError(e);
           }
           return null;
         }
