@@ -76,14 +76,9 @@ final class SpanTranslator {
     zipkin2.Span.Builder spanBuilder = zipkin2.Span.newBuilder();
     byte[] traceIdBytes = spanData.getTraceId().toByteArray();
     long high = bytesToLong(traceIdBytes, 0);
-    if (high == 0) {
-      spanBuilder.traceId(INVALID_TRACE);
-    }
-    else {
-      long low = bytesToLong(traceIdBytes, 8);
-      spanBuilder.traceId(high, low);
-    }
+    long low = bytesToLong(traceIdBytes, 8);
     spanBuilder
+        .traceId(high, low)
         .id(bytesToLong(spanData.getSpanId().toByteArray(), 0))
         .kind(toSpanKind(spanData.getKind()))
         .name(spanData.getName())
