@@ -46,8 +46,6 @@ final class SpanTranslator {
 
   static final String ERROR_TAG = "error";
 
-  static final String INVALID_TRACE = "00000000000000000000000000000000";
-
   static List<zipkin2.Span> translate(ExportTraceServiceRequest otelSpans) {
     List<zipkin2.Span> spans = new ArrayList<>();
     List<ResourceSpans> spansList = otelSpans.getResourceSpansList();
