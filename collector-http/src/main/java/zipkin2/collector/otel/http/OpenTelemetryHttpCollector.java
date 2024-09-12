@@ -108,8 +108,11 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
 
     final OpenTelemetryHttpCollector collector;
 
+    final SpanTranslator spanTranslator;
+
     HttpService(OpenTelemetryHttpCollector collector) {
       this.collector = collector;
+      this.spanTranslator = new SpanTranslator(collector.metrics);
     }
 
     @Override
@@ -118,6 +121,7 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
       req.aggregate(AggregationOptions.usePooledObjects(ctx.alloc(), ctx.eventLoop()
       )).handle((msg, t) -> {
         if (t != null) {
+          collector.metrics.incrementMessagesDropped();
           result.onError(t);
           return null;
         }
@@ -126,13 +130,15 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
             result.onSuccess(null);
             return null;
           }
-
+          collector.metrics.incrementBytes(content.length());
           try {
             ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
-            List<Span> spans = SpanTranslator.translate(request);
+            collector.metrics.incrementMessages();
+            List<Span> spans = spanTranslator.translate(request);
             collector.collector.accept(spans, result);
           }
           catch (IOException e) {
+            collector.metrics.incrementMessagesDropped();
             LOG.log(Level.WARNING, "Unable to parse the request:", e);
             result.onError(e);
           }

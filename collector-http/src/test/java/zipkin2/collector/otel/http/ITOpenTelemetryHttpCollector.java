@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.google.protobuf.ByteString;
 import com.linecorp.armeria.server.Server;
 import com.linecorp.armeria.server.ServerBuilder;
 import io.opentelemetry.api.common.AttributeKey;
@@ -27,6 +28,9 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
+import io.opentelemetry.proto.trace.v1.ResourceSpans;
+import io.opentelemetry.proto.trace.v1.ScopeSpans;
+import io.opentelemetry.proto.trace.v1.TracesData;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
@@ -154,6 +158,11 @@ class ITOpenTelemetryHttpCollector {
       assertThat(span.remoteEndpoint()).isNull();
       assertThat(span.annotations()).isEmpty();
     }
+    assertThat(metrics.spans()).isEqualTo(size);
+    assertThat(metrics.spansDropped()).isZero();
+    assertThat(metrics.messages()).isEqualTo(1);
+    assertThat(metrics.messagesDropped()).isZero();
+    // TODO calculate received bytes
   }
 
   @Test
@@ -212,6 +221,11 @@ class ITOpenTelemetryHttpCollector {
       assertThat(span.annotations().get(2).value()).isEqualTo("\"event-3\":{}");
       assertThat(span.annotations().get(2).timestamp()).isEqualTo(toMillis(eventTime3.plusMillis(size)));
     }
+    assertThat(metrics.spans()).isEqualTo(size);
+    assertThat(metrics.spansDropped()).isZero();
+    assertThat(metrics.messages()).isEqualTo(1);
+    assertThat(metrics.messagesDropped()).isZero();
+    // TODO calculate received bytes
   }
 
   @Test
@@ -259,6 +273,11 @@ class ITOpenTelemetryHttpCollector {
       assertThat(span.remoteEndpoint()).isNull();
       assertThat(span.annotations()).isEmpty();
     }
+    assertThat(metrics.spans()).isEqualTo(size);
+    assertThat(metrics.spansDropped()).isZero();
+    assertThat(metrics.messages()).isEqualTo(1);
+    assertThat(metrics.messagesDropped()).isZero();
+    // TODO calculate received bytes
   }
 
   @Test
@@ -320,6 +339,104 @@ class ITOpenTelemetryHttpCollector {
       assertThat(span.remoteEndpoint().port()).isEqualTo(8080);
       assertThat(span.annotations()).isEmpty();
     }
+    assertThat(metrics.spans()).isEqualTo(size);
+    assertThat(metrics.spansDropped()).isZero();
+    assertThat(metrics.messages()).isEqualTo(1);
+    assertThat(metrics.messagesDropped()).isZero();
+    // TODO calculate received bytes
+  }
+
+  @Test
+  void minimalSpan() throws Exception {
+    TracesData tracesData = TracesData.newBuilder()
+        .addResourceSpans(ResourceSpans.newBuilder()
+            .addScopeSpans(ScopeSpans.newBuilder()
+                .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
+                    .setSpanId(ByteString.fromHex("0000000000000001"))
+                    .setTraceId(ByteString.fromHex("00000000000000000000000000000001")))))
+        .build();
+
+    URL url = URI.create("http://localhost:" + port + "/v1/traces").toURL();
+    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+    connection.setRequestMethod("POST");
+    connection.setDoOutput(true);
+    connection.setRequestProperty("Content-Type", "application/x-protobuf");
+    try (OutputStream os = connection.getOutputStream()) {
+      os.write(tracesData.toByteArray());
+      os.flush();
+    }
+    connection.disconnect();
+    int responseCode = connection.getResponseCode();
+    assertThat(responseCode).isEqualTo(HttpURLConnection.HTTP_ACCEPTED);
+    Awaitility.waitAtMost(Duration.ofMillis(200))
+        .untilAsserted(() -> assertThat(store.acceptedSpanCount()).isEqualTo(1));
+    assertThat(metrics.spans()).isEqualTo(1);
+    assertThat(metrics.spansDropped()).isZero();
+    assertThat(metrics.messages()).isEqualTo(1);
+    assertThat(metrics.messagesDropped()).isZero();
+    assertThat(metrics.bytes()).isEqualTo(tracesData.getSerializedSize());
+  }
+
+  @Test
+  void invalidSpanId() throws Exception {
+    TracesData tracesData = TracesData.newBuilder()
+        .addResourceSpans(ResourceSpans.newBuilder()
+            .addScopeSpans(ScopeSpans.newBuilder()
+                .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
+                    .setSpanId(ByteString.fromHex("0000000000000000"))
+                    .setTraceId(ByteString.fromHex("00000000000000000000000000000001")))))
+        .build();
+
+    URL url = URI.create("http://localhost:" + port + "/v1/traces").toURL();
+    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+    connection.setRequestMethod("POST");
+    connection.setDoOutput(true);
+    connection.setRequestProperty("Content-Type", "application/x-protobuf");
+    try (OutputStream os = connection.getOutputStream()) {
+      os.write(tracesData.toByteArray());
+      os.flush();
+    }
+    connection.disconnect();
+    int responseCode = connection.getResponseCode();
+    assertThat(responseCode).isEqualTo(HttpURLConnection.HTTP_ACCEPTED);
+    Awaitility.waitAtMost(Duration.ofMillis(200))
+        .untilAsserted(() -> assertThat(store.acceptedSpanCount()).isEqualTo(0));
+    assertThat(metrics.spans()).isZero();
+    assertThat(metrics.spansDropped()).isEqualTo(1);
+    assertThat(metrics.messages()).isEqualTo(1);
+    assertThat(metrics.messagesDropped()).isZero();
+    assertThat(metrics.bytes()).isEqualTo(tracesData.getSerializedSize());
+  }
+
+  @Test
+  void invalidTraceId() throws Exception {
+    TracesData tracesData = TracesData.newBuilder()
+        .addResourceSpans(ResourceSpans.newBuilder()
+            .addScopeSpans(ScopeSpans.newBuilder()
+                .addSpans(io.opentelemetry.proto.trace.v1.Span.newBuilder()
+                    .setSpanId(ByteString.fromHex("0000000000000001"))
+                    .setTraceId(ByteString.fromHex("00000000000000000000000000000000")))))
+        .build();
+
+    URL url = URI.create("http://localhost:" + port + "/v1/traces").toURL();
+    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+    connection.setRequestMethod("POST");
+    connection.setDoOutput(true);
+    connection.setRequestProperty("Content-Type", "application/x-protobuf");
+    try (OutputStream os = connection.getOutputStream()) {
+      os.write(tracesData.toByteArray());
+      os.flush();
+    }
+    connection.disconnect();
+    int responseCode = connection.getResponseCode();
+    assertThat(responseCode).isEqualTo(HttpURLConnection.HTTP_ACCEPTED);
+    Awaitility.waitAtMost(Duration.ofMillis(200))
+        .untilAsserted(() -> assertThat(store.acceptedSpanCount()).isEqualTo(0));
+    assertThat(metrics.spans()).isZero();
+    assertThat(metrics.spansDropped()).isEqualTo(1);
+    assertThat(metrics.messages()).isEqualTo(1);
+    assertThat(metrics.messagesDropped()).isZero();
+    assertThat(metrics.bytes()).isEqualTo(tracesData.getSerializedSize());
   }
 
   @Test
@@ -338,6 +455,11 @@ class ITOpenTelemetryHttpCollector {
     assertThat(responseCode).isEqualTo(HttpURLConnection.HTTP_ACCEPTED);
     Awaitility.waitAtMost(Duration.ofSeconds(5))
         .untilAsserted(() -> assertThat(store.acceptedSpanCount()).isEqualTo(0));
+    assertThat(metrics.spans()).isZero();
+    assertThat(metrics.spansDropped()).isZero();
+    assertThat(metrics.messages()).isZero();
+    assertThat(metrics.messagesDropped()).isZero();
+    assertThat(metrics.bytes()).isZero();
   }
 
   @Test
@@ -356,6 +478,11 @@ class ITOpenTelemetryHttpCollector {
     assertThat(responseCode).isEqualTo(HttpURLConnection.HTTP_INTERNAL_ERROR);
     Awaitility.waitAtMost(Duration.ofMillis(200))
         .untilAsserted(() -> assertThat(store.acceptedSpanCount()).isEqualTo(0));
+    assertThat(metrics.spans()).isZero();
+    assertThat(metrics.spansDropped()).isZero();
+    assertThat(metrics.messages()).isZero();
+    assertThat(metrics.messagesDropped()).isEqualTo(1);
+    assertThat(metrics.bytes()).isEqualTo(1);
   }
 
   static long toMillis(Instant instant) {

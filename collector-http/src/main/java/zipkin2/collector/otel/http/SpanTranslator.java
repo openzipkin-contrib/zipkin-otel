@@ -28,6 +28,7 @@ import io.opentelemetry.semconv.NetworkAttributes;
 import io.opentelemetry.semconv.OtelAttributes;
 import io.opentelemetry.semconv.ServiceAttributes;
 import zipkin2.Endpoint;
+import zipkin2.collector.CollectorMetrics;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -38,6 +39,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  */
 final class SpanTranslator {
 
+  final CollectorMetrics metrics;
+
   static final AttributeKey<String> PEER_SERVICE = AttributeKey.stringKey("peer.service");
 
   static final String OTEL_DROPPED_ATTRIBUTES_COUNT = "otel.dropped_attributes_count";
@@ -46,14 +49,24 @@ final class SpanTranslator {
 
   static final String ERROR_TAG = "error";
 
-  static List<zipkin2.Span> translate(ExportTraceServiceRequest otelSpans) {
+  SpanTranslator(CollectorMetrics metrics) {
+    this.metrics = metrics;
+  }
+
+  List<zipkin2.Span> translate(ExportTraceServiceRequest otelSpans) {
     List<zipkin2.Span> spans = new ArrayList<>();
     List<ResourceSpans> spansList = otelSpans.getResourceSpansList();
     for (ResourceSpans resourceSpans : spansList) {
       for (ScopeSpans scopeSpans : resourceSpans.getScopeSpansList()) {
         InstrumentationScope scope = scopeSpans.getScope();
         for (io.opentelemetry.proto.trace.v1.Span span : scopeSpans.getSpansList()) {
-          spans.add(generateSpan(span, scope, resourceSpans.getResource()));
+          try {
+            spans.add(generateSpan(span, scope, resourceSpans.getResource()));
+          }
+          catch (RuntimeException e) {
+            // If the span is invalid, an exception such as IllegalArgumentException will be thrown.
+            metrics.incrementSpansDropped(1);
+          }
         }
       }
     }
