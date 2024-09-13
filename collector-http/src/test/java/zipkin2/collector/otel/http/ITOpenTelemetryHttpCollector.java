@@ -398,7 +398,7 @@ class ITOpenTelemetryHttpCollector {
     }
     connection.disconnect();
     int responseCode = connection.getResponseCode();
-    assertThat(responseCode).isEqualTo(HttpURLConnection.HTTP_ACCEPTED);
+    assertThat(responseCode).isEqualTo(HttpURLConnection.HTTP_INTERNAL_ERROR);
     Awaitility.waitAtMost(Duration.ofMillis(200))
         .untilAsserted(() -> assertThat(store.acceptedSpanCount()).isEqualTo(0));
     assertThat(metrics.spans()).isZero();
@@ -429,7 +429,7 @@ class ITOpenTelemetryHttpCollector {
     }
     connection.disconnect();
     int responseCode = connection.getResponseCode();
-    assertThat(responseCode).isEqualTo(HttpURLConnection.HTTP_ACCEPTED);
+    assertThat(responseCode).isEqualTo(HttpURLConnection.HTTP_INTERNAL_ERROR);
     Awaitility.waitAtMost(Duration.ofMillis(200))
         .untilAsserted(() -> assertThat(store.acceptedSpanCount()).isEqualTo(0));
     assertThat(metrics.spans()).isZero();

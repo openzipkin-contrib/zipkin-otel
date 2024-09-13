@@ -24,6 +24,7 @@ import com.linecorp.armeria.server.ServerConfigurator;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.encoding.DecodingService;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
+import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.collector.Collector;
@@ -108,11 +109,8 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
 
     final OpenTelemetryHttpCollector collector;
 
-    final SpanTranslator spanTranslator;
-
     HttpService(OpenTelemetryHttpCollector collector) {
       this.collector = collector;
-      this.spanTranslator = new SpanTranslator(collector.metrics);
     }
 
     @Override
@@ -134,8 +132,19 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
           try {
             ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
             collector.metrics.incrementMessages();
-            List<Span> spans = spanTranslator.translate(request);
-            collector.collector.accept(spans, result);
+            try {
+              List<Span> spans = SpanTranslator.translate(request);
+              collector.collector.accept(spans, result);
+            }
+            catch (RuntimeException e) {
+              // If the span is invalid, an exception such as IllegalArgumentException will be thrown.
+              int spanSize = request.getResourceSpansList().stream()
+                  .flatMap(rs -> rs.getScopeSpansList().stream())
+                  .mapToInt(ScopeSpans::getSpansCount).sum();
+              collector.metrics.incrementSpansDropped(spanSize);
+              LOG.log(Level.WARNING, "Unable to translate the spans:", e);
+              result.onError(e);
+            }
           }
           catch (IOException e) {
             collector.metrics.incrementMessagesDropped();

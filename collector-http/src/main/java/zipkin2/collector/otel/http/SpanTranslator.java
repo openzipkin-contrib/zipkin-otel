@@ -39,8 +39,6 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  */
 final class SpanTranslator {
 
-  final CollectorMetrics metrics;
-
   static final AttributeKey<String> PEER_SERVICE = AttributeKey.stringKey("peer.service");
 
   static final String OTEL_DROPPED_ATTRIBUTES_COUNT = "otel.dropped_attributes_count";
@@ -49,24 +47,14 @@ final class SpanTranslator {
 
   static final String ERROR_TAG = "error";
 
-  SpanTranslator(CollectorMetrics metrics) {
-    this.metrics = metrics;
-  }
-
-  List<zipkin2.Span> translate(ExportTraceServiceRequest otelSpans) {
+  static List<zipkin2.Span> translate(ExportTraceServiceRequest otelSpans) {
     List<zipkin2.Span> spans = new ArrayList<>();
     List<ResourceSpans> spansList = otelSpans.getResourceSpansList();
     for (ResourceSpans resourceSpans : spansList) {
       for (ScopeSpans scopeSpans : resourceSpans.getScopeSpansList()) {
         InstrumentationScope scope = scopeSpans.getScope();
         for (io.opentelemetry.proto.trace.v1.Span span : scopeSpans.getSpansList()) {
-          try {
             spans.add(generateSpan(span, scope, resourceSpans.getResource()));
-          }
-          catch (RuntimeException e) {
-            // If the span is invalid, an exception such as IllegalArgumentException will be thrown.
-            metrics.incrementSpansDropped(1);
-          }
         }
       }
     }
