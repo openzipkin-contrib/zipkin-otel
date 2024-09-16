@@ -5,11 +5,11 @@
 # zipkin-otel
 Shared libraries that provide Zipkin integration with the OpenTelemetry. Requires JRE 11 or later.
 
-# Usage
+## Usage
 These components integrate traced applications and servers with OpenTelemetry protocols
 via interfaces defined by [Zipkin](https://github.com/openzipkin/zipkin).
 
-## Collectors
+### Collectors
 The component in a zipkin server that receives trace data is called a
 collector. A collector decodes spans reported by applications and
 persists them to a configured collector component.
