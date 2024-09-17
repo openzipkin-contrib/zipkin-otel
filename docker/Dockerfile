@@ -49,8 +49,5 @@ LABEL org.opencontainers.image.source=https://github.com/openzipkin-contrib/zipk
 ARG module=otel
 COPY --from=install --chown=${USER} /install/* /zipkin/${module}
 
-# Readback is currently not supported
-ENV QUERY_ENABLED false
-
 # * Active profile typically corresponds $1 in module/src/main/resources/zipkin-server-(.*).yml
 ENV MODULE_OPTS="-Dloader.path=${module} -Dspring.profiles.active=${module}"
