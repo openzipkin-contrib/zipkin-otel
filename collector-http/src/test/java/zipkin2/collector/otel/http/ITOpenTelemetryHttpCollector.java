@@ -216,9 +216,9 @@ class ITOpenTelemetryHttpCollector {
       // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk_exporters/zipkin.md#events
       assertThat(span.annotations().get(0).value()).isEqualTo("\"event-1\":{\"foo\":\"bar\",\"i\":" + i + "}");
       assertThat(span.annotations().get(0).timestamp()).isEqualTo(toMillis(eventTime1.plusMillis(size)));
-      assertThat(span.annotations().get(1).value()).isEqualTo("\"event-2\":{}");
+      assertThat(span.annotations().get(1).value()).isEqualTo("event-2");
       assertThat(span.annotations().get(1).timestamp()).isEqualTo(toMillis(eventTime2.plusMillis(size)));
-      assertThat(span.annotations().get(2).value()).isEqualTo("\"event-3\":{}");
+      assertThat(span.annotations().get(2).value()).isEqualTo("event-3");
       assertThat(span.annotations().get(2).timestamp()).isEqualTo(toMillis(eventTime3.plusMillis(size)));
     }
     assertThat(metrics.spans()).isEqualTo(size);
