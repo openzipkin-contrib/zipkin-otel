@@ -70,7 +70,9 @@ final class SpanTranslator {
   private static zipkin2.Span generateSpan(Span spanData, InstrumentationScope scope, Resource resource) {
     long startTimestamp = nanoToMills(spanData.getStartTimeUnixNano());
     long endTimestamp = nanoToMills(spanData.getEndTimeUnixNano());
-    Map<String, AnyValue> attributesMap = spanData.getAttributesList().stream().collect(Collectors.toMap(KeyValue::getKey, KeyValue::getValue));
+    Map<String, AnyValue> attributesMap = spanData.getAttributesList()
+            .stream()
+            .collect(Collectors.toMap(KeyValue::getKey, KeyValue::getValue, (a, b) -> b /* The latter wins */));
     zipkin2.Span.Builder spanBuilder = zipkin2.Span.newBuilder();
     byte[] traceIdBytes = spanData.getTraceId().toByteArray();
     long high = bytesToLong(traceIdBytes, 0);
