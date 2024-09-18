@@ -429,4 +429,24 @@ class SpanTranslatorTest {
     assertThat(SpanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
+
+
+  @Test
+  void translate_WithDuplicateKeys() {
+    ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
+            .setKind(SpanKind.SPAN_KIND_SERVER)
+            .addAttributes(stringAttribute("foo", "bar1"))
+            .addAttributes(stringAttribute("foo", "bar2"))
+            .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_UNSET).build()))
+            .build();
+
+    Span expectedSpan =
+            zipkinSpanBuilder(Span.Kind.SERVER)
+                    .putTag("foo", "bar2")
+                    .putTag(SpanTranslator.OTEL_DROPPED_ATTRIBUTES_COUNT, "1")
+                    .build();
+
+    assertThat(SpanTranslator.translate(data))
+            .containsExactly(expectedSpan);
+  }
 }
