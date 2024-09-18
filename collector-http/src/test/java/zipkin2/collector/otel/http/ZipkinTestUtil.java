@@ -58,8 +58,8 @@ class ZipkinTestUtil {
         .duration((1505855799000000L + 465726528L / 1000) - (1505855794000000L + 194009601L / 1000))
         .localEndpoint(Endpoint.newBuilder().ip("1.2.3.4").serviceName("tweetiebird").build())
         .putTag(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "1.2.3.4")
-        .addAnnotation(1505855799000000L + 433901068L / 1000, "\"RECEIVED\":{}")
-        .addAnnotation(1505855799000000L + 459486280L / 1000, "\"SENT\":{}");
+        .addAnnotation(1505855799000000L + 433901068L / 1000, "RECEIVED")
+        .addAnnotation(1505855799000000L + 459486280L / 1000, "SENT");
   }
 
   static ExportTraceServiceRequest.Builder requestBuilder(

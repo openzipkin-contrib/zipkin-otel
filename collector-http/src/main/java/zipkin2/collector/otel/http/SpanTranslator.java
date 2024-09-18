@@ -28,7 +28,6 @@ import io.opentelemetry.semconv.NetworkAttributes;
 import io.opentelemetry.semconv.OtelAttributes;
 import io.opentelemetry.semconv.ServiceAttributes;
 import zipkin2.Endpoint;
-import zipkin2.collector.CollectorMetrics;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -54,7 +53,7 @@ final class SpanTranslator {
       for (ScopeSpans scopeSpans : resourceSpans.getScopeSpansList()) {
         InstrumentationScope scope = scopeSpans.getScope();
         for (io.opentelemetry.proto.trace.v1.Span span : scopeSpans.getSpansList()) {
-            spans.add(generateSpan(span, scope, resourceSpans.getResource()));
+          spans.add(generateSpan(span, scope, resourceSpans.getResource()));
         }
       }
     }
@@ -118,8 +117,15 @@ final class SpanTranslator {
     for (Event eventData : spanData.getEventsList()) {
       // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk_exporters/zipkin.md#events
       String name = eventData.getName();
-      String value = ProtoUtils.kvListToJson(eventData.getAttributesList());
-      String annotation = "\"" + name + "\":" + value;
+      List<KeyValue> attributesList = eventData.getAttributesList();
+      String annotation;
+      if (attributesList.isEmpty()) {
+        annotation = name;
+      }
+      else {
+        String value = ProtoUtils.kvListToJson(attributesList);
+        annotation = "\"" + name + "\":" + value;
+      }
       spanBuilder.addAnnotation(nanoToMills(eventData.getTimeUnixNano()), annotation);
     }
     // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/common/mapping-to-non-otlp.md#dropped-events-count
