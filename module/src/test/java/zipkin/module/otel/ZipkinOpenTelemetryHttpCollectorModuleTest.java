@@ -5,66 +5,94 @@
 package zipkin.module.otel;
 
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.boot.test.util.TestPropertyValues;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.otel.http.DefaultOtelResourceMapper;
 import zipkin2.collector.otel.http.OpenTelemetryHttpCollector;
+import zipkin2.collector.otel.http.OtelResourceMapper;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
 class ZipkinOpenTelemetryHttpCollectorModuleTest {
-  AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @AfterEach void close() {
-    context.close();
+  ApplicationContextRunner contextRunner = new ApplicationContextRunner();
+
+
+  @Test
+  void httpCollector_enabledByDefault() {
+    contextRunner.withUserConfiguration(ZipkinOpenTelemetryHttpCollectorModule.class)
+        .withUserConfiguration(InMemoryConfiguration.class)
+        .run(context -> assertThat(context).hasSingleBean(OpenTelemetryHttpCollector.class)
+            .hasSingleBean(DefaultOtelResourceMapper.class)
+            .hasSingleBean(ArmeriaServerConfigurator.class));
   }
 
-  @Test void httpCollector_enabledByDefault() {
-    context.register(
-        ZipkinOpenTelemetryHttpCollectorProperties.class,
-        ZipkinOpenTelemetryHttpCollectorModule.class,
-        InMemoryConfiguration.class
-    );
-    context.refresh();
-
-    assertThat(context.getBean(OpenTelemetryHttpCollector.class)).isNotNull();
-    assertThat(context.getBean(ArmeriaServerConfigurator.class)).isNotNull();
+  @Test
+  void httpCollector_resourceAttributePrefix() {
+    contextRunner.withUserConfiguration(ZipkinOpenTelemetryHttpCollectorModule.class)
+        .withUserConfiguration(InMemoryConfiguration.class)
+        .withPropertyValues("zipkin.collector.otel.http.resource-attribute-prefix=otel.resources.")
+        .run(context -> {
+          assertThat(context).hasSingleBean(OpenTelemetryHttpCollector.class)
+              .hasSingleBean(DefaultOtelResourceMapper.class)
+              .hasSingleBean(ArmeriaServerConfigurator.class);
+          OpenTelemetryHttpCollector collector = context.getBean(OpenTelemetryHttpCollector.class);
+          OtelResourceMapper otelResourceMapper = collector.getOtelResourceMapper();
+          assertThat(otelResourceMapper).isInstanceOf(DefaultOtelResourceMapper.class);
+          assertThat(((DefaultOtelResourceMapper) otelResourceMapper).getResourceAttributePrefix()).isEqualTo("otel.resources.");
+        });
   }
 
-  @Test void httpCollector_canDisable() {
-    assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
-      TestPropertyValues.of("zipkin.collector.otel.http.enabled:false").applyTo(context);
-      context.register(
-          ZipkinOpenTelemetryHttpCollectorProperties.class,
-          ZipkinOpenTelemetryHttpCollectorModule.class,
-          InMemoryConfiguration.class
-      );
-      context.refresh();
 
-      context.getBean(OpenTelemetryHttpCollector.class);
-    });
+  @Test
+  void httpCollector_customOtelResourceMapper() {
+    OtelResourceMapper customOtelResourceMapper = (resource, builder) -> {
+
+    };
+    contextRunner.withUserConfiguration(ZipkinOpenTelemetryHttpCollectorModule.class)
+        .withUserConfiguration(InMemoryConfiguration.class)
+        .withBean(OtelResourceMapper.class, () -> customOtelResourceMapper)
+        .run(context -> {
+          assertThat(context).hasSingleBean(OpenTelemetryHttpCollector.class)
+              .hasSingleBean(ArmeriaServerConfigurator.class)
+              .doesNotHaveBean(DefaultOtelResourceMapper.class);
+          OpenTelemetryHttpCollector collector = context.getBean(OpenTelemetryHttpCollector.class);
+          OtelResourceMapper otelResourceMapper = collector.getOtelResourceMapper();
+          assertThat(otelResourceMapper).isEqualTo(customOtelResourceMapper);
+        });
+  }
+
+  @Test
+  void httpCollector_canDisable() {
+    contextRunner.withUserConfiguration(ZipkinOpenTelemetryHttpCollectorModule.class)
+        .withUserConfiguration(InMemoryConfiguration.class)
+        .withPropertyValues("zipkin.collector.otel.http.enabled=false")
+        .run(context -> assertThat(context).doesNotHaveBean(OpenTelemetryHttpCollector.class)
+            .doesNotHaveBean(DefaultOtelResourceMapper.class)
+            .doesNotHaveBean(ArmeriaServerConfigurator.class));
   }
 
   @Configuration
   static class InMemoryConfiguration {
-    @Bean CollectorSampler sampler() {
+    @Bean
+    CollectorSampler sampler() {
       return CollectorSampler.ALWAYS_SAMPLE;
     }
 
-    @Bean CollectorMetrics metrics() {
+    @Bean
+    CollectorMetrics metrics() {
       return CollectorMetrics.NOOP_METRICS;
     }
 
-    @Bean StorageComponent storage() {
+    @Bean
+    StorageComponent storage() {
       return InMemoryStorage.newBuilder().build();
     }
   }

@@ -4,6 +4,8 @@
  */
 package zipkin2.collector.otel.http;
 
+import java.util.function.Function;
+
 import com.google.protobuf.ByteString;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 import io.opentelemetry.proto.common.v1.AnyValue;
@@ -32,6 +34,7 @@ import static zipkin2.collector.otel.http.ZipkinTestUtil.zipkinSpanBuilder;
 
 /* Based on code from https://github.com/open-telemetry/opentelemetry-java/blob/d37c1c74e7ec20a990e1a0a07a5daa1a2ecf9f0b/exporters/zipkin/src/test/java/io/opentelemetry/exporter/zipkin/OtelToZipkinSpanTransformerTest.java */
 class SpanTranslatorTest {
+  SpanTranslator spanTranslator = new SpanTranslator();
 
   @Test
   void translate_remoteParent() {
@@ -39,7 +42,7 @@ class SpanTranslatorTest {
     Span expected = zipkinSpanBuilder(Span.Kind.SERVER)
         .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
         .build();
-    assertThat(SpanTranslator.translate(data)).containsExactly(expected);
+    assertThat(spanTranslator.translate(data)).containsExactly(expected);
   }
 
   @Test
@@ -51,7 +54,7 @@ class SpanTranslatorTest {
         .parentId(0)
         .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
         .build();
-    assertThat(SpanTranslator.translate(data)).containsExactly(expected);
+    assertThat(spanTranslator.translate(data)).containsExactly(expected);
   }
 
 
@@ -60,7 +63,7 @@ class SpanTranslatorTest {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setTraceId(ByteString.fromHex("00000000000000000000000000000000")))
         .build();
-    assertThatThrownBy(() -> SpanTranslator.translate(data))
+    assertThatThrownBy(() ->   spanTranslator.translate(data))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -69,7 +72,7 @@ class SpanTranslatorTest {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setSpanId(ByteString.fromHex("0000000000000000")))
         .build();
-    assertThatThrownBy(() -> SpanTranslator.translate(data))
+    assertThatThrownBy(() ->   spanTranslator.translate(data))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -85,14 +88,14 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .duration(1)
             .build();
-    assertThat(SpanTranslator.translate(data)).containsExactly(expected);
+    assertThat(spanTranslator.translate(data)).containsExactly(expected);
   }
 
   @Test
   void translate_ServerKind() {
     ExportTraceServiceRequest data = ZipkinTestUtil.requestBuilderWithSpanCustomizer(span -> span
         .setKind(SpanKind.SPAN_KIND_SERVER)).build();
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(Span.Kind.SERVER)
                 .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
@@ -103,7 +106,7 @@ class SpanTranslatorTest {
   void translate_ClientKind() {
     ExportTraceServiceRequest data = ZipkinTestUtil.requestBuilderWithSpanCustomizer(span -> span
         .setKind(SpanKind.SPAN_KIND_CLIENT)).build();
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(Span.Kind.CLIENT)
                 .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
@@ -114,7 +117,7 @@ class SpanTranslatorTest {
   void translate_InternalKind() {
     ExportTraceServiceRequest data = ZipkinTestUtil.requestBuilderWithSpanCustomizer(span -> span
         .setKind(SpanKind.SPAN_KIND_INTERNAL)).build();
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(null)
                 .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
@@ -125,7 +128,7 @@ class SpanTranslatorTest {
   void translate_ConsumeKind() {
     ExportTraceServiceRequest data = ZipkinTestUtil.requestBuilderWithSpanCustomizer(span -> span
         .setKind(SpanKind.SPAN_KIND_CONSUMER)).build();
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(Span.Kind.CONSUMER)
                 .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
@@ -136,7 +139,7 @@ class SpanTranslatorTest {
   void translate_ProducerKind() {
     ExportTraceServiceRequest data = ZipkinTestUtil.requestBuilderWithSpanCustomizer(span -> span
         .setKind(SpanKind.SPAN_KIND_PRODUCER)).build();
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(Span.Kind.PRODUCER)
                 .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
@@ -158,7 +161,7 @@ class SpanTranslatorTest {
             .localEndpoint(expectedLocalEndpoint)
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
-    assertThat(SpanTranslator.translate(data)).containsExactly(expectedZipkinSpan);
+    assertThat(spanTranslator.translate(data)).containsExactly(expectedZipkinSpan);
   }
 
   @Test
@@ -170,7 +173,7 @@ class SpanTranslatorTest {
             .localEndpoint(null)
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedZipkinSpan);
   }
 
@@ -199,7 +202,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -222,7 +225,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -241,7 +244,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -268,7 +271,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -295,7 +298,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -333,7 +336,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -351,7 +354,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -371,7 +374,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "ERROR")
             .build();
 
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -390,7 +393,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "ERROR")
             .build();
 
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -409,7 +412,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "ERROR")
             .build();
 
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -426,27 +429,83 @@ class SpanTranslatorTest {
             .putTag("rpc.service", "my service name")
             .build();
 
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
-
 
   @Test
   void translate_WithDuplicateKeys() {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
+        .setKind(SpanKind.SPAN_KIND_SERVER)
+        .addAttributes(stringAttribute("foo", "bar1"))
+        .addAttributes(stringAttribute("foo", "bar2"))
+        .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_UNSET).build()))
+        .build();
+
+    Span expectedSpan =
+        zipkinSpanBuilder(Span.Kind.SERVER)
+            .putTag("foo", "bar2")
+            .putTag(SpanTranslator.OTEL_DROPPED_ATTRIBUTES_COUNT, "1")
+            .build();
+
+    assertThat(spanTranslator.translate(data))
+        .containsExactly(expectedSpan);
+  }
+
+  @Test
+  void translate_WithResourceAttributes() {
+    ExportTraceServiceRequest data = requestBuilder(resource -> resource
+            .addAttributes(stringAttribute("java.version", "21.0.4"))
+            .addAttributes(stringAttribute("os.name", "Linux"))
+            .addAttributes(stringAttribute("os.arch", "amd64"))
+            .addAttributes(stringAttribute("hostname", "localhost")),
+        Function.identity(), span -> span
             .setKind(SpanKind.SPAN_KIND_SERVER)
             .addAttributes(stringAttribute("foo", "bar1"))
             .addAttributes(stringAttribute("foo", "bar2"))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_UNSET).build()))
+        .build();
+
+    Span expectedSpan =
+        zipkinSpanBuilder(Span.Kind.SERVER)
+            .putTag("foo", "bar2")
+            .putTag(SpanTranslator.OTEL_DROPPED_ATTRIBUTES_COUNT, "1")
+            .putTag("java.version", "21.0.4")
+            .putTag("os.name", "Linux")
+            .putTag("os.arch", "amd64")
+            .putTag("hostname", "localhost")
+            .build();
+
+    assertThat(spanTranslator.translate(data))
+        .containsExactly(expectedSpan);
+  }
+
+  @Test
+  void translate_WithResourceAttributes_prefixed() {
+    SpanTranslator spanTranslator = new SpanTranslator(new DefaultOtelResourceMapper("otel.resources."));
+    ExportTraceServiceRequest data = requestBuilder(resource -> resource
+                    .addAttributes(stringAttribute("java.version", "21.0.4"))
+                    .addAttributes(stringAttribute("os.name", "Linux"))
+                    .addAttributes(stringAttribute("os.arch", "amd64"))
+                    .addAttributes(stringAttribute("hostname", "localhost")),
+            Function.identity(), span -> span
+                    .setKind(SpanKind.SPAN_KIND_SERVER)
+                    .addAttributes(stringAttribute("foo", "bar1"))
+                    .addAttributes(stringAttribute("foo", "bar2"))
+                    .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_UNSET).build()))
             .build();
 
     Span expectedSpan =
             zipkinSpanBuilder(Span.Kind.SERVER)
                     .putTag("foo", "bar2")
                     .putTag(SpanTranslator.OTEL_DROPPED_ATTRIBUTES_COUNT, "1")
+                    .putTag("otel.resources.java.version", "21.0.4")
+                    .putTag("otel.resources.os.name", "Linux")
+                    .putTag("otel.resources.os.arch", "amd64")
+                    .putTag("otel.resources.hostname", "localhost")
                     .build();
 
-    assertThat(SpanTranslator.translate(data))
+    assertThat(spanTranslator.translate(data))
             .containsExactly(expectedSpan);
   }
 }
