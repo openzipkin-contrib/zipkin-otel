@@ -8,21 +8,53 @@ import java.util.Collections;
 import java.util.Map;
 
 import brave.Tag;
+import brave.Tags;
 import brave.handler.MutableSpan;
 import io.opentelemetry.proto.trace.v1.TracesData;
 import zipkin2.reporter.BytesEncoder;
 import zipkin2.reporter.Encoding;
 
 public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
-  final SpanTranslator spanTranslator;
-
-  public OtlpProtoV1Encoder(Tag<Throwable> errorTag, Map<String, String> resourceAttributes) {
-    if (errorTag == null) throw new NullPointerException("errorTag == null");
-    this.spanTranslator = new SpanTranslator(errorTag, resourceAttributes);
+  public static OtlpProtoV1Encoder create() {
+    return newBuilder().build();
   }
 
-  public OtlpProtoV1Encoder(Tag<Throwable> errorTag) {
-    this(errorTag, Collections.emptyMap());
+  public static Builder newBuilder() {
+    return new Builder();
+  }
+
+  public static final class Builder {
+    Tag<Throwable> errorTag = Tags.ERROR;
+
+    Map<String, String> resourceAttributes = Collections.emptyMap();
+
+    /** The throwable parser. Defaults to {@link Tags#ERROR}. */
+    public Builder errorTag(Tag<Throwable> errorTag) {
+      if (errorTag == null) {
+        throw new NullPointerException("errorTag == null");
+      } this.errorTag = errorTag; return this;
+    }
+
+    /** static resource attributes added to a {@link io.opentelemetry.proto.resource.v1.Resource}. Defaults to empty map. */
+    public Builder resourceAttributes(Map<String, String> resourceAttributes) {
+      if (resourceAttributes == null) {
+        throw new NullPointerException("resourceAttributes == null");
+      } this.resourceAttributes = resourceAttributes; return this;
+    }
+
+    public OtlpProtoV1Encoder build() {
+      return new OtlpProtoV1Encoder(this);
+    }
+
+    Builder() {
+
+    }
+  }
+
+  final SpanTranslator spanTranslator;
+
+  private OtlpProtoV1Encoder(Builder builder) {
+    this.spanTranslator = new SpanTranslator(builder.errorTag, builder.resourceAttributes);
   }
 
   @Override

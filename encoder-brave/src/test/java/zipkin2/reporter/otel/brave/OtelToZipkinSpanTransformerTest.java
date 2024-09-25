@@ -12,7 +12,6 @@ import javax.annotation.Nullable;
 
 import brave.Span;
 import brave.Span.Kind;
-import brave.Tags;
 import brave.handler.MutableSpan;
 import com.google.protobuf.ByteString;
 import io.opentelemetry.proto.common.v1.InstrumentationScope;
@@ -46,7 +45,7 @@ class OtelToZipkinSpanTransformerTest {
 
   @BeforeEach
   void setup() {
-    encoder = new OtlpProtoV1Encoder(Tags.ERROR);
+    encoder = OtlpProtoV1Encoder.create();
   }
 
   @Test
@@ -88,7 +87,7 @@ class OtelToZipkinSpanTransformerTest {
     resourceAttributes.put("os.name", "Linux");
     resourceAttributes.put("os.arch", "amd64");
     resourceAttributes.put("hostname", "localhost");
-    OtlpProtoV1Encoder encoder = new OtlpProtoV1Encoder(Tags.ERROR, resourceAttributes);
+    OtlpProtoV1Encoder encoder = OtlpProtoV1Encoder.newBuilder().resourceAttributes(resourceAttributes).build();
     assertThat(encoder.translate(data))
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
@@ -129,7 +128,7 @@ class OtelToZipkinSpanTransformerTest {
     resourceAttributes.put("os.name", "Linux");
     resourceAttributes.put("os.arch", "amd64");
     resourceAttributes.put("hostname", "localhost");
-    OtlpProtoV1Encoder encoder = new OtlpProtoV1Encoder(Tags.ERROR, resourceAttributes);
+    OtlpProtoV1Encoder encoder = OtlpProtoV1Encoder.newBuilder().resourceAttributes(resourceAttributes).build();
     assertThat(encoder.translate(data))
             .isEqualTo(
                     TracesData.newBuilder().addResourceSpans(ResourceSpans
