@@ -32,14 +32,16 @@ public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
     public Builder errorTag(Tag<Throwable> errorTag) {
       if (errorTag == null) {
         throw new NullPointerException("errorTag == null");
-      } this.errorTag = errorTag; return this;
+      }
+      this.errorTag = errorTag; return this;
     }
 
     /** static resource attributes added to a {@link io.opentelemetry.proto.resource.v1.Resource}. Defaults to empty map. */
     public Builder resourceAttributes(Map<String, String> resourceAttributes) {
       if (resourceAttributes == null) {
         throw new NullPointerException("resourceAttributes == null");
-      } this.resourceAttributes = resourceAttributes; return this;
+      }
+      this.resourceAttributes = resourceAttributes; return this;
     }
 
     public OtlpProtoV1Encoder build() {
