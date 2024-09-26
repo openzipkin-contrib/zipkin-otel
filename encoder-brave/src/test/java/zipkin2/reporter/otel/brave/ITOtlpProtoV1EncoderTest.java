@@ -112,9 +112,9 @@ public class ITOtlpProtoV1EncoderTest {
   static Stream<Arguments> encoderAndEndpoint() {
     return Stream.of(
         /* existing sender + new encoder -> otlp with otel collector */
-        Arguments.of(Encoding.PROTO3, new OtlpProtoV1Encoder(Tags.ERROR), String.format("http://localhost:%d/v1/traces", collector.getMappedPort(COLLECTOR_OTLP_HTTP_PORT))),
+        Arguments.of(Encoding.PROTO3, OtlpProtoV1Encoder.create(), String.format("http://localhost:%d/v1/traces", collector.getMappedPort(COLLECTOR_OTLP_HTTP_PORT))),
         /* existing sender + new encoder -> otlp without otel collector */
-        Arguments.of(Encoding.PROTO3, new OtlpProtoV1Encoder(Tags.ERROR), String.format("http://localhost:%d/v1/traces", otlpHttpServer.httpPort())),
+        Arguments.of(Encoding.PROTO3, OtlpProtoV1Encoder.create(), String.format("http://localhost:%d/v1/traces", otlpHttpServer.httpPort())),
         /* existing sender + zipkin encoder -> zipkin endpoint on collector */
         Arguments.of(Encoding.JSON, MutableSpanBytesEncoder.create(Encoding.JSON, Tags.ERROR), String.format("http://localhost:%d/api/v2/spans", collector.getMappedPort(COLLECTOR_ZIPKIN_PORT))));
   }

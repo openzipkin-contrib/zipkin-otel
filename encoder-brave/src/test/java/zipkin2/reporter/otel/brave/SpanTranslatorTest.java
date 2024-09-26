@@ -6,6 +6,7 @@ package zipkin2.reporter.otel.brave;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import brave.Tags;
@@ -28,7 +29,7 @@ import static zipkin2.reporter.otel.brave.TestObjects.clientSpan;
 
 class SpanTranslatorTest {
 
-  SpanTranslator spanTranslator = new SpanTranslator(Tags.ERROR);
+  SpanTranslator spanTranslator = new SpanTranslator(Tags.ERROR, Collections.emptyMap());
 
   /**
    * This test is intentionally sensitive, so changing other parts makes obvious impact here

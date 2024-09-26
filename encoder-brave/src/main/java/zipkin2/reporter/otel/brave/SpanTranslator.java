@@ -18,6 +18,7 @@ import com.google.protobuf.ByteString;
 import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.InstrumentationScope;
 import io.opentelemetry.proto.common.v1.KeyValue;
+import io.opentelemetry.proto.resource.v1.Resource;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.ResourceSpans.Builder;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
@@ -78,8 +79,11 @@ final class SpanTranslator {
 
   private final TagMapper tagMapper;
 
-  SpanTranslator(Tag<Throwable> errorTag) {
+  private final Map<String, String> resourceAttributes;
+
+  SpanTranslator(Tag<Throwable> errorTag, Map<String, String> resourceAttributes) {
     this.tagMapper = new TagMapper(errorTag, TAG_TO_ATTRIBUTE);
+    this.resourceAttributes = resourceAttributes;
   }
 
   TracesData translate(MutableSpan braveSpan) {
@@ -101,7 +105,7 @@ final class SpanTranslator {
     Span.Builder spanBuilder = Span.newBuilder()
         .setTraceId(span.traceId() != null ? ByteString.fromHex(span.traceId()) : INVALID_TRACE_ID)
         .setSpanId(span.id() != null ? ByteString.fromHex(span.id()) : INVALID_SPAN_ID)
-        .setName(span.name() == null || span.name().isEmpty() ?  DEFAULT_SPAN_NAME : span.name());
+        .setName(span.name() == null || span.name().isEmpty() ? DEFAULT_SPAN_NAME : span.name());
     if (span.parentId() != null) {
       spanBuilder.setParentSpanId(ByteString.fromHex(span.parentId()));
     }
@@ -110,11 +114,15 @@ final class SpanTranslator {
     spanBuilder.setStartTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(start));
     spanBuilder.setEndTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(finish));
     spanBuilder.setKind(translateKind(span.kind()));
-    String localServiceName = span.localServiceName();
-    if (localServiceName == null || localServiceName.isEmpty()) {
-      localServiceName = DEFAULT_SERVICE_NAME;
+    Resource.Builder resourceBuilder = resourceSpansBuilder.getResourceBuilder();
+    if (!this.resourceAttributes.containsKey(ServiceAttributes.SERVICE_NAME.getKey())) {
+      String localServiceName = span.localServiceName();
+      if (localServiceName == null || localServiceName.isEmpty()) {
+        localServiceName = DEFAULT_SERVICE_NAME;
+      }
+      resourceBuilder.addAttributes(stringAttribute(ServiceAttributes.SERVICE_NAME.getKey(), localServiceName));
     }
-    resourceSpansBuilder.getResourceBuilder().addAttributes(stringAttribute(ServiceAttributes.SERVICE_NAME.getKey(), localServiceName));
+    resourceAttributes.forEach((k, v) -> resourceBuilder.addAttributes(stringAttribute(k, v)));
     maybeAddStringAttribute(spanBuilder, NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), span.localIp());
     maybeAddIntAttribute(spanBuilder, NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), span.localPort());
     maybeAddStringAttribute(spanBuilder, NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), span.remoteIp());
@@ -123,7 +131,6 @@ final class SpanTranslator {
     span.forEachTag(tagMapper, spanBuilder);
     span.forEachAnnotation(tagMapper, spanBuilder);
     tagMapper.addErrorTag(spanBuilder, span);
-
     return spanBuilder;
   }
 
@@ -145,16 +152,16 @@ final class SpanTranslator {
 
   static KeyValue stringAttribute(String key, String value) {
     return KeyValue.newBuilder()
-            .setKey(key)
-            .setValue(AnyValue.newBuilder().setStringValue(value))
-            .build();
+        .setKey(key)
+        .setValue(AnyValue.newBuilder().setStringValue(value))
+        .build();
   }
 
   static KeyValue intAttribute(String key, int value) {
     return KeyValue.newBuilder()
-            .setKey(key)
-            .setValue(AnyValue.newBuilder().setIntValue(value))
-            .build();
+        .setKey(key)
+        .setValue(AnyValue.newBuilder().setIntValue(value))
+        .build();
   }
 
   private static void maybeAddStringAttribute(Span.Builder spanBuilder, String key, String value) {
