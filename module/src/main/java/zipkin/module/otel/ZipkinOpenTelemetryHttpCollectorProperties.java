@@ -10,7 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ZipkinOpenTelemetryHttpCollectorProperties {
   private String resourceAttributePrefix;
 
-  public String resourceAttributePrefix() {
+  public String getResourceAttributePrefix() {
     return resourceAttributePrefix;
   }
 

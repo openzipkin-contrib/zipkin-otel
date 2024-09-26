@@ -53,7 +53,7 @@ final class SpanTranslator {
   }
 
   SpanTranslator() {
-    this(new DefaultOtelResourceMapper());
+    this(DefaultOtelResourceMapper.create());
   }
 
 

@@ -29,9 +29,15 @@ class ZipkinOpenTelemetryHttpCollectorModuleTest {
   void httpCollector_enabledByDefault() {
     contextRunner.withUserConfiguration(ZipkinOpenTelemetryHttpCollectorModule.class)
         .withUserConfiguration(InMemoryConfiguration.class)
-        .run(context -> assertThat(context).hasSingleBean(OpenTelemetryHttpCollector.class)
-            .hasSingleBean(DefaultOtelResourceMapper.class)
-            .hasSingleBean(ArmeriaServerConfigurator.class));
+        .run(context -> {
+          assertThat(context).hasSingleBean(OpenTelemetryHttpCollector.class)
+              .hasSingleBean(DefaultOtelResourceMapper.class)
+              .hasSingleBean(ArmeriaServerConfigurator.class);
+          OpenTelemetryHttpCollector collector = context.getBean(OpenTelemetryHttpCollector.class);
+          OtelResourceMapper otelResourceMapper = collector.getOtelResourceMapper();
+          assertThat(otelResourceMapper).isInstanceOf(DefaultOtelResourceMapper.class);
+          assertThat(((DefaultOtelResourceMapper) otelResourceMapper).getResourceAttributePrefix()).isEqualTo("");
+        });
   }
 
   @Test

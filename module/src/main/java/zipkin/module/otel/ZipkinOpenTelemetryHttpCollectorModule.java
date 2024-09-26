@@ -42,6 +42,10 @@ class ZipkinOpenTelemetryHttpCollectorModule {
   @ConditionalOnMissingBean(OtelResourceMapper.class)
   @Bean
   OtelResourceMapper otelResourceMapper(ZipkinOpenTelemetryHttpCollectorProperties properties) {
-    return new DefaultOtelResourceMapper(properties.resourceAttributePrefix());
+    DefaultOtelResourceMapper.Builder builder = DefaultOtelResourceMapper.newBuilder();
+    if (properties.getResourceAttributePrefix() != null) {
+      builder.resourceAttributePrefix(properties.getResourceAttributePrefix());
+    }
+    return builder.build();
   }
 }

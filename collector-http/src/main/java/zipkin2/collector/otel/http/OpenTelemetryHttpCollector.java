@@ -92,7 +92,7 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
   OpenTelemetryHttpCollector(Builder builder) {
     collector = builder.delegate.build();
     metrics = builder.metrics;
-    otelResourceMapper = builder.otelResourceMapper == null ? new DefaultOtelResourceMapper() : builder.otelResourceMapper;
+    otelResourceMapper = builder.otelResourceMapper == null ? DefaultOtelResourceMapper.create() : builder.otelResourceMapper;
   }
 
   @Override

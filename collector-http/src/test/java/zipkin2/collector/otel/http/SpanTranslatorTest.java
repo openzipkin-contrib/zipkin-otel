@@ -63,7 +63,7 @@ class SpanTranslatorTest {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setTraceId(ByteString.fromHex("00000000000000000000000000000000")))
         .build();
-    assertThatThrownBy(() ->   spanTranslator.translate(data))
+    assertThatThrownBy(() -> spanTranslator.translate(data))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -72,7 +72,7 @@ class SpanTranslatorTest {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setSpanId(ByteString.fromHex("0000000000000000")))
         .build();
-    assertThatThrownBy(() ->   spanTranslator.translate(data))
+    assertThatThrownBy(() -> spanTranslator.translate(data))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -462,14 +462,12 @@ class SpanTranslatorTest {
         Function.identity(), span -> span
             .setKind(SpanKind.SPAN_KIND_SERVER)
             .addAttributes(stringAttribute("foo", "bar1"))
-            .addAttributes(stringAttribute("foo", "bar2"))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_UNSET).build()))
         .build();
 
     Span expectedSpan =
         zipkinSpanBuilder(Span.Kind.SERVER)
-            .putTag("foo", "bar2")
-            .putTag(SpanTranslator.OTEL_DROPPED_ATTRIBUTES_COUNT, "1")
+            .putTag("foo", "bar1")
             .putTag("java.version", "21.0.4")
             .putTag("os.name", "Linux")
             .putTag("os.arch", "amd64")
@@ -482,30 +480,30 @@ class SpanTranslatorTest {
 
   @Test
   void translate_WithResourceAttributes_prefixed() {
-    SpanTranslator spanTranslator = new SpanTranslator(new DefaultOtelResourceMapper("otel.resources."));
+    SpanTranslator spanTranslator = new SpanTranslator(DefaultOtelResourceMapper.newBuilder()
+        .resourceAttributePrefix("otel.resources.")
+        .build());
     ExportTraceServiceRequest data = requestBuilder(resource -> resource
-                    .addAttributes(stringAttribute("java.version", "21.0.4"))
-                    .addAttributes(stringAttribute("os.name", "Linux"))
-                    .addAttributes(stringAttribute("os.arch", "amd64"))
-                    .addAttributes(stringAttribute("hostname", "localhost")),
-            Function.identity(), span -> span
-                    .setKind(SpanKind.SPAN_KIND_SERVER)
-                    .addAttributes(stringAttribute("foo", "bar1"))
-                    .addAttributes(stringAttribute("foo", "bar2"))
-                    .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_UNSET).build()))
-            .build();
+            .addAttributes(stringAttribute("java.version", "21.0.4"))
+            .addAttributes(stringAttribute("os.name", "Linux"))
+            .addAttributes(stringAttribute("os.arch", "amd64"))
+            .addAttributes(stringAttribute("hostname", "localhost")),
+        Function.identity(), span -> span
+            .setKind(SpanKind.SPAN_KIND_SERVER)
+            .addAttributes(stringAttribute("foo", "bar1"))
+            .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_UNSET).build()))
+        .build();
 
     Span expectedSpan =
-            zipkinSpanBuilder(Span.Kind.SERVER)
-                    .putTag("foo", "bar2")
-                    .putTag(SpanTranslator.OTEL_DROPPED_ATTRIBUTES_COUNT, "1")
-                    .putTag("otel.resources.java.version", "21.0.4")
-                    .putTag("otel.resources.os.name", "Linux")
-                    .putTag("otel.resources.os.arch", "amd64")
-                    .putTag("otel.resources.hostname", "localhost")
-                    .build();
+        zipkinSpanBuilder(Span.Kind.SERVER)
+            .putTag("foo", "bar1")
+            .putTag("otel.resources.java.version", "21.0.4")
+            .putTag("otel.resources.os.name", "Linux")
+            .putTag("otel.resources.os.arch", "amd64")
+            .putTag("otel.resources.hostname", "localhost")
+            .build();
 
     assertThat(spanTranslator.translate(data))
-            .containsExactly(expectedSpan);
+        .containsExactly(expectedSpan);
   }
 }

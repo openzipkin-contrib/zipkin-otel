@@ -12,16 +12,36 @@ import zipkin2.Span;
  * Default implementation of {@link OtelResourceMapper} that simply maps resource attributes except for {@link ServiceAttributes#SERVICE_NAME} to tags with optional prefix.
  */
 public class DefaultOtelResourceMapper implements OtelResourceMapper {
-  private final String resourceAttributePrefix;
 
-  private static final String DEFAULT_PREFIX = "";
-
-  public DefaultOtelResourceMapper(String resourceAttributePrefix) {
-    this.resourceAttributePrefix = resourceAttributePrefix;
+  public static DefaultOtelResourceMapper create() {
+    return newBuilder().build();
   }
 
-  public DefaultOtelResourceMapper() {
-    this(DEFAULT_PREFIX);
+  public static Builder newBuilder() {
+    return new Builder();
+  }
+
+  public static final class Builder {
+    private String resourceAttributePrefix = "";
+
+    /** The prefix for tags mapped from resource attributes. Defaults to the empty string. */
+    public Builder resourceAttributePrefix(String resourceAttributePrefix) {
+      if (resourceAttributePrefix == null) {
+        throw new NullPointerException("resourceAttributePrefix == null");
+      }
+      this.resourceAttributePrefix = resourceAttributePrefix;
+      return this;
+    }
+
+    public DefaultOtelResourceMapper build() {
+      return new DefaultOtelResourceMapper(this);
+    }
+  }
+
+  private final String resourceAttributePrefix;
+
+  private DefaultOtelResourceMapper(Builder builder) {
+    this.resourceAttributePrefix = builder.resourceAttributePrefix;
   }
 
   public String getResourceAttributePrefix() {
