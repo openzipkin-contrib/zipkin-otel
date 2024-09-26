@@ -46,6 +46,8 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
 
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
 
+    OtelResourceMapper otelResourceMapper;
+
     @Override
     public Builder storage(StorageComponent storageComponent) {
       delegate.storage(storageComponent);
@@ -67,6 +69,11 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
       return this;
     }
 
+    public Builder otelResourceMapper(OtelResourceMapper otelResourceMapper) {
+      this.otelResourceMapper = otelResourceMapper;
+      return this;
+    }
+
     @Override
     public OpenTelemetryHttpCollector build() {
       return new OpenTelemetryHttpCollector(this);
@@ -80,9 +87,12 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
 
   final CollectorMetrics metrics;
 
+  final OtelResourceMapper otelResourceMapper;
+
   OpenTelemetryHttpCollector(Builder builder) {
     collector = builder.delegate.build();
     metrics = builder.metrics;
+    otelResourceMapper = builder.otelResourceMapper == null ? DefaultOtelResourceMapper.create() : builder.otelResourceMapper;
   }
 
   @Override
@@ -93,6 +103,10 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
   @Override
   public String toString() {
     return "OpenTelemetryHttpCollector{}";
+  }
+
+  public OtelResourceMapper getOtelResourceMapper() {
+    return otelResourceMapper;
   }
 
   /**
@@ -109,8 +123,11 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
 
     final OpenTelemetryHttpCollector collector;
 
+    final SpanTranslator spanTranslator;
+
     HttpService(OpenTelemetryHttpCollector collector) {
       this.collector = collector;
+      this.spanTranslator = new SpanTranslator(collector.otelResourceMapper);
     }
 
     @Override
@@ -133,7 +150,7 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
             ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
             collector.metrics.incrementMessages();
             try {
-              List<Span> spans = SpanTranslator.translate(request);
+              List<Span> spans = spanTranslator.translate(request);
               collector.collector.accept(spans, result);
             }
             catch (RuntimeException e) {

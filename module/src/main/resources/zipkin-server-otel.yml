@@ -8,3 +8,4 @@ zipkin:
       http:
         # Set to false to disable creation of spans via OLTP/HTTP protocol
         enabled: ${COLLECTOR_HTTP_ENABLED:${COLLECTOR_OTEL_HTTP_ENABLED:true}}
+        resource-attribute-prefix: ${COLLECTOR_OTEL_RESOURCE_ATTRIBUTE_PREFIX:}

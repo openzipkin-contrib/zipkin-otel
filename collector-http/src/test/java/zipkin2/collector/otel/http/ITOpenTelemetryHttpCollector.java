@@ -81,6 +81,8 @@ class ITOpenTelemetryHttpCollector {
 
   Server server;
 
+  static final String OTEL_SDK_VERSION = "1.41.0";
+
   @BeforeEach
   public void setup() {
     store = InMemoryStorage.newBuilder().build();
@@ -140,7 +142,7 @@ class ITOpenTelemetryHttpCollector {
       assertThat(span.parentId()).isNull();
       assertThat(span.name()).isEqualTo("get");
       assertThat(span.kind()).isEqualTo(zipkin2.Span.Kind.SERVER);
-      assertThat(span.tags()).hasSize(9);
+      assertThat(span.tags()).hasSize(12);
       assertThat(span.tags()).containsEntry("string", "foo" + i);
       assertThat(span.tags()).containsEntry("int", "100");
       assertThat(span.tags()).containsEntry("double", "10.5");
@@ -150,6 +152,10 @@ class ITOpenTelemetryHttpCollector {
       assertThat(span.tags()).containsEntry(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), "12345");
       assertThat(span.tags()).containsEntry(OtelAttributes.OTEL_SCOPE_NAME.getKey(), "io.zipkin.contrib.otel:zipkin-collector-otel-http");
       assertThat(span.tags()).containsEntry(OtelAttributes.OTEL_SCOPE_VERSION.getKey(), "0.0.1");
+      // resource attributes
+      assertThat(span.tags()).containsEntry("telemetry.sdk.language", "java");
+      assertThat(span.tags()).containsEntry("telemetry.sdk.name", "opentelemetry");
+      assertThat(span.tags()).containsEntry("telemetry.sdk.version", OTEL_SDK_VERSION);
       assertThat(span.duration()).isGreaterThan(100_000 /* 100ms */).isLessThan(110_000 /* 110ms */);
       assertThat(span.localServiceName()).isEqualTo("zipkin-collector-otel-http-test");
       assertThat(span.localEndpoint().ipv4()).isEqualTo("127.0.0.1");
@@ -200,11 +206,15 @@ class ITOpenTelemetryHttpCollector {
       assertThat(span.parentId()).isNull();
       assertThat(span.name()).isEqualTo("do-something");
       assertThat(span.kind()).isEqualTo(zipkin2.Span.Kind.SERVER);
-      assertThat(span.tags()).hasSize(4);
+      assertThat(span.tags()).hasSize(7);
       assertThat(span.tags()).containsEntry(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "127.0.0.1");
       assertThat(span.tags()).containsEntry(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), "12345");
       assertThat(span.tags()).containsEntry(OtelAttributes.OTEL_SCOPE_NAME.getKey(), "io.zipkin.contrib.otel:zipkin-collector-otel-http");
       assertThat(span.tags()).containsEntry(OtelAttributes.OTEL_SCOPE_VERSION.getKey(), "0.0.1");
+      // resource attributes
+      assertThat(span.tags()).containsEntry("telemetry.sdk.language", "java");
+      assertThat(span.tags()).containsEntry("telemetry.sdk.name", "opentelemetry");
+      assertThat(span.tags()).containsEntry("telemetry.sdk.version", OTEL_SDK_VERSION);
       assertThat(span.duration()).isGreaterThan(100_000 /* 100ms */).isLessThan(110_000 /* 110ms */);
       assertThat(span.localServiceName()).isEqualTo("zipkin-collector-otel-http-test");
       assertThat(span.localEndpoint().ipv4()).isEqualTo("127.0.0.1");
@@ -258,13 +268,17 @@ class ITOpenTelemetryHttpCollector {
       assertThat(span.parentId()).isNull();
       assertThat(span.name()).isEqualTo("do-something");
       assertThat(span.kind()).isEqualTo(zipkin2.Span.Kind.SERVER);
-      assertThat(span.tags()).hasSize(6);
+      assertThat(span.tags()).hasSize(9);
       assertThat(span.tags()).containsEntry(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "127.0.0.1");
       assertThat(span.tags()).containsEntry(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), "12345");
       assertThat(span.tags()).containsEntry(OtelAttributes.OTEL_SCOPE_NAME.getKey(), "io.zipkin.contrib.otel:zipkin-collector-otel-http");
       assertThat(span.tags()).containsEntry(OtelAttributes.OTEL_SCOPE_VERSION.getKey(), "0.0.1");
       assertThat(span.tags()).containsEntry(SpanTranslator.ERROR_TAG, "Exception!!");
       assertThat(span.tags()).containsEntry(OtelAttributes.OTEL_STATUS_CODE.getKey(), "ERROR");
+      // resource attributes
+      assertThat(span.tags()).containsEntry("telemetry.sdk.language", "java");
+      assertThat(span.tags()).containsEntry("telemetry.sdk.name", "opentelemetry");
+      assertThat(span.tags()).containsEntry("telemetry.sdk.version", OTEL_SDK_VERSION);
       assertThat(span.duration()).isGreaterThan(100_000 /* 100ms */).isLessThan(110_000 /* 110ms */);
       assertThat(span.localServiceName()).isEqualTo("zipkin-collector-otel-http-test");
       assertThat(span.localEndpoint().ipv4()).isEqualTo("127.0.0.1");
@@ -317,7 +331,7 @@ class ITOpenTelemetryHttpCollector {
       assertThat(span.parentId()).isNull();
       assertThat(span.name()).isEqualTo("send");
       assertThat(span.kind()).isEqualTo(zipkin2.Span.Kind.CLIENT);
-      assertThat(span.tags()).hasSize(12);
+      assertThat(span.tags()).hasSize(15);
       assertThat(span.tags()).containsEntry("string", "foo" + i);
       assertThat(span.tags()).containsEntry("int", "100");
       assertThat(span.tags()).containsEntry("double", "10.5");
@@ -330,6 +344,10 @@ class ITOpenTelemetryHttpCollector {
       assertThat(span.tags()).containsEntry(NetworkAttributes.NETWORK_PEER_PORT.getKey(), "8080");
       assertThat(span.tags()).containsEntry(OtelAttributes.OTEL_SCOPE_NAME.getKey(), "io.zipkin.contrib.otel:zipkin-collector-otel-http");
       assertThat(span.tags()).containsEntry(OtelAttributes.OTEL_SCOPE_VERSION.getKey(), "0.0.1");
+      // resource attributes
+      assertThat(span.tags()).containsEntry("telemetry.sdk.language", "java");
+      assertThat(span.tags()).containsEntry("telemetry.sdk.name", "opentelemetry");
+      assertThat(span.tags()).containsEntry("telemetry.sdk.version", OTEL_SDK_VERSION);
       assertThat(span.duration()).isGreaterThan(100_000 /* 100ms */).isLessThan(110_000 /* 110ms */);
       assertThat(span.localServiceName()).isEqualTo("zipkin-collector-otel-http-test");
       assertThat(span.localEndpoint().ipv4()).isEqualTo("127.0.0.1");

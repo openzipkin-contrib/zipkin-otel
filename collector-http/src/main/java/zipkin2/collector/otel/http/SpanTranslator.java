@@ -46,7 +46,18 @@ final class SpanTranslator {
 
   static final String ERROR_TAG = "error";
 
-  static List<zipkin2.Span> translate(ExportTraceServiceRequest otelSpans) {
+  final OtelResourceMapper resourceMapper;
+
+  SpanTranslator(OtelResourceMapper resourceMapper) {
+    this.resourceMapper = resourceMapper;
+  }
+
+  SpanTranslator() {
+    this(DefaultOtelResourceMapper.create());
+  }
+
+
+  List<zipkin2.Span> translate(ExportTraceServiceRequest otelSpans) {
     List<zipkin2.Span> spans = new ArrayList<>();
     List<ResourceSpans> spansList = otelSpans.getResourceSpansList();
     for (ResourceSpans resourceSpans : spansList) {
@@ -67,12 +78,12 @@ final class SpanTranslator {
    * @param scope InstrumentationScope of the span
    * @return a new Zipkin Span
    */
-  private static zipkin2.Span generateSpan(Span spanData, InstrumentationScope scope, Resource resource) {
+  private zipkin2.Span generateSpan(Span spanData, InstrumentationScope scope, Resource resource) {
     long startTimestamp = nanoToMills(spanData.getStartTimeUnixNano());
     long endTimestamp = nanoToMills(spanData.getEndTimeUnixNano());
     Map<String, AnyValue> attributesMap = spanData.getAttributesList()
-            .stream()
-            .collect(Collectors.toMap(KeyValue::getKey, KeyValue::getValue, (a, b) -> b /* The latter wins */));
+        .stream()
+        .collect(Collectors.toMap(KeyValue::getKey, KeyValue::getValue, (a, b) -> b /* The latter wins */));
     zipkin2.Span.Builder spanBuilder = zipkin2.Span.newBuilder();
     byte[] traceIdBytes = spanData.getTraceId().toByteArray();
     long high = bytesToLong(traceIdBytes, 0);
@@ -93,6 +104,7 @@ final class SpanTranslator {
         spanBuilder.parentId(parentId);
       }
     }
+    resourceMapper.accept(resource, spanBuilder);
     attributesMap.forEach((k, v) -> spanBuilder.putTag(k, ProtoUtils.valueToString(v)));
     // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/common/mapping-to-non-otlp.md#dropped-attributes-count
     int droppedAttributes = spanData.getAttributesCount() - attributesMap.size();
