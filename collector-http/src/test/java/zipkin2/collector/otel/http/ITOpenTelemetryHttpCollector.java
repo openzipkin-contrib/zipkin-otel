@@ -81,7 +81,7 @@ class ITOpenTelemetryHttpCollector {
 
   Server server;
 
-  static final String OTEL_SDK_VERSION = "1.41.0";
+  static final String OTEL_SDK_VERSION = "1.43.0";
 
   @BeforeEach
   public void setup() {
