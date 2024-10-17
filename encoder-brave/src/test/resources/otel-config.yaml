@@ -9,7 +9,7 @@ receivers:
   zipkin:
     endpoint: 0.0.0.0:9411
 exporters:
-  logging:
+  debug:
   # verbosity: detailed
   otlphttp:
     endpoint: ${OTLP_EXPORTER_ENDPOINT}
@@ -20,4 +20,4 @@ service:
   pipelines:
     traces:
       receivers: [ otlp, zipkin ]
-      exporters: [ logging, otlphttp ]
+      exporters: [ debug, otlphttp ]
