@@ -50,13 +50,6 @@
       <artifactId>opentelemetry-semconv</artifactId>
       <version>${opentelemetry-semconv.version}</version>
     </dependency>
-    <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <version>${protobuf.version}</version>
-      <!-- We use provided scope to avoid pinning a protobuf version -->
-      <scope>provided</scope>
-    </dependency>
 
     <dependency>
       <groupId>${zipkin.groupId}</groupId>
