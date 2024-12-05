@@ -65,7 +65,7 @@
     <opentelemetry.version>1.43.0</opentelemetry.version>
     <!-- Alpha jar! -->
     <opentelemetry-proto.version>1.4.0-alpha</opentelemetry-proto.version>
-    <opentelemetry-semconv.version>1.29.0-alpha</opentelemetry-semconv.version>
+    <opentelemetry-semconv.version>1.28.0-alpha</opentelemetry-semconv.version>
 
     <assertj.version>3.25.3</assertj.version>
     <awaitility.version>4.2.1</awaitility.version>
