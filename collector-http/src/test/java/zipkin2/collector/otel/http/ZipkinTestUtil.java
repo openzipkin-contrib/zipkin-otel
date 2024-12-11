@@ -20,6 +20,7 @@ import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.sdk.trace.data.EventData;
+import io.opentelemetry.semconv.NetworkAttributes;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
@@ -56,7 +57,7 @@ class ZipkinTestUtil {
         .timestamp(1505855794000000L + 194009601L / 1000)
         .duration((1505855799000000L + 465726528L / 1000) - (1505855794000000L + 194009601L / 1000))
         .localEndpoint(Endpoint.newBuilder().ip("1.2.3.4").serviceName("tweetiebird").build())
-        .putTag(SemanticConventionsAttributes.NETWORK_LOCAL_ADDRESS, "1.2.3.4")
+        .putTag(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "1.2.3.4")
         .addAnnotation(1505855799000000L + 433901068L / 1000, "RECEIVED")
         .addAnnotation(1505855799000000L + 459486280L / 1000, "SENT");
   }
@@ -80,7 +81,7 @@ class ZipkinTestUtil {
                     .setName("Recv.helloworld.Greeter.SayHello")
                     .setStartTimeUnixNano(1505855794_194009601L)
                     .setEndTimeUnixNano(1505855799_465726528L)
-                    .addAttributes(stringAttribute(SemanticConventionsAttributes.NETWORK_LOCAL_ADDRESS, "1.2.3.4"))
+                    .addAttributes(stringAttribute(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "1.2.3.4"))
                     .addEvents(Event.newBuilder()
                         .setName("RECEIVED").setTimeUnixNano(1505855799_433901068L))
                     .addEvents(Event.newBuilder()

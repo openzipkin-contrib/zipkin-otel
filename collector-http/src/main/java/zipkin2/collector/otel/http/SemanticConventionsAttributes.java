@@ -25,7 +25,7 @@ final class SemanticConventionsAttributes {
 	// https://github.com/open-telemetry/semantic-conventions-java/blob/v1.28.0/semconv/src/main/java/io/opentelemetry/semconv/OtelAttributes.java#L20
 	static final String OTEL_SCOPE_VERSION = "otel.scope.version";
 	// https://github.com/open-telemetry/semantic-conventions-java/blob/v1.28.0/semconv/src/main/java/io/opentelemetry/semconv/OtelAttributes.java#L23
-	static final String OTEL_STATUS_CODE = "otel.status.code";
+	static final String OTEL_STATUS_CODE = "otel.status_code";
 	// https://github.com/open-telemetry/semantic-conventions-java/blob/v1.28.0/semconv-incubating/src/main/java/io/opentelemetry/semconv/incubating/PeerIncubatingAttributes.java#L21
 	static final String PEER_SERVICE = "peer.service";
 }
