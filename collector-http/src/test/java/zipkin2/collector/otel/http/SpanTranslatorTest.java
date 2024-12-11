@@ -13,8 +13,6 @@ import io.opentelemetry.proto.common.v1.ArrayValue;
 import io.opentelemetry.proto.resource.v1.Resource;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
-import io.opentelemetry.semconv.NetworkAttributes;
-import io.opentelemetry.semconv.OtelAttributes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -40,7 +38,7 @@ class SpanTranslatorTest {
   void translate_remoteParent() {
     ExportTraceServiceRequest data = requestBuilder().build();
     Span expected = zipkinSpanBuilder(Span.Kind.SERVER)
-        .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+        .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
         .build();
     assertThat(spanTranslator.translate(data)).containsExactly(expected);
   }
@@ -52,7 +50,7 @@ class SpanTranslatorTest {
         .build();
     Span expected = zipkinSpanBuilder(Span.Kind.SERVER)
         .parentId(0)
-        .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+        .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
         .build();
     assertThat(spanTranslator.translate(data)).containsExactly(expected);
   }
@@ -85,7 +83,7 @@ class SpanTranslatorTest {
             .build();
     Span expected =
         zipkinSpanBuilder(Span.Kind.SERVER)
-            .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+            .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
             .duration(1)
             .build();
     assertThat(spanTranslator.translate(data)).containsExactly(expected);
@@ -98,7 +96,7 @@ class SpanTranslatorTest {
     assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(Span.Kind.SERVER)
-                .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+                .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
                 .build());
   }
 
@@ -109,7 +107,7 @@ class SpanTranslatorTest {
     assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(Span.Kind.CLIENT)
-                .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+                .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
                 .build());
   }
 
@@ -120,7 +118,7 @@ class SpanTranslatorTest {
     assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(null)
-                .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+                .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
                 .build());
   }
 
@@ -131,7 +129,7 @@ class SpanTranslatorTest {
     assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(Span.Kind.CONSUMER)
-                .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+                .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
                 .build());
   }
 
@@ -142,7 +140,7 @@ class SpanTranslatorTest {
     assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(Span.Kind.PRODUCER)
-                .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+                .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
                 .build());
   }
 
@@ -159,7 +157,7 @@ class SpanTranslatorTest {
     Span expectedZipkinSpan =
         zipkinSpanBuilder(Span.Kind.SERVER)
             .localEndpoint(expectedLocalEndpoint)
-            .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+            .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
             .build();
     assertThat(spanTranslator.translate(data)).containsExactly(expectedZipkinSpan);
   }
@@ -171,7 +169,7 @@ class SpanTranslatorTest {
     Span expectedZipkinSpan =
         zipkinSpanBuilder(Span.Kind.SERVER)
             .localEndpoint(null)
-            .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+            .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
             .build();
     assertThat(spanTranslator.translate(data))
         .containsExactly(expectedZipkinSpan);
@@ -182,9 +180,9 @@ class SpanTranslatorTest {
   void translate_RemoteEndpointMapping(SpanKind spanKind) {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setKind(spanKind)
-        .addAttributes(stringAttribute(SpanTranslator.PEER_SERVICE.getKey(), "remote-test-service"))
-        .addAttributes(stringAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "8.8.8.8"))
-        .addAttributes(longAttribute(NetworkAttributes.NETWORK_PEER_PORT.getKey(), 42L)))
+        .addAttributes(stringAttribute(SemanticConventionsAttributes.PEER_SERVICE, "remote-test-service"))
+        .addAttributes(stringAttribute(SemanticConventionsAttributes.NETWORK_PEER_ADDRESS, "8.8.8.8"))
+        .addAttributes(longAttribute(SemanticConventionsAttributes.NETWORK_PEER_PORT, 42L)))
         .build();
 
     Endpoint expectedRemoteEndpoint = Endpoint.newBuilder()
@@ -196,10 +194,10 @@ class SpanTranslatorTest {
     Span expectedSpan =
         zipkinSpanBuilder(SpanTranslator.toSpanKind(spanKind))
             .remoteEndpoint(expectedRemoteEndpoint)
-            .putTag(SpanTranslator.PEER_SERVICE.getKey(), "remote-test-service")
-            .putTag(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "8.8.8.8")
-            .putTag(NetworkAttributes.NETWORK_PEER_PORT.getKey(), "42")
-            .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+            .putTag(SemanticConventionsAttributes.PEER_SERVICE, "remote-test-service")
+            .putTag(SemanticConventionsAttributes.NETWORK_PEER_ADDRESS, "8.8.8.8")
+            .putTag(SemanticConventionsAttributes.NETWORK_PEER_PORT, "42")
+            .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
             .build();
 
     assertThat(spanTranslator.translate(data))
@@ -211,18 +209,18 @@ class SpanTranslatorTest {
   void translate_RemoteEndpointMappingWhenKindIsNotClientOrProducer(SpanKind spanKind) {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setKind(spanKind)
-        .addAttributes(stringAttribute(SpanTranslator.PEER_SERVICE.getKey(), "remote-test-service"))
-        .addAttributes(stringAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "8.8.8.8"))
-        .addAttributes(longAttribute(NetworkAttributes.NETWORK_PEER_PORT.getKey(), 42L)))
+        .addAttributes(stringAttribute(SemanticConventionsAttributes.PEER_SERVICE, "remote-test-service"))
+        .addAttributes(stringAttribute(SemanticConventionsAttributes.NETWORK_PEER_ADDRESS, "8.8.8.8"))
+        .addAttributes(longAttribute(SemanticConventionsAttributes.NETWORK_PEER_PORT, 42L)))
         .build();
 
     Span expectedSpan =
         zipkinSpanBuilder(SpanTranslator.toSpanKind(spanKind))
             .remoteEndpoint(null)
-            .putTag(SpanTranslator.PEER_SERVICE.getKey(), "remote-test-service")
-            .putTag(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "8.8.8.8")
-            .putTag(NetworkAttributes.NETWORK_PEER_PORT.getKey(), "42")
-            .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+            .putTag(SemanticConventionsAttributes.PEER_SERVICE, "remote-test-service")
+            .putTag(SemanticConventionsAttributes.NETWORK_PEER_ADDRESS, "8.8.8.8")
+            .putTag(SemanticConventionsAttributes.NETWORK_PEER_PORT, "42")
+            .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
             .build();
 
     assertThat(spanTranslator.translate(data))
@@ -234,14 +232,14 @@ class SpanTranslatorTest {
   void translate_RemoteEndpointMappingWhenServiceNameAndPeerAddressAreMissing(SpanKind spanKind) {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setKind(spanKind)
-        .addAttributes(longAttribute(NetworkAttributes.NETWORK_PEER_PORT.getKey(), 42L)))
+        .addAttributes(longAttribute(SemanticConventionsAttributes.NETWORK_PEER_PORT, 42L)))
         .build();
 
     Span expectedSpan =
         zipkinSpanBuilder(SpanTranslator.toSpanKind(spanKind))
             .remoteEndpoint(null)
-            .putTag(NetworkAttributes.NETWORK_PEER_PORT.getKey(), "42")
-            .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+            .putTag(SemanticConventionsAttributes.NETWORK_PEER_PORT, "42")
+            .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
             .build();
 
     assertThat(spanTranslator.translate(data))
@@ -253,8 +251,8 @@ class SpanTranslatorTest {
   void translate_RemoteEndpointMappingWhenServiceNameIsMissingButPeerAddressExists(SpanKind spanKind) {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setKind(spanKind)
-        .addAttributes(stringAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "8.8.8.8"))
-        .addAttributes(longAttribute(NetworkAttributes.NETWORK_PEER_PORT.getKey(), 42L)))
+        .addAttributes(stringAttribute(SemanticConventionsAttributes.NETWORK_PEER_ADDRESS, "8.8.8.8"))
+        .addAttributes(longAttribute(SemanticConventionsAttributes.NETWORK_PEER_PORT, 42L)))
         .build();
 
     Endpoint expectedRemoteEndpoint = Endpoint.newBuilder()
@@ -266,9 +264,9 @@ class SpanTranslatorTest {
     Span expectedSpan =
         zipkinSpanBuilder(SpanTranslator.toSpanKind(spanKind))
             .remoteEndpoint(expectedRemoteEndpoint)
-            .putTag(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "8.8.8.8")
-            .putTag(NetworkAttributes.NETWORK_PEER_PORT.getKey(), "42")
-            .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+            .putTag(SemanticConventionsAttributes.NETWORK_PEER_ADDRESS, "8.8.8.8")
+            .putTag(SemanticConventionsAttributes.NETWORK_PEER_PORT, "42")
+            .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
             .build();
 
     assertThat(spanTranslator.translate(data))
@@ -281,8 +279,8 @@ class SpanTranslatorTest {
   void translate_RemoteEndpointMappingWhenPortIsMissing(SpanKind spanKind) {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setKind(spanKind)
-        .addAttributes(stringAttribute(SpanTranslator.PEER_SERVICE.getKey(), "remote-test-service"))
-        .addAttributes(stringAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "8.8.8.8")))
+        .addAttributes(stringAttribute(SemanticConventionsAttributes.PEER_SERVICE, "remote-test-service"))
+        .addAttributes(stringAttribute(SemanticConventionsAttributes.NETWORK_PEER_ADDRESS, "8.8.8.8")))
         .build();
 
     Endpoint expectedRemoteEndpoint = Endpoint.newBuilder()
@@ -293,9 +291,9 @@ class SpanTranslatorTest {
     Span expectedSpan =
         zipkinSpanBuilder(SpanTranslator.toSpanKind(spanKind))
             .remoteEndpoint(expectedRemoteEndpoint)
-            .putTag(SpanTranslator.PEER_SERVICE.getKey(), "remote-test-service")
-            .putTag(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "8.8.8.8")
-            .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+            .putTag(SemanticConventionsAttributes.PEER_SERVICE, "remote-test-service")
+            .putTag(SemanticConventionsAttributes.NETWORK_PEER_ADDRESS, "8.8.8.8")
+            .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
             .build();
 
     assertThat(spanTranslator.translate(data))
@@ -333,7 +331,7 @@ class SpanTranslatorTest {
             .putTag("stringArray", "Hello")
             .putTag("doubleArray", "32.33,-98.3")
             .putTag("longArray", "32,999")
-            .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+            .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
             .build();
 
     assertThat(spanTranslator.translate(data))
@@ -349,9 +347,9 @@ class SpanTranslatorTest {
 
     Span expectedSpan =
         zipkinSpanBuilder(Span.Kind.SERVER)
-            .putTag(OtelAttributes.OTEL_SCOPE_NAME.getKey(), "io.opentelemetry.auto")
-            .putTag(OtelAttributes.OTEL_SCOPE_VERSION.getKey(), "1.0.0")
-            .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
+            .putTag(SemanticConventionsAttributes.OTEL_SCOPE_NAME, "io.opentelemetry.auto")
+            .putTag(SemanticConventionsAttributes.OTEL_SCOPE_VERSION, "1.0.0")
+            .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "OK")
             .build();
 
     assertThat(spanTranslator.translate(data))
@@ -371,7 +369,7 @@ class SpanTranslatorTest {
         zipkinSpanBuilder(Span.Kind.CLIENT)
             .putTag("http.response.status.code", "404")
             .putTag("error", "A user provided error")
-            .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "ERROR")
+            .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "ERROR")
             .build();
 
     assertThat(spanTranslator.translate(data))
@@ -390,7 +388,7 @@ class SpanTranslatorTest {
         zipkinSpanBuilder(Span.Kind.SERVER)
             .putTag("rpc.service", "my service name")
             .putTag("error", "timeout")
-            .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "ERROR")
+            .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "ERROR")
             .build();
 
     assertThat(spanTranslator.translate(data))
@@ -409,7 +407,7 @@ class SpanTranslatorTest {
         zipkinSpanBuilder(Span.Kind.SERVER)
             .putTag("rpc.service", "my service name")
             .putTag("error", "")
-            .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "ERROR")
+            .putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, "ERROR")
             .build();
 
     assertThat(spanTranslator.translate(data))
