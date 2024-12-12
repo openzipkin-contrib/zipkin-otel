@@ -29,7 +29,7 @@ final class SemanticConventionsAttributes {
   // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.28.0/semconv/src/main/java/io/opentelemetry/semconv/UrlAttributes.java#L34
   static final String URL_FULL = "url.full";
   // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.28.0/semconv/src/main/java/io/opentelemetry/semconv/UrlAttributes.java#L44
-  static String URL_PATH = "url.path";
+  static final String URL_PATH = "url.path";
   // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.28.0/semconv-incubating/src/main/java/io/opentelemetry/semconv/incubating/PeerIncubatingAttributes.java#L21
   static final String PEER_SERVICE = "peer.service";
 }
