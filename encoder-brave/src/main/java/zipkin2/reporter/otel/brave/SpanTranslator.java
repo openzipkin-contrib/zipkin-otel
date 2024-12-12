@@ -27,20 +27,11 @@ import io.opentelemetry.proto.trace.v1.Span.Event;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.TracesData;
-import io.opentelemetry.semconv.HttpAttributes;
-import io.opentelemetry.semconv.NetworkAttributes;
-import io.opentelemetry.semconv.ServerAttributes;
-import io.opentelemetry.semconv.ServiceAttributes;
-import io.opentelemetry.semconv.UrlAttributes;
-
 
 /**
  * SpanTranslator converts a Brave Span to a OpenTelemetry Span.
  */
 final class SpanTranslator {
-
-  // Defined in the incubating SDK https://github.com/open-telemetry/semantic-conventions-java/blob/main/semconv-incubating/src/main/java/io/opentelemetry/semconv/incubating/PeerIncubatingAttributes.java
-  static final String PEER_SERVICE = "peer.service";
 
   // Same value as the API https://github.com/open-telemetry/opentelemetry-java/blob/3e8092d086967fa24a0559044651781403033313/api/all/src/main/java/io/opentelemetry/api/trace/TraceId.java#L32
   static final ByteString INVALID_TRACE_ID = ByteString.fromHex("00000000000000000000000000000000");
@@ -69,12 +60,12 @@ final class SpanTranslator {
   static {
     TAG_TO_ATTRIBUTE = new LinkedHashMap<>();
     // "http.host" is not defined in HttpTags, but is a well-known tag.
-    TAG_TO_ATTRIBUTE.put("http.host", ServerAttributes.SERVER_ADDRESS.getKey());
-    TAG_TO_ATTRIBUTE.put(HttpTags.METHOD.key(), HttpAttributes.HTTP_REQUEST_METHOD.getKey());
-    TAG_TO_ATTRIBUTE.put(HttpTags.PATH.key(), UrlAttributes.URL_PATH.getKey());
-    TAG_TO_ATTRIBUTE.put(HttpTags.ROUTE.key(), HttpAttributes.HTTP_ROUTE.getKey());
-    TAG_TO_ATTRIBUTE.put(HttpTags.URL.key(), UrlAttributes.URL_FULL.getKey());
-    TAG_TO_ATTRIBUTE.put(HttpTags.STATUS_CODE.key(), HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey());
+    TAG_TO_ATTRIBUTE.put("http.host", SemanticConventionsAttributes.SERVER_ADDRESS);
+    TAG_TO_ATTRIBUTE.put(HttpTags.METHOD.key(), SemanticConventionsAttributes.HTTP_REQUEST_METHOD);
+    TAG_TO_ATTRIBUTE.put(HttpTags.PATH.key(), SemanticConventionsAttributes.URL_PATH);
+    TAG_TO_ATTRIBUTE.put(HttpTags.ROUTE.key(), SemanticConventionsAttributes.HTTP_ROUTE);
+    TAG_TO_ATTRIBUTE.put(HttpTags.URL.key(), SemanticConventionsAttributes.URL_FULL);
+    TAG_TO_ATTRIBUTE.put(HttpTags.STATUS_CODE.key(), SemanticConventionsAttributes.HTTP_RESPONSE_STATUS_CODE);
   }
 
   private final TagMapper tagMapper;
@@ -115,19 +106,19 @@ final class SpanTranslator {
     spanBuilder.setEndTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(finish));
     spanBuilder.setKind(translateKind(span.kind()));
     Resource.Builder resourceBuilder = resourceSpansBuilder.getResourceBuilder();
-    if (!this.resourceAttributes.containsKey(ServiceAttributes.SERVICE_NAME.getKey())) {
+    if (!this.resourceAttributes.containsKey(SemanticConventionsAttributes.SERVICE_NAME)) {
       String localServiceName = span.localServiceName();
       if (localServiceName == null || localServiceName.isEmpty()) {
         localServiceName = DEFAULT_SERVICE_NAME;
       }
-      resourceBuilder.addAttributes(stringAttribute(ServiceAttributes.SERVICE_NAME.getKey(), localServiceName));
+      resourceBuilder.addAttributes(stringAttribute(SemanticConventionsAttributes.SERVICE_NAME, localServiceName));
     }
     resourceAttributes.forEach((k, v) -> resourceBuilder.addAttributes(stringAttribute(k, v)));
-    maybeAddStringAttribute(spanBuilder, NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), span.localIp());
-    maybeAddIntAttribute(spanBuilder, NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), span.localPort());
-    maybeAddStringAttribute(spanBuilder, NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), span.remoteIp());
-    maybeAddIntAttribute(spanBuilder, NetworkAttributes.NETWORK_PEER_PORT.getKey(), span.remotePort());
-    maybeAddStringAttribute(spanBuilder, PEER_SERVICE, span.remoteServiceName());
+    maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.NETWORK_LOCAL_ADDRESS, span.localIp());
+    maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.NETWORK_LOCAL_PORT, span.localPort());
+    maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.NETWORK_PEER_ADDRESS, span.remoteIp());
+    maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.NETWORK_PEER_PORT, span.remotePort());
+    maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.PEER_SERVICE, span.remoteServiceName());
     span.forEachTag(tagMapper, spanBuilder);
     span.forEachAnnotation(tagMapper, spanBuilder);
     tagMapper.addErrorTag(spanBuilder, span);
@@ -197,8 +188,7 @@ final class SpanTranslator {
       if (errorValue != null) {
         target.addAttributes(stringAttribute("error", errorValue));
         target.setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
-      }
-      else {
+      } else {
         target.setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build());
       }
     }

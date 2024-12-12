@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
-import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.InstrumentationScope;
@@ -24,9 +23,6 @@ import io.opentelemetry.proto.trace.v1.Span.Event;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.Status.StatusCode;
-import io.opentelemetry.semconv.NetworkAttributes;
-import io.opentelemetry.semconv.OtelAttributes;
-import io.opentelemetry.semconv.ServiceAttributes;
 import zipkin2.Endpoint;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -34,11 +30,10 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * SpanTranslator converts OpenTelemetry Spans to Zipkin Spans
  * It is based, in part, on code from https://github.com/open-telemetry/opentelemetry-java/blob/ad120a5bff0887dffedb9c73af8e8e0aeb63659a/exporters/zipkin/src/main/java/io/opentelemetry/exporter/zipkin/OtelToZipkinSpanTransformer.java
+ *
  * @see <a href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk_exporters/zipkin.md#status">https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk_exporters/zipkin.md#status</a>
  */
 final class SpanTranslator {
-
-  static final AttributeKey<String> PEER_SERVICE = AttributeKey.stringKey("peer.service");
 
   static final String OTEL_DROPPED_ATTRIBUTES_COUNT = "otel.dropped_attributes_count";
 
@@ -75,7 +70,7 @@ final class SpanTranslator {
    * Creates an instance of a Zipkin Span from an OpenTelemetry SpanData instance.
    *
    * @param spanData an OpenTelemetry spanData instance
-   * @param scope InstrumentationScope of the span
+   * @param scope    InstrumentationScope of the span
    * @return a new Zipkin Span
    */
   private zipkin2.Span generateSpan(Span spanData, InstrumentationScope scope, Resource resource) {
@@ -115,7 +110,7 @@ final class SpanTranslator {
     // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk_exporters/zipkin.md#status
     if (status.getCode() != Status.StatusCode.STATUS_CODE_UNSET) {
       String codeValue = status.getCode().toString().replace("STATUS_CODE_", ""); // either OK or ERROR
-      spanBuilder.putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), codeValue);
+      spanBuilder.putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, codeValue);
       // add the error tag, if it isn't already in the source span.
       if (status.getCode() == StatusCode.STATUS_CODE_ERROR && !attributesMap.containsKey(ERROR_TAG)) {
         spanBuilder.putTag(ERROR_TAG, status.getMessage());
@@ -123,10 +118,10 @@ final class SpanTranslator {
     }
     // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/common/mapping-to-non-otlp.md#instrumentationscope
     if (!scope.getName().isEmpty()) {
-      spanBuilder.putTag(OtelAttributes.OTEL_SCOPE_NAME.getKey(), scope.getName());
+      spanBuilder.putTag(SemanticConventionsAttributes.OTEL_SCOPE_NAME, scope.getName());
     }
     if (!scope.getVersion().isEmpty()) {
-      spanBuilder.putTag(OtelAttributes.OTEL_SCOPE_VERSION.getKey(), scope.getVersion());
+      spanBuilder.putTag(SemanticConventionsAttributes.OTEL_SCOPE_VERSION, scope.getVersion());
     }
     for (Event eventData : spanData.getEventsList()) {
       // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk_exporters/zipkin.md#events
@@ -135,8 +130,7 @@ final class SpanTranslator {
       String annotation;
       if (attributesList.isEmpty()) {
         annotation = name;
-      }
-      else {
+      } else {
         String value = ProtoUtils.kvListToJson(attributesList);
         annotation = "\"" + name + "\":" + value;
       }
@@ -152,14 +146,14 @@ final class SpanTranslator {
 
   private static Endpoint getLocalEndpoint(Map<String, AnyValue> attributesMap, Resource resource) {
     AnyValue serviceName = resource.getAttributesList().stream()
-        .filter(kv -> kv.getKey().equals(ServiceAttributes.SERVICE_NAME.getKey()))
+        .filter(kv -> kv.getKey().equals(SemanticConventionsAttributes.SERVICE_NAME))
         .findFirst()
         .map(KeyValue::getValue)
         .orElse(null);
     if (serviceName != null) {
       Endpoint.Builder endpoint = Endpoint.newBuilder().serviceName(serviceName.getStringValue());
-      AnyValue networkLocalAddress = attributesMap.get(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey());
-      AnyValue networkLocalPort = attributesMap.get(NetworkAttributes.NETWORK_LOCAL_PORT.getKey());
+      AnyValue networkLocalAddress = attributesMap.get(SemanticConventionsAttributes.NETWORK_LOCAL_ADDRESS);
+      AnyValue networkLocalPort = attributesMap.get(SemanticConventionsAttributes.NETWORK_LOCAL_PORT);
       if (networkLocalAddress != null) {
         endpoint.ip(networkLocalAddress.getStringValue());
       }
@@ -174,20 +168,19 @@ final class SpanTranslator {
 
   private static Endpoint getRemoteEndpoint(Map<String, AnyValue> attributesMap, SpanKind kind) {
     if (kind == SpanKind.SPAN_KIND_CLIENT || kind == SpanKind.SPAN_KIND_PRODUCER) {
-      AnyValue peerService = attributesMap.get(PEER_SERVICE.getKey());
-      AnyValue networkPeerAddress = attributesMap.get(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey());
+      AnyValue peerService = attributesMap.get(SemanticConventionsAttributes.PEER_SERVICE);
+      AnyValue networkPeerAddress = attributesMap.get(SemanticConventionsAttributes.NETWORK_PEER_ADDRESS);
       String serviceName = null;
       // TODO: Implement fallback mechanism?
       // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk_exporters/zipkin.md#otlp---zipkin
       if (peerService != null) {
         serviceName = peerService.getStringValue();
-      }
-      else if (networkPeerAddress != null) {
+      } else if (networkPeerAddress != null) {
         serviceName = networkPeerAddress.getStringValue();
       }
       if (serviceName != null) {
         Endpoint.Builder endpoint = Endpoint.newBuilder().serviceName(serviceName);
-        AnyValue networkPeerPort = attributesMap.get(NetworkAttributes.NETWORK_PEER_PORT.getKey());
+        AnyValue networkPeerPort = attributesMap.get(SemanticConventionsAttributes.NETWORK_PEER_PORT);
         if (networkPeerAddress != null) {
           endpoint.ip(networkPeerAddress.getStringValue());
         }

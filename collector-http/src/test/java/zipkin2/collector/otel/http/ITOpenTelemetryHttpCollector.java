@@ -310,7 +310,7 @@ class ITOpenTelemetryHttpCollector {
           .setAttribute(AttributeKey.stringArrayKey("array"), Arrays.asList("a", "b", "c"))
           .setAttribute(NetworkAttributes.NETWORK_LOCAL_ADDRESS, "127.0.0.1")
           .setAttribute(NetworkAttributes.NETWORK_LOCAL_PORT, 12345L)
-          .setAttribute(SpanTranslator.PEER_SERVICE, "demo")
+          .setAttribute(SemanticConventionsAttributes.PEER_SERVICE, "demo")
           .setAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS, "1.2.3.4")
           .setAttribute(NetworkAttributes.NETWORK_PEER_PORT, 8080L)
           .startSpan();
@@ -339,7 +339,7 @@ class ITOpenTelemetryHttpCollector {
       assertThat(span.tags()).containsEntry("array", "a,b,c");
       assertThat(span.tags()).containsEntry(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "127.0.0.1");
       assertThat(span.tags()).containsEntry(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), "12345");
-      assertThat(span.tags()).containsEntry(SpanTranslator.PEER_SERVICE.getKey(), "demo");
+      assertThat(span.tags()).containsEntry(SemanticConventionsAttributes.PEER_SERVICE, "demo");
       assertThat(span.tags()).containsEntry(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "1.2.3.4");
       assertThat(span.tags()).containsEntry(NetworkAttributes.NETWORK_PEER_PORT.getKey(), "8080");
       assertThat(span.tags()).containsEntry(OtelAttributes.OTEL_SCOPE_NAME.getKey(), "io.zipkin.contrib.otel:zipkin-collector-otel-http");

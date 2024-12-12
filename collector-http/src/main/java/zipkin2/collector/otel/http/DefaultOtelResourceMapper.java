@@ -5,11 +5,10 @@
 package zipkin2.collector.otel.http;
 
 import io.opentelemetry.proto.resource.v1.Resource;
-import io.opentelemetry.semconv.ServiceAttributes;
 import zipkin2.Span;
 
 /**
- * Default implementation of {@link OtelResourceMapper} that simply maps resource attributes except for {@link ServiceAttributes#SERVICE_NAME} to tags with optional prefix.
+ * Default implementation of {@link OtelResourceMapper} that simply maps resource attributes except for {@link SemanticConventionsAttributes#SERVICE_NAME} to tags with optional prefix.
  */
 public class DefaultOtelResourceMapper implements OtelResourceMapper {
 
@@ -24,7 +23,9 @@ public class DefaultOtelResourceMapper implements OtelResourceMapper {
   public static final class Builder {
     private String resourceAttributePrefix = "";
 
-    /** The prefix for tags mapped from resource attributes. Defaults to the empty string. */
+    /**
+     * The prefix for tags mapped from resource attributes. Defaults to the empty string.
+     */
     public Builder resourceAttributePrefix(String resourceAttributePrefix) {
       if (resourceAttributePrefix == null) {
         throw new NullPointerException("resourceAttributePrefix == null");
@@ -51,7 +52,7 @@ public class DefaultOtelResourceMapper implements OtelResourceMapper {
   @Override
   public void accept(Resource resource, Span.Builder builder) {
     resource.getAttributesList().stream()
-        .filter(kv -> !kv.getKey().equals(ServiceAttributes.SERVICE_NAME.getKey()))
+        .filter(kv -> !kv.getKey().equals(SemanticConventionsAttributes.SERVICE_NAME))
         .forEach(kv -> builder.putTag(resourceAttributePrefix + kv.getKey(), ProtoUtils.valueToString(kv.getValue())));
   }
 }
