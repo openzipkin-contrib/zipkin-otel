@@ -49,6 +49,9 @@ final class SpanTranslator {
   // Defined value in https://opentelemetry.io/docs/specs/semconv/attributes-registry/telemetry/#telemetry-sdk-language
   static final String TELEMETRY_SDK_LANGUAGE = "java";
 
+  // Same version as the default instrumentation name
+  static final String TELEMETRY_SDK_NAME = BraveScope.NAME;
+
   // Same version as the default instrumentation scope
   static final String TELEMETRY_SDK_VERSION = BraveScope.VERSION;
 
@@ -78,8 +81,6 @@ final class SpanTranslator {
 
   final InstrumentationScope instrumentationScope;
 
-  final String telemetrySdkName;
-
   static final class Builder {
     private TagMapper tagMapper;
 
@@ -108,11 +109,6 @@ final class SpanTranslator {
       return this;
     }
 
-    Builder telemetrySdkName(String telemetrySdkName) {
-      this.telemetrySdkName = telemetrySdkName;
-      return this;
-    }
-
     SpanTranslator build() {
       return new SpanTranslator(this);
     }
@@ -126,7 +122,6 @@ final class SpanTranslator {
     this.tagMapper = builder.tagMapper;
     this.resourceAttributes = builder.resourceAttributes;
     this.instrumentationScope = builder.instrumentationScope;
-    this.telemetrySdkName = builder.telemetrySdkName;
   }
 
   TracesData translate(MutableSpan braveSpan) {
@@ -168,7 +163,7 @@ final class SpanTranslator {
     resourceAttributes.forEach((k, v) -> resourceBuilder.addAttributes(stringAttribute(k, v)));
     // Set Telemetry SDK resource attributes https://opentelemetry.io/docs/specs/semconv/attributes-registry/telemetry/
     resourceBuilder.addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_LANGUAGE, TELEMETRY_SDK_LANGUAGE))
-        .addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_NAME, this.telemetrySdkName))
+        .addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_NAME, TELEMETRY_SDK_NAME))
         .addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_VERSION, TELEMETRY_SDK_VERSION));
 
     maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.NETWORK_LOCAL_ADDRESS, span.localIp());

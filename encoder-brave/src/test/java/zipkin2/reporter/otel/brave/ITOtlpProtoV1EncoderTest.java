@@ -172,7 +172,7 @@ public class ITOtlpProtoV1EncoderTest {
             .addAttributes(stringAttribute("other", "A"))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build());
         resourceBuilder.addAttributes(stringAttribute("telemetry.sdk.language", "java"))
-            .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+            .addAttributes(stringAttribute("telemetry.sdk.name", BraveScope.NAME))
             .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION));
       } else {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().build() /* empty */);
@@ -255,7 +255,7 @@ public class ITOtlpProtoV1EncoderTest {
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
         resourceBuilder
             .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
-            .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+            .addAttributes(stringAttribute("telemetry.sdk.name", BraveScope.NAME))
             .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION));
       } else {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().build() /* empty */);
