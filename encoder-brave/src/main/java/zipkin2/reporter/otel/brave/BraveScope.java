@@ -17,6 +17,8 @@ final class BraveScope {
 
   static final String VERSION;
 
+  static final InstrumentationScope INSTRUMENTATION_SCOPE;
+
   static {
     try (InputStream stream = BraveScope.class.getClassLoader().getResourceAsStream("scope.properties")) {
       if (stream != null) {
@@ -24,15 +26,18 @@ final class BraveScope {
         props.load(stream);
         NAME = props.getProperty("name");
         VERSION = props.getProperty("version");
-      }
-      else {
+      } else {
         NAME = "unknown";
         VERSION = "unknown";
       }
-    }
-    catch (IOException e) {
+      INSTRUMENTATION_SCOPE = new InstrumentationScope(NAME, VERSION);
+    } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
+  }
+
+  public static InstrumentationScope instrumentationScope() {
+    return INSTRUMENTATION_SCOPE;
   }
 
 }

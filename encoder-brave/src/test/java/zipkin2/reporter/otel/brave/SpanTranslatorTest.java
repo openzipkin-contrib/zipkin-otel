@@ -13,6 +13,8 @@ import brave.Tags;
 import brave.handler.MutableSpan;
 import brave.propagation.TraceContext;
 import com.google.protobuf.ByteString;
+import io.opentelemetry.proto.trace.v1.ResourceSpans;
+import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.Span;
 import io.opentelemetry.proto.trace.v1.Span.Event;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
@@ -29,7 +31,11 @@ import static zipkin2.reporter.otel.brave.TestObjects.clientSpan;
 
 class SpanTranslatorTest {
 
-  SpanTranslator spanTranslator = new SpanTranslator(Tags.ERROR, Collections.emptyMap());
+  SpanTranslator spanTranslator = SpanTranslator.newBuilder()
+      .errorTag(Tags.ERROR)
+      .resourceAttributes(Collections.emptyMap())
+      .instrumentationScope(BraveScope.instrumentationScope())
+      .build();
 
   /**
    * This test is intentionally sensitive, so changing other parts makes obvious impact here
@@ -71,6 +77,10 @@ class SpanTranslatorTest {
                         .setName("bar").build()))
                 .setStatus(Status.newBuilder().setCode(StatusCode.STATUS_CODE_OK).build())
                 .build());
+
+    io.opentelemetry.proto.common.v1.InstrumentationScope scope = implementationScope(translated);
+    assertThat(scope.getName()).isEqualTo(BraveScope.NAME);
+    assertThat(scope.getVersion()).isEqualTo(BraveScope.VERSION);
   }
 
   @Test
@@ -80,6 +90,10 @@ class SpanTranslatorTest {
     TracesData translated = spanTranslator.translate(braveSpan);
 
     assertThat(firstSpan(translated).getName()).isEqualTo(DEFAULT_SPAN_NAME);
+
+    io.opentelemetry.proto.common.v1.InstrumentationScope scope = implementationScope(translated);
+    assertThat(scope.getName()).isEqualTo(BraveScope.NAME);
+    assertThat(scope.getVersion()).isEqualTo(BraveScope.VERSION);
   }
 
   @Test
@@ -90,9 +104,41 @@ class SpanTranslatorTest {
     TracesData translated = spanTranslator.translate(braveSpan);
 
     assertThat(firstSpan(translated).getName()).isEqualTo(DEFAULT_SPAN_NAME);
+
+    io.opentelemetry.proto.common.v1.InstrumentationScope scope = implementationScope(translated);
+    assertThat(scope.getName()).isEqualTo(BraveScope.NAME);
+    assertThat(scope.getVersion()).isEqualTo(BraveScope.VERSION);
+  }
+
+  @Test
+  void custom_implementationScope() {
+    MutableSpan braveSpan = clientSpan();
+    SpanTranslator translator = SpanTranslator.newBuilder()
+        .errorTag(Tags.ERROR)
+        .resourceAttributes(Collections.emptyMap())
+        .instrumentationScope(new zipkin2.reporter.otel.brave.InstrumentationScope("com.example.app", "3.3.5"))
+        .build();
+
+    TracesData tracesData = translator.translate(braveSpan);
+    io.opentelemetry.proto.common.v1.InstrumentationScope scope = implementationScope(tracesData);
+    assertThat(scope.getName()).isEqualTo("com.example.app");
+    assertThat(scope.getVersion()).isEqualTo("3.3.5");
+  }
+
+  private static io.opentelemetry.proto.common.v1.InstrumentationScope implementationScope(TracesData translated) {
+    assertThat(translated.getResourceSpansCount()).isEqualTo(1);
+    ResourceSpans resourceSpans = translated.getResourceSpans(0);
+    assertThat(resourceSpans.getScopeSpansCount()).isEqualTo(1);
+    ScopeSpans scopeSpans = resourceSpans.getScopeSpans(0);
+    return scopeSpans.getScope();
   }
 
   private static Span firstSpan(TracesData translated) {
-    return translated.getResourceSpans(0).getScopeSpans(0).getSpans(0);
+    assertThat(translated.getResourceSpansCount()).isEqualTo(1);
+    ResourceSpans resourceSpans = translated.getResourceSpans(0);
+    assertThat(resourceSpans.getScopeSpansCount()).isEqualTo(1);
+    ScopeSpans scopeSpans = resourceSpans.getScopeSpans(0);
+    assertThat(scopeSpans.getSpansCount()).isEqualTo(1);
+    return scopeSpans.getSpans(0);
   }
 }

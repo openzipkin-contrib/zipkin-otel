@@ -28,12 +28,15 @@ public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
 
     Map<String, String> resourceAttributes = Collections.emptyMap();
 
+    InstrumentationScope instrumentationScope = BraveScope.instrumentationScope();
+
     /** The throwable parser. Defaults to {@link Tags#ERROR}. */
     public Builder errorTag(Tag<Throwable> errorTag) {
       if (errorTag == null) {
         throw new NullPointerException("errorTag == null");
       }
-      this.errorTag = errorTag; return this;
+      this.errorTag = errorTag;
+      return this;
     }
 
     /** static resource attributes added to a {@link io.opentelemetry.proto.resource.v1.Resource}. Defaults to empty map. */
@@ -41,7 +44,17 @@ public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
       if (resourceAttributes == null) {
         throw new NullPointerException("resourceAttributes == null");
       }
-      this.resourceAttributes = resourceAttributes; return this;
+      this.resourceAttributes = resourceAttributes;
+      return this;
+    }
+
+    /** The Instrumentation scope which represents a logical unit within the application code with which the emitted telemetry can be associated */
+    public Builder instrumentationScope(InstrumentationScope instrumentationScope) {
+      if (instrumentationScope == null) {
+        throw new NullPointerException("implementationScope == null");
+      }
+      this.instrumentationScope = instrumentationScope;
+      return this;
     }
 
     public OtlpProtoV1Encoder build() {
@@ -56,7 +69,11 @@ public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
   final SpanTranslator spanTranslator;
 
   private OtlpProtoV1Encoder(Builder builder) {
-    this.spanTranslator = new SpanTranslator(builder.errorTag, builder.resourceAttributes);
+    this.spanTranslator = SpanTranslator.newBuilder()
+        .errorTag(builder.errorTag)
+        .resourceAttributes(builder.resourceAttributes)
+        .instrumentationScope(builder.instrumentationScope)
+        .build();
   }
 
   @Override
