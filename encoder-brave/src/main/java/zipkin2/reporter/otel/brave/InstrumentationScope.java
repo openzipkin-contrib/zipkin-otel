@@ -7,7 +7,12 @@ package zipkin2.reporter.otel.brave;
 import java.util.Objects;
 
 /**
- * OpenTelemetry InstrumentationScope
+ * Instrumentation Scope indicates the application component that produced spans. This is more
+ * specific than the local service name.
+ * <p>
+ * See https://opentelemetry.io/docs/specs/otel/glossary/#instrumentation-scope
+ *
+ * @see BraveScope#instrumentationScope
  */
 public final class InstrumentationScope {
   private final String name;
