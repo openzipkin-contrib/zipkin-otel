@@ -16,11 +16,9 @@ import brave.handler.MutableSpan.TagConsumer;
 import brave.http.HttpTags;
 import com.google.protobuf.ByteString;
 import io.opentelemetry.proto.common.v1.AnyValue;
-import io.opentelemetry.proto.common.v1.InstrumentationScope;
 import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.resource.v1.Resource;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
-import io.opentelemetry.proto.trace.v1.ResourceSpans.Builder;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.Span;
 import io.opentelemetry.proto.trace.v1.Span.Event;
@@ -68,31 +66,69 @@ final class SpanTranslator {
     TAG_TO_ATTRIBUTE.put(HttpTags.STATUS_CODE.key(), SemanticConventionsAttributes.HTTP_RESPONSE_STATUS_CODE);
   }
 
-  private final TagMapper tagMapper;
+  final TagMapper tagMapper;
 
-  private final Map<String, String> resourceAttributes;
+  final Map<String, String> resourceAttributes;
 
-  SpanTranslator(Tag<Throwable> errorTag, Map<String, String> resourceAttributes) {
-    this.tagMapper = new TagMapper(errorTag, TAG_TO_ATTRIBUTE);
-    this.resourceAttributes = resourceAttributes;
+  final InstrumentationScope instrumentationScope;
+
+  static final class Builder {
+    private TagMapper tagMapper;
+
+    private Map<String, String> resourceAttributes;
+
+    private InstrumentationScope instrumentationScope;
+
+    Builder() {
+
+    }
+
+    Builder errorTag(Tag<Throwable> errorTag) {
+      this.tagMapper = new TagMapper(errorTag, TAG_TO_ATTRIBUTE);
+      return this;
+    }
+
+    Builder resourceAttributes(Map<String, String> resourceAttributes) {
+      this.resourceAttributes = resourceAttributes;
+      return this;
+    }
+
+    Builder instrumentationScope(InstrumentationScope instrumentationScope) {
+      this.instrumentationScope = instrumentationScope;
+      return this;
+    }
+
+    SpanTranslator build() {
+      return new SpanTranslator(this);
+    }
+  }
+
+  static Builder newBuilder() {
+    return new Builder();
+  }
+
+  SpanTranslator(Builder builder) {
+    this.tagMapper = builder.tagMapper;
+    this.resourceAttributes = builder.resourceAttributes;
+    this.instrumentationScope = builder.instrumentationScope;
   }
 
   TracesData translate(MutableSpan braveSpan) {
     TracesData.Builder tracesDataBuilder = TracesData.newBuilder();
-    Builder resourceSpansBuilder = ResourceSpans.newBuilder();
+    ResourceSpans.Builder resourceSpansBuilder = ResourceSpans.newBuilder();
     ScopeSpans.Builder scopeSpanBuilder = ScopeSpans.newBuilder();
     Span.Builder spanBuilder = builderForSingleSpan(braveSpan, resourceSpansBuilder);
     scopeSpanBuilder.addSpans(spanBuilder.build());
-    InstrumentationScope.Builder scopeBuilder = InstrumentationScope.newBuilder();
-    scopeBuilder.setName(BraveScope.NAME);
-    scopeBuilder.setVersion(BraveScope.VERSION);
+    io.opentelemetry.proto.common.v1.InstrumentationScope.Builder scopeBuilder = io.opentelemetry.proto.common.v1.InstrumentationScope.newBuilder();
+    scopeBuilder.setName(this.instrumentationScope.name());
+    scopeBuilder.setVersion(this.instrumentationScope.version());
     scopeSpanBuilder.setScope(scopeBuilder.build());
     resourceSpansBuilder.addScopeSpans(scopeSpanBuilder.build());
     tracesDataBuilder.addResourceSpans(resourceSpansBuilder.build());
     return tracesDataBuilder.build();
   }
 
-  private Span.Builder builderForSingleSpan(MutableSpan span, Builder resourceSpansBuilder) {
+  private Span.Builder builderForSingleSpan(MutableSpan span, ResourceSpans.Builder resourceSpansBuilder) {
     Span.Builder spanBuilder = Span.newBuilder()
         .setTraceId(span.traceId() != null ? ByteString.fromHex(span.traceId()) : INVALID_TRACE_ID)
         .setSpanId(span.id() != null ? ByteString.fromHex(span.id()) : INVALID_SPAN_ID)
