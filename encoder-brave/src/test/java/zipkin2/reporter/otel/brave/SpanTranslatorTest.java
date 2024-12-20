@@ -35,6 +35,7 @@ class SpanTranslatorTest {
       .errorTag(Tags.ERROR)
       .resourceAttributes(Collections.emptyMap())
       .instrumentationScope(BraveScope.instrumentationScope())
+      .telemetrySdkName(this.getClass().getName())
       .build();
 
   /**
@@ -117,6 +118,7 @@ class SpanTranslatorTest {
         .errorTag(Tags.ERROR)
         .resourceAttributes(Collections.emptyMap())
         .instrumentationScope(new zipkin2.reporter.otel.brave.InstrumentationScope("com.example.app", "3.3.5"))
+        .telemetrySdkName(this.getClass().getName())
         .build();
 
     TracesData tracesData = translator.translate(braveSpan);

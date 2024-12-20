@@ -73,6 +73,9 @@ public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
         .errorTag(builder.errorTag)
         .resourceAttributes(builder.resourceAttributes)
         .instrumentationScope(builder.instrumentationScope)
+        // Use the fully-qualified class name as the SDK name following the spec
+        // https://opentelemetry.io/docs/specs/semconv/attributes-registry/telemetry/#telemetry-sdk-name
+        .telemetrySdkName(this.getClass().getName())
         .build();
   }
 

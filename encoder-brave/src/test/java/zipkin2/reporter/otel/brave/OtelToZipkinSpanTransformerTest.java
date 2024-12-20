@@ -56,8 +56,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", "tweetiebird")))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", "tweetiebird"))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -97,7 +100,10 @@ class OtelToZipkinSpanTransformerTest {
                         .addAttributes(stringAttribute("java.version", "21.0.4"))
                         .addAttributes(stringAttribute("os.name", "Linux"))
                         .addAttributes(stringAttribute("os.arch", "amd64"))
-                        .addAttributes(stringAttribute("hostname", "localhost")))
+                        .addAttributes(stringAttribute("hostname", "localhost"))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -130,35 +136,39 @@ class OtelToZipkinSpanTransformerTest {
     resourceAttributes.put("hostname", "localhost");
     OtlpProtoV1Encoder encoder = OtlpProtoV1Encoder.newBuilder().resourceAttributes(resourceAttributes).build();
     assertThat(encoder.translate(data))
-            .isEqualTo(
-                    TracesData.newBuilder().addResourceSpans(ResourceSpans
-                                    .newBuilder()
-                                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
-                                            .addAttributes(stringAttribute("service.name", "tweetie-bird"))
-                                            .addAttributes(stringAttribute("java.version", "21.0.4"))
-                                            .addAttributes(stringAttribute("os.name", "Linux"))
-                                            .addAttributes(stringAttribute("os.arch", "amd64"))
-                                            .addAttributes(stringAttribute("hostname", "localhost")))
-                                    .addScopeSpans(ScopeSpans.newBuilder()
-                                            .setScope(InstrumentationScope.newBuilder()
-                                                    .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
-                                            .addSpans(newBuilder()
-                                                    .setSpanId(ByteString.fromHex(data.id()))
-                                                    .setTraceId(ByteString.fromHex(data.traceId()))
-                                                    .setParentSpanId(ByteString.fromHex(data.parentId()))
-                                                    .setName(data.name())
-                                                    .setStartTimeUnixNano(1505855794194009000L)
-                                                    .setEndTimeUnixNano(1505855799465726000L)
-                                                    .setKind(SpanKind.SPAN_KIND_SERVER)
-                                                    .setStatus(
-                                                            Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
-                                                    .addEvents(Event.newBuilder().setName("\"RECEIVED\":{}").setTimeUnixNano(1505855799433901000L).build())
-                                                    .addEvents(Event.newBuilder().setName("\"SENT\":{}").setTimeUnixNano(1505855799459486000L).build())
-                                                    .build())
-                                            .build())
-                                    .build())
-                            .build());
+        .isEqualTo(
+            TracesData.newBuilder().addResourceSpans(ResourceSpans
+                    .newBuilder()
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", "tweetie-bird"))
+                        .addAttributes(stringAttribute("java.version", "21.0.4"))
+                        .addAttributes(stringAttribute("os.name", "Linux"))
+                        .addAttributes(stringAttribute("os.arch", "amd64"))
+                        .addAttributes(stringAttribute("hostname", "localhost"))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
+                    .addScopeSpans(ScopeSpans.newBuilder()
+                        .setScope(InstrumentationScope.newBuilder()
+                            .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
+                        .addSpans(newBuilder()
+                            .setSpanId(ByteString.fromHex(data.id()))
+                            .setTraceId(ByteString.fromHex(data.traceId()))
+                            .setParentSpanId(ByteString.fromHex(data.parentId()))
+                            .setName(data.name())
+                            .setStartTimeUnixNano(1505855794194009000L)
+                            .setEndTimeUnixNano(1505855799465726000L)
+                            .setKind(SpanKind.SPAN_KIND_SERVER)
+                            .setStatus(
+                                Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
+                            .addEvents(Event.newBuilder().setName("\"RECEIVED\":{}").setTimeUnixNano(1505855799433901000L).build())
+                            .addEvents(Event.newBuilder().setName("\"SENT\":{}").setTimeUnixNano(1505855799459486000L).build())
+                            .build())
+                        .build())
+                    .build())
+                .build());
   }
+
   @Test
   void generateSpan_subMicroDurations() {
     MutableSpan data = span(Kind.SERVER);
@@ -169,9 +179,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", "tweetiebird")
-                    ).build())
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", "tweetiebird"))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)).build())
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -201,8 +213,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", "tweetiebird")))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", "tweetiebird"))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -232,8 +247,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", "tweetiebird")))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", "tweetiebird"))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -263,8 +281,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", "tweetiebird")))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", "tweetiebird"))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -294,8 +315,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", "tweetiebird")))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", "tweetiebird"))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -325,8 +349,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", "tweetiebird")))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", "tweetiebird"))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -357,8 +384,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", "super-zipkin-service")))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", "super-zipkin-service"))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -389,8 +419,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -427,8 +460,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -464,8 +500,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -500,8 +539,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -535,8 +577,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -569,8 +614,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -606,8 +654,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -642,8 +693,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
@@ -672,8 +726,11 @@ class OtelToZipkinSpanTransformerTest {
         .isEqualTo(
             TracesData.newBuilder().addResourceSpans(ResourceSpans
                     .newBuilder()
-                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder().addAttributes(
-                        stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME)))
+                    .setResource(io.opentelemetry.proto.resource.v1.Resource.newBuilder()
+                        .addAttributes(stringAttribute("service.name", SpanTranslator.DEFAULT_SERVICE_NAME))
+                        .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+                        .addAttributes(stringAttribute("telemetry.sdk.name", OtlpProtoV1Encoder.class.getName()))
+                        .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION)))
                     .addScopeSpans(ScopeSpans.newBuilder()
                         .setScope(InstrumentationScope.newBuilder()
                             .setName(BraveScope.NAME).setVersion(BraveScope.VERSION).build())
