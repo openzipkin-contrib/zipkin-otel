@@ -36,6 +36,7 @@ final class BraveScope {
     }
   }
 
+  /** Returns a scope derived from the classpath resource "scope.properties" */
   public static InstrumentationScope instrumentationScope() {
     return INSTRUMENTATION_SCOPE;
   }
