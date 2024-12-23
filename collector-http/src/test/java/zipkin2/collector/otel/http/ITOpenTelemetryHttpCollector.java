@@ -6,9 +6,7 @@ package zipkin2.collector.otel.http;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
-import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
@@ -59,7 +57,7 @@ class ITOpenTelemetryHttpCollector {
 
   OpenTelemetryHttpCollector collector;
 
-  int port = getFreePort();
+  int port = ZipkinTestUtil.getFreePort();
 
   SpanExporter spanExporter = OtlpHttpSpanExporter.builder()
       .setCompression("gzip")
@@ -507,14 +505,5 @@ class ITOpenTelemetryHttpCollector {
     long time = TimeUnit.SECONDS.toNanos(instant.getEpochSecond());
     time += instant.getNano();
     return SpanTranslator.nanoToMills(time);
-  }
-
-  static int getFreePort() {
-    try (ServerSocket socket = new ServerSocket(0)) {
-      return socket.getLocalPort();
-    }
-    catch (IOException e) {
-      throw new UncheckedIOException("Failed to find a free port", e);
-    }
   }
 }

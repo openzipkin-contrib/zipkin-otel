@@ -30,15 +30,15 @@ final class ProtoUtils {
       // Also Brave doesn't use the json encoding.
       // So follow the comma separator here.
       return value.getArrayValue().getValuesList().stream()
-              .map(ProtoUtils::valueToString)
-              .collect(joining(","));
+          .map(ProtoUtils::valueToString)
+          .collect(joining(","));
     }
     return valueToJson(value);
   }
 
   static String valueToJson(AnyValue value) {
     if (value.hasStringValue()) {
-      return "\"" + value.getStringValue() + "\"";
+      return quote(value.getStringValue());
     }
     if (value.hasArrayValue()) {
       return value.getArrayValue().getValuesList().stream()
@@ -59,8 +59,12 @@ final class ProtoUtils {
     }
     if (value.hasBytesValue()) {
       // TODO
-      return TextFormat.escapeBytes(value.getBytesValue());
+      return quote(TextFormat.escapeBytes(value.getBytesValue()));
     }
-    return value.toString();
+    return quote(value.toString());
+  }
+
+  static String quote(String value) {
+    return "\"" + value.replace("\n", "\\n") + "\"";
   }
 }
