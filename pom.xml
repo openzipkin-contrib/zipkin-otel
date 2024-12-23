@@ -49,12 +49,12 @@
     <!-- matching armeria/grpc/zipkin -->
     <zipkin.groupId>io.zipkin.zipkin2</zipkin.groupId>
     <!-- when updating, update docker/Dockerfile -->
-    <zipkin.version>3.4.2</zipkin.version>
-    <zipkin-reporter.version>3.4.2</zipkin-reporter.version>
-    <spring-boot.version>3.3.4</spring-boot.version>
+    <zipkin.version>3.4.3</zipkin.version>
+    <zipkin-reporter.version>3.4.3</zipkin-reporter.version>
+    <spring-boot.version>3.3.7</spring-boot.version>
     <!-- armeria.groupId allows you to test feature branches with jitpack -->
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>1.30.1</armeria.version>
+    <armeria.version>1.30.2</armeria.version>
 
     <!-- This allows you to test feature branches with jitpack -->
     <!--    <brave.groupId>com.github.openzipkin.brave</brave.groupId>-->
