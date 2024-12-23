@@ -11,7 +11,7 @@
   <parent>
     <artifactId>zipkin-otel-parent</artifactId>
     <groupId>io.zipkin.contrib.otel</groupId>
-    <version>0.1.3-SNAPSHOT</version>
+    <version>0.2.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
