@@ -70,7 +70,7 @@ public class ITOtlpProtoV1EncoderTest {
   private static OtlpHttpServer otlpHttpServer;
 
   private static final String COLLECTOR_IMAGE =
-      "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.111.0";
+      "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.116.1";
 
   private static final Integer COLLECTOR_OTLP_HTTP_PORT = 4318;
 
@@ -158,6 +158,7 @@ public class ITOtlpProtoV1EncoderTest {
           .setKind(Span.SpanKind.SPAN_KIND_SERVER)
           .addEvents(Span.Event.newBuilder().setName("Foo").setTimeUnixNano(milliToNanos(1510256710021866L + 1000L)).build());
       ScopeSpans.Builder scopeSpanBuilder = ScopeSpans.newBuilder();
+      Resource.Builder resourceBuilder = Resource.newBuilder().addAttributes(stringAttribute("service.name", "isao01"));
       if (encoder instanceof OtlpProtoV1Encoder) {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.NAME).setVersion(BraveScope.VERSION));
         spanBuilder.addAttributes(stringAttribute("network.local.address", "10.23.14.72"))
@@ -170,8 +171,10 @@ public class ITOtlpProtoV1EncoderTest {
             .addAttributes(stringAttribute("location", "T67792"))
             .addAttributes(stringAttribute("other", "A"))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build());
-      }
-      else {
+        resourceBuilder.addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+            .addAttributes(stringAttribute("telemetry.sdk.name", BraveScope.NAME))
+            .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION));
+      } else {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().build() /* empty */);
         spanBuilder.addAttributes(stringAttribute("http.method", "GET"))
             .addAttributes(stringAttribute("http.url", "https://zipkin.example.com/rs/A"))
@@ -185,14 +188,13 @@ public class ITOtlpProtoV1EncoderTest {
             .setStatus(Status.newBuilder().build() /* empty */);
       }
       ResourceSpans resourceSpans = ResourceSpans.newBuilder()
-          .setResource(Resource.newBuilder().addAttributes(stringAttribute("service.name", "isao01")))
+          .setResource(resourceBuilder)
           .addScopeSpans(scopeSpanBuilder.addSpans(spanBuilder))
           .build();
       List<ResourceSpans> receivedSpans = otlpHttpServer.receivedSpans();
       assertThat(receivedSpans.size()).isEqualTo(1);
       compareResourceSpans(receivedSpans.get(0), resourceSpans);
-    }
-    else {
+    } else {
       Assertions.fail("Traces not sent");
     }
   }
@@ -236,6 +238,7 @@ public class ITOtlpProtoV1EncoderTest {
           .setSpanId(ByteString.fromHex("5d64683224ba9b17"))
           .setKind(Span.SpanKind.SPAN_KIND_CLIENT);
       ScopeSpans.Builder scopeSpanBuilder = ScopeSpans.newBuilder();
+      Resource.Builder resourceBuilder = Resource.newBuilder().addAttributes(stringAttribute("service.name", "test-api"));
       if (encoder instanceof OtlpProtoV1Encoder) {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.NAME).setVersion(BraveScope.VERSION));
         spanBuilder.addAttributes(stringAttribute("network.local.address", "10.99.99.99"))
@@ -250,8 +253,11 @@ public class ITOtlpProtoV1EncoderTest {
             .addAttributes(stringAttribute("http.response.status_code", "500"))
             .addAttributes(stringAttribute("error", "Unexpected Exception!"))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
-      }
-      else {
+        resourceBuilder
+            .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
+            .addAttributes(stringAttribute("telemetry.sdk.name", BraveScope.NAME))
+            .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION));
+      } else {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().build() /* empty */);
         spanBuilder.addAttributes(stringAttribute("http.method", "POST"))
             .addAttributes(stringAttribute("http.url", "https://zipkin.example.com/order"))
@@ -267,14 +273,13 @@ public class ITOtlpProtoV1EncoderTest {
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
       }
       ResourceSpans resourceSpans = ResourceSpans.newBuilder()
-          .setResource(Resource.newBuilder().addAttributes(stringAttribute("service.name", "test-api")))
+          .setResource(resourceBuilder)
           .addScopeSpans(scopeSpanBuilder.addSpans(spanBuilder))
           .build();
       List<ResourceSpans> receivedSpans = otlpHttpServer.receivedSpans();
       assertThat(receivedSpans.size()).isEqualTo(1);
       compareResourceSpans(receivedSpans.get(0), resourceSpans);
-    }
-    else {
+    } else {
       Assertions.fail("Traces not sent");
     }
   }
@@ -337,8 +342,7 @@ public class ITOtlpProtoV1EncoderTest {
                             spans.addAll(request.getResourceSpansList());
                             latch.countDown();
                           }
-                        }
-                        catch (IOException e) {
+                        } catch (IOException e) {
                           throw new UncheckedIOException(e);
                         }
                       }

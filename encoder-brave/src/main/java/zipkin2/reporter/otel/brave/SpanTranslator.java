@@ -46,6 +46,15 @@ final class SpanTranslator {
   // Same default value as the SDK https://github.com/open-telemetry/opentelemetry-java/blob/3e8092d086967fa24a0559044651781403033313/sdk/common/src/main/java/io/opentelemetry/sdk/resources/Resource.java#L46-L52
   static final String DEFAULT_SERVICE_NAME = "unknown_service:java";
 
+  // Defined value in https://opentelemetry.io/docs/specs/semconv/attributes-registry/telemetry/#telemetry-sdk-language
+  static final String TELEMETRY_SDK_LANGUAGE = "java";
+
+  // Same version as the default instrumentation name
+  static final String TELEMETRY_SDK_NAME = BraveScope.NAME;
+
+  // Same version as the default instrumentation scope
+  static final String TELEMETRY_SDK_VERSION = BraveScope.VERSION;
+
   /**
    * Tag to Attribute mappings which map brave data policy to otel semantics.
    *
@@ -78,6 +87,8 @@ final class SpanTranslator {
     private Map<String, String> resourceAttributes;
 
     private InstrumentationScope instrumentationScope;
+
+    private String telemetrySdkName;
 
     Builder() {
 
@@ -150,6 +161,11 @@ final class SpanTranslator {
       resourceBuilder.addAttributes(stringAttribute(SemanticConventionsAttributes.SERVICE_NAME, localServiceName));
     }
     resourceAttributes.forEach((k, v) -> resourceBuilder.addAttributes(stringAttribute(k, v)));
+    // Set Telemetry SDK resource attributes https://opentelemetry.io/docs/specs/semconv/attributes-registry/telemetry/
+    resourceBuilder.addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_LANGUAGE, TELEMETRY_SDK_LANGUAGE))
+        .addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_NAME, TELEMETRY_SDK_NAME))
+        .addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_VERSION, TELEMETRY_SDK_VERSION));
+
     maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.NETWORK_LOCAL_ADDRESS, span.localIp());
     maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.NETWORK_LOCAL_PORT, span.localPort());
     maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.NETWORK_PEER_ADDRESS, span.remoteIp());
