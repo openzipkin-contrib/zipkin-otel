@@ -4,6 +4,9 @@
  */
 package zipkin2.collector.otel.http;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.ServerSocket;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -118,5 +121,13 @@ class ZipkinTestUtil {
         .setKey(key)
         .setValue(builder.apply(AnyValue.newBuilder()))
         .build();
+  }
+
+  static int getFreePort() {
+    try (ServerSocket socket = new ServerSocket(0)) {
+      return socket.getLocalPort();
+    } catch (IOException e) {
+      throw new UncheckedIOException("Failed to find a free port", e);
+    }
   }
 }

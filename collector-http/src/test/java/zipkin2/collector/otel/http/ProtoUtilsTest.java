@@ -4,14 +4,14 @@
  */
 package zipkin2.collector.otel.http;
 
-import java.util.Arrays;
-
 import com.google.protobuf.ByteString;
 import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.ArrayValue;
 import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.common.v1.KeyValueList;
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.collector.otel.http.ProtoUtils.kvListToJson;
@@ -38,8 +38,8 @@ class ProtoUtilsTest {
         .build()).build()))
         .isEqualTo("{\"x\":\"abc\",\"y\":\"efg\",\"z\":0}");
     assertThat(valueToJson(AnyValue.newBuilder().setBytesValue(ByteString.fromHex("cafebabe")).build()))
-        .isEqualTo("\\312\\376\\272\\276");
-    assertThat(valueToJson(AnyValue.newBuilder().build())).isEqualTo("");
+        .isEqualTo("\"\\312\\376\\272\\276\"");
+    assertThat(valueToJson(AnyValue.newBuilder().build())).isEqualTo("\"\"");
   }
 
   @Test

@@ -56,10 +56,11 @@ final class SpanTranslator {
     List<zipkin2.Span> spans = new ArrayList<>();
     List<ResourceSpans> spansList = otelSpans.getResourceSpansList();
     for (ResourceSpans resourceSpans : spansList) {
+      Resource resource = resourceSpans.getResource();
       for (ScopeSpans scopeSpans : resourceSpans.getScopeSpansList()) {
         InstrumentationScope scope = scopeSpans.getScope();
         for (io.opentelemetry.proto.trace.v1.Span span : scopeSpans.getSpansList()) {
-          spans.add(generateSpan(span, scope, resourceSpans.getResource()));
+          spans.add(generateSpan(span, scope, resource));
         }
       }
     }
