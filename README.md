@@ -18,13 +18,23 @@ persists them to a configured collector component.
 |------------------------------------|-----------------------------------------------------------------------------------------|
 | [collector-http](./collector-http) | Implements the [OTLP/HTTP protocol](https://opentelemetry.io/docs/specs/otlp/#otlphttp) |
 
+#### Signal Handling
+
+This project supports some OpenTelemetry signals with the following behavior:
+
+| Signal  | Description                                                                                                                            |
+|---------|----------------------------------------------------------------------------------------------------------------------------------------|
+| Traces  | Translated to Zipkin spans. Otel attributes and resource attributes are converted into zipkin annotations.                             |
+| Metrics | Not Supported.                                                                                                                         |
+| Logs    | Recorded as annotations on Zipkin spans if the log entry includes a span context (span id and trace id) and an `event.name` attribute. |
+
 ### Encoders
 
 The encoder encodes brave spans into OTLP proto format.
 
-| Encoder                                   | Description                                    |
-|-------------------------------------------|------------------------------------------------|
-| [`OtlpProtoV1Encoder`](./encoder-brave)     | zipkin-reporter-brave `AsyncZipkinSpanHandler` |
+| Encoder                                 | Description                                    |
+|-----------------------------------------|------------------------------------------------|
+| [`OtlpProtoV1Encoder`](./encoder-brave) | zipkin-reporter-brave `AsyncZipkinSpanHandler` |
 
 ## Server integration
 

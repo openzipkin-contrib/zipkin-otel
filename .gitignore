@@ -24,3 +24,5 @@ target/
 .classpath
 .project
 .settings/
+.venv
+node_modules
