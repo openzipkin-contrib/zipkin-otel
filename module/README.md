@@ -32,7 +32,7 @@ $ java \
     -Dloader.path='otel.jar,otel.jar!/lib' \
     -Dspring.profiles.active=otel \
     -cp zipkin.jar \
-    org.springframework.boot.loader.PropertiesLauncher
+    org.springframework.boot.loader.launch.PropertiesLauncher
 ```
 
 TODO: add example of sending span in otel protocols 
@@ -59,7 +59,7 @@ $ java \
     -Dloader.path='otel.jar,otel.jar!/lib' \
     -Dspring.profiles.active=otel \
     -cp zipkin.jar \
-    org.springframework.boot.loader.PropertiesLauncher
+    org.springframework.boot.loader.launch.PropertiesLauncher
 ```
 
 ### Testing
