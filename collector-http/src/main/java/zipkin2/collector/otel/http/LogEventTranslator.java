@@ -29,13 +29,41 @@ import static zipkin2.collector.otel.http.SpanTranslator.nanoToMills;
  */
 final class LogEventTranslator {
   final OtelResourceMapper resourceMapper;
+  final String logEventNameAttribute;
 
-  LogEventTranslator(OtelResourceMapper resourceMapper) {
-    this.resourceMapper = resourceMapper;
+  public static LogEventTranslator create() {
+    return newBuilder().build();
   }
 
-  LogEventTranslator() {
-    this(DefaultOtelResourceMapper.create());
+  static Builder newBuilder() {
+    return new Builder();
+  }
+
+  static final class Builder {
+    private OtelResourceMapper resourceMapper;
+    private String logEventNameAttribute;
+
+    public Builder otelResourceMapper(OtelResourceMapper resourceMapper) {
+      this.resourceMapper = resourceMapper;
+      return this;
+    }
+
+    /**
+     * The otel attribute name that indicates whether to convert the upcoming Log Event to a Span.
+     */
+    public Builder logEventNameAttribute(String logEventNameAttribute) {
+      this.logEventNameAttribute = logEventNameAttribute;
+      return this;
+    }
+
+    public LogEventTranslator build() {
+      return new LogEventTranslator(this);
+    }
+  }
+
+  private LogEventTranslator(Builder builder) {
+    this.resourceMapper = builder.resourceMapper == null ? DefaultOtelResourceMapper.create() : builder.resourceMapper;
+    this.logEventNameAttribute = builder.logEventNameAttribute == null ? SemanticConventionsAttributes.EVENT_NAME : builder.logEventNameAttribute;
   }
 
   List<Span> translate(ExportLogsServiceRequest logs) {
@@ -61,10 +89,9 @@ final class LogEventTranslator {
       return null;
     }
     Optional<String> eventNameOptional = logRecord.getAttributesList().stream()
-        .filter(attribute -> attribute.getKey().equals(SemanticConventionsAttributes.EVENT_NAME))
+        .filter(attribute -> attribute.getKey().equals(this.logEventNameAttribute))
         .findAny()
         .map(kv -> ProtoUtils.valueToString(kv.getValue()));
-    // TODO Should it be restricted to log records that have an 'event.name' attribute?
     if (!eventNameOptional.isPresent()) {
       return null;
     }

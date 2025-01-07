@@ -50,6 +50,8 @@ for users that prefer a file based approach.
 | Property                             | Environment Variable          | Description                                              |
 |--------------------------------------|-------------------------------|----------------------------------------------------------|
 | `zipkin.collector.otel.http.enabled` | `COLLECTOR_HTTP_OTEL_ENABLED` | `false` disables the HTTP collector. Defaults to `true`. |
+| `zipkin.collector.otel.http.resource-attribute-prefix` | `COLLECTOR_OTEL_RESOURCE_ATTRIBUTE_PREFIX` | The prefix to use when converting otel resource attributes to span annotations. The default is to not prefix anything. |
+| `zipkin.collector.otel.http.log-event-name-attribute` | `COLLECTOR_OTEL_LOG_EVENT_NAME_ATTRIBUTE` | The otel attribute name that indicates whether to convert the upcoming Log Event to a Span. By default, `event.name` is used. |
 
 ### Running
 

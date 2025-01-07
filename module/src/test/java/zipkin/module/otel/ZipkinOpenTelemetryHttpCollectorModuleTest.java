@@ -6,6 +6,9 @@ package zipkin.module.otel;
 
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.collector.otel.http.DefaultOtelResourceMapper;
@@ -13,10 +16,6 @@ import zipkin2.collector.otel.http.OpenTelemetryHttpCollector;
 import zipkin2.collector.otel.http.OtelResourceMapper;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
-
-import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,6 +36,7 @@ class ZipkinOpenTelemetryHttpCollectorModuleTest {
           OtelResourceMapper otelResourceMapper = collector.getOtelResourceMapper();
           assertThat(otelResourceMapper).isInstanceOf(DefaultOtelResourceMapper.class);
           assertThat(((DefaultOtelResourceMapper) otelResourceMapper).getResourceAttributePrefix()).isEqualTo("");
+          assertThat(collector.getLogEventNameAttribute()).isNull();
         });
   }
 
@@ -53,6 +53,20 @@ class ZipkinOpenTelemetryHttpCollectorModuleTest {
           OtelResourceMapper otelResourceMapper = collector.getOtelResourceMapper();
           assertThat(otelResourceMapper).isInstanceOf(DefaultOtelResourceMapper.class);
           assertThat(((DefaultOtelResourceMapper) otelResourceMapper).getResourceAttributePrefix()).isEqualTo("otel.resources.");
+        });
+  }
+
+  @Test
+  void httpCollector_logEventNameAttribute() {
+    contextRunner.withUserConfiguration(ZipkinOpenTelemetryHttpCollectorModule.class)
+        .withUserConfiguration(InMemoryConfiguration.class)
+        .withPropertyValues("zipkin.collector.otel.http.log-event-name-attribute=test.name")
+        .run(context -> {
+          assertThat(context).hasSingleBean(OpenTelemetryHttpCollector.class)
+              .hasSingleBean(DefaultOtelResourceMapper.class)
+              .hasSingleBean(ArmeriaServerConfigurator.class);
+          OpenTelemetryHttpCollector collector = context.getBean(OpenTelemetryHttpCollector.class);
+          assertThat(collector.getLogEventNameAttribute()).isEqualTo("test.name");
         });
   }
 

@@ -10,11 +10,21 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ZipkinOpenTelemetryHttpCollectorProperties {
   private String resourceAttributePrefix;
 
+  private String logEventNameAttribute;
+
   public String getResourceAttributePrefix() {
     return resourceAttributePrefix;
   }
 
   public void setResourceAttributePrefix(String resourceAttributePrefix) {
     this.resourceAttributePrefix = resourceAttributePrefix;
+  }
+
+  public String getLogEventNameAttribute() {
+    return logEventNameAttribute;
+  }
+
+  public void setLogEventNameAttribute(String logEventNameAttribute) {
+    this.logEventNameAttribute = logEventNameAttribute;
   }
 }

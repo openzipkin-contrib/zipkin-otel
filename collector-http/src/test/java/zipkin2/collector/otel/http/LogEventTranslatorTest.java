@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.collector.otel.http.ZipkinTestUtil.stringAttribute;
 
 class LogEventTranslatorTest {
-  LogEventTranslator logEventTranslator = new LogEventTranslator();
+  LogEventTranslator logEventTranslator = LogEventTranslator.create();
 
   @Test
   void nullSpanShouldBeReturnedWithoutSpanId() {
@@ -110,6 +110,26 @@ class LogEventTranslatorTest {
         .id("7180c278b62e8f6a")
         .traceId("6b221d5bc9e6496c6b221d5bc9e6496c")
         .addAnnotation(1505855794000L, "\"demo.event\":{\"body\":{\"string\":\"value1\",\"int\":2}}")
+        .build());
+  }
+
+  @Test
+  void customEventNameAttributeShouldBeTranslated() {
+    LogEventTranslator eventTranslator = LogEventTranslator.newBuilder()
+        .logEventNameAttribute("foo.bar")
+        .build();
+    Span span = eventTranslator.generateSpan(LogRecord.newBuilder()
+        .setSpanId(ByteString.fromHex("7180c278b62e8f6a216a2aea45d08fc9"))
+        .setTraceId(ByteString.fromHex("6b221d5bc9e6496c6b221d5bc9e6496c"))
+        .setTimeUnixNano(1505855794000000L)
+        .setSeverityText("INFO")
+        .setBody(AnyValue.newBuilder().setStringValue("Hello World!").build())
+        .addAttributes(stringAttribute("foo.bar", "demo.event"))
+        .build());
+    assertThat(span).isEqualTo(Span.newBuilder()
+        .id("7180c278b62e8f6a")
+        .traceId("6b221d5bc9e6496c6b221d5bc9e6496c")
+        .addAnnotation(1505855794000L, "\"demo.event\":{\"severity_text\":\"INFO\",\"body\":\"Hello World!\"}")
         .build());
   }
 }
