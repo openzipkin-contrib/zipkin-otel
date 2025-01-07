@@ -26,6 +26,7 @@ import zipkin2.storage.InMemoryStorage;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,6 +94,7 @@ public class ITLogEventEmission {
         assertThat(traces.get(0)).hasSize(3);
       });
       List<Span> spans = store.getTraces().get(0);
+      spans.sort(Comparator.comparing(Span::kind, Comparator.nullsFirst(Comparator.naturalOrder())));
       String spanId = spans.get(0).id();
       String traceId = spans.get(0).traceId();
       assertThat(spans.get(0).kind()).isNull();
@@ -224,6 +226,7 @@ public class ITLogEventEmission {
         assertThat(traces.get(0)).hasSize(4);
       });
       List<Span> spans = store.getTraces().get(0);
+      spans.sort(Comparator.comparing(Span::kind, Comparator.nullsFirst(Comparator.naturalOrder())));
       String spanId = spans.get(0).id();
       String traceId = spans.get(0).traceId();
       assertThat(spans.get(0).kind()).isNull();
@@ -323,6 +326,7 @@ public class ITLogEventEmission {
         assertThat(traces.get(0)).hasSize(3);
       });
       List<Span> spans = store.getTraces().get(0);
+      spans.sort(Comparator.comparing(Span::kind, Comparator.nullsFirst(Comparator.naturalOrder())));
       String spanId = spans.get(0).id();
       String traceId = spans.get(0).traceId();
       assertThat(spans.get(0).kind()).isNull();
