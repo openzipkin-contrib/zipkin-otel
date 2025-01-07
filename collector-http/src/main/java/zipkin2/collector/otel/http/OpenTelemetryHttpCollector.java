@@ -49,8 +49,6 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
 
     OtelResourceMapper otelResourceMapper;
 
-    String logEventNameAttribute;
-
     @Override
     public Builder storage(StorageComponent storageComponent) {
       delegate.storage(storageComponent);
@@ -77,11 +75,6 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
       return this;
     }
 
-    public Builder logEventNameAttribute(String logEventNameAttribute) {
-      this.logEventNameAttribute = logEventNameAttribute;
-      return this;
-    }
-
     @Override
     public OpenTelemetryHttpCollector build() {
       return new OpenTelemetryHttpCollector(this);
@@ -97,13 +90,10 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
 
   final OtelResourceMapper otelResourceMapper;
 
-  final String logEventNameAttribute;
-
   OpenTelemetryHttpCollector(Builder builder) {
     collector = builder.delegate.build();
     metrics = builder.metrics;
     otelResourceMapper = builder.otelResourceMapper == null ? DefaultOtelResourceMapper.create() : builder.otelResourceMapper;
-    logEventNameAttribute = builder.logEventNameAttribute;
   }
 
   @Override
@@ -118,10 +108,6 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
 
   public OtelResourceMapper getOtelResourceMapper() {
     return otelResourceMapper;
-  }
-
-  public String getLogEventNameAttribute() {
-    return logEventNameAttribute;
   }
 
   /**
@@ -198,7 +184,6 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
       this.collector = collector;
       this.logEventTranslator = LogEventTranslator.newBuilder()
           .otelResourceMapper(collector.otelResourceMapper)
-          .logEventNameAttribute(collector.logEventNameAttribute)
           .build();
     }
 

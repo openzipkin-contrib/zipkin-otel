@@ -29,7 +29,6 @@ import static zipkin2.collector.otel.http.SpanTranslator.nanoToMills;
  */
 final class LogEventTranslator {
   final OtelResourceMapper resourceMapper;
-  final String logEventNameAttribute;
 
   public static LogEventTranslator create() {
     return newBuilder().build();
@@ -48,14 +47,6 @@ final class LogEventTranslator {
       return this;
     }
 
-    /**
-     * The otel attribute name that indicates whether to convert the upcoming Log Event to a Span.
-     */
-    public Builder logEventNameAttribute(String logEventNameAttribute) {
-      this.logEventNameAttribute = logEventNameAttribute;
-      return this;
-    }
-
     public LogEventTranslator build() {
       return new LogEventTranslator(this);
     }
@@ -63,7 +54,6 @@ final class LogEventTranslator {
 
   private LogEventTranslator(Builder builder) {
     this.resourceMapper = builder.resourceMapper == null ? DefaultOtelResourceMapper.create() : builder.resourceMapper;
-    this.logEventNameAttribute = builder.logEventNameAttribute == null ? SemanticConventionsAttributes.EVENT_NAME : builder.logEventNameAttribute;
   }
 
   List<Span> translate(ExportLogsServiceRequest logs) {
@@ -89,7 +79,7 @@ final class LogEventTranslator {
       return null;
     }
     Optional<String> eventNameOptional = logRecord.getAttributesList().stream()
-        .filter(attribute -> attribute.getKey().equals(this.logEventNameAttribute))
+        .filter(attribute -> attribute.getKey().equals(SemanticConventionsAttributes.EVENT_NAME))
         .findAny()
         .map(kv -> ProtoUtils.valueToString(kv.getValue()));
     if (!eventNameOptional.isPresent()) {

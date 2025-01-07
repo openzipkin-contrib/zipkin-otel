@@ -36,7 +36,6 @@ class ZipkinOpenTelemetryHttpCollectorModuleTest {
           OtelResourceMapper otelResourceMapper = collector.getOtelResourceMapper();
           assertThat(otelResourceMapper).isInstanceOf(DefaultOtelResourceMapper.class);
           assertThat(((DefaultOtelResourceMapper) otelResourceMapper).getResourceAttributePrefix()).isEqualTo("");
-          assertThat(collector.getLogEventNameAttribute()).isNull();
         });
   }
 
@@ -53,20 +52,6 @@ class ZipkinOpenTelemetryHttpCollectorModuleTest {
           OtelResourceMapper otelResourceMapper = collector.getOtelResourceMapper();
           assertThat(otelResourceMapper).isInstanceOf(DefaultOtelResourceMapper.class);
           assertThat(((DefaultOtelResourceMapper) otelResourceMapper).getResourceAttributePrefix()).isEqualTo("otel.resources.");
-        });
-  }
-
-  @Test
-  void httpCollector_logEventNameAttribute() {
-    contextRunner.withUserConfiguration(ZipkinOpenTelemetryHttpCollectorModule.class)
-        .withUserConfiguration(InMemoryConfiguration.class)
-        .withPropertyValues("zipkin.collector.otel.http.log-event-name-attribute=test.name")
-        .run(context -> {
-          assertThat(context).hasSingleBean(OpenTelemetryHttpCollector.class)
-              .hasSingleBean(DefaultOtelResourceMapper.class)
-              .hasSingleBean(ArmeriaServerConfigurator.class);
-          OpenTelemetryHttpCollector collector = context.getBean(OpenTelemetryHttpCollector.class);
-          assertThat(collector.getLogEventNameAttribute()).isEqualTo("test.name");
         });
   }
 

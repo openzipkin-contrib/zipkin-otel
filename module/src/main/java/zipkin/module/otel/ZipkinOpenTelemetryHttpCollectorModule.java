@@ -10,7 +10,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.util.StringUtils;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.collector.otel.http.DefaultOtelResourceMapper;
@@ -28,9 +27,6 @@ class ZipkinOpenTelemetryHttpCollectorModule {
                                                OtelResourceMapper otelResourceMapper,
                                                ZipkinOpenTelemetryHttpCollectorProperties properties) {
     OpenTelemetryHttpCollector.Builder builder = OpenTelemetryHttpCollector.newBuilder();
-    if (StringUtils.hasText(properties.getLogEventNameAttribute())) {
-      builder.logEventNameAttribute(properties.getLogEventNameAttribute());
-    }
     return builder
         .storage(storage)
         .sampler(sampler)
