@@ -22,7 +22,8 @@ class OtlpProtoV1EncoderTest {
     SpanTranslator spanTranslator = encoder.spanTranslator;
     assertThat(spanTranslator.instrumentationScope).isEqualTo(BraveScope.instrumentationScope());
     assertThat(spanTranslator.resourceAttributes).isEqualTo(Collections.emptyMap());
-    assertThat(spanTranslator.tagMapper.errorTag).isEqualTo(Tags.ERROR);
+    assertThat(spanTranslator.errorTag).isEqualTo(Tags.ERROR);
+    assertThat(spanTranslator.tagToAttributes).isNotNull();
   }
 
   @Test
@@ -34,7 +35,8 @@ class OtlpProtoV1EncoderTest {
     SpanTranslator spanTranslator = encoder.spanTranslator;
     assertThat(spanTranslator.instrumentationScope).isEqualTo(BraveScope.instrumentationScope());
     assertThat(spanTranslator.resourceAttributes).isEqualTo(resourceAttributes);
-    assertThat(spanTranslator.tagMapper.errorTag).isEqualTo(Tags.ERROR);
+    assertThat(spanTranslator.errorTag).isEqualTo(Tags.ERROR);
+    assertThat(spanTranslator.tagToAttributes).isNotNull();
   }
 
   @Test
@@ -46,7 +48,8 @@ class OtlpProtoV1EncoderTest {
     SpanTranslator spanTranslator = encoder.spanTranslator;
     assertThat(spanTranslator.instrumentationScope).isEqualTo(instrumentationScope);
     assertThat(spanTranslator.resourceAttributes).isEqualTo(Collections.emptyMap());
-    assertThat(spanTranslator.tagMapper.errorTag).isEqualTo(Tags.ERROR);
+    assertThat(spanTranslator.errorTag).isEqualTo(Tags.ERROR);
+    assertThat(spanTranslator.tagToAttributes).isNotNull();
   }
 
   @Test
@@ -63,6 +66,19 @@ class OtlpProtoV1EncoderTest {
     SpanTranslator spanTranslator = encoder.spanTranslator;
     assertThat(spanTranslator.instrumentationScope).isEqualTo(BraveScope.instrumentationScope());
     assertThat(spanTranslator.resourceAttributes).isEqualTo(Collections.emptyMap());
-    assertThat(spanTranslator.tagMapper.errorTag).isEqualTo(errorTag);
+    assertThat(spanTranslator.errorTag).isEqualTo(errorTag);
+    assertThat(spanTranslator.tagToAttributes).isNotNull();
+  }
+
+  @Test
+  void customTagToAttributes() {
+    TagToAttributes tagToAttributes = TagToAttributes.newBuilder()
+        .tagToAttribute("abc", "xyz")
+        .build();
+    OtlpProtoV1Encoder encoder = OtlpProtoV1Encoder.newBuilder()
+        .tagToAttributes(tagToAttributes)
+        .build();
+    SpanTranslator spanTranslator = encoder.spanTranslator;
+    assertThat(spanTranslator.tagToAttributes).isEqualTo(tagToAttributes);
   }
 }

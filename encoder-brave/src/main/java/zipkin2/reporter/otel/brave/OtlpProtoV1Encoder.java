@@ -4,15 +4,15 @@
  */
 package zipkin2.reporter.otel.brave;
 
-import java.util.Collections;
-import java.util.Map;
-
 import brave.Tag;
 import brave.Tags;
 import brave.handler.MutableSpan;
 import io.opentelemetry.proto.trace.v1.TracesData;
 import zipkin2.reporter.BytesEncoder;
 import zipkin2.reporter.Encoding;
+
+import java.util.Collections;
+import java.util.Map;
 
 public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
   public static OtlpProtoV1Encoder create() {
@@ -26,11 +26,15 @@ public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
   public static final class Builder {
     Tag<Throwable> errorTag = Tags.ERROR;
 
+    TagToAttributes tagToAttributes;
+
     Map<String, String> resourceAttributes = Collections.emptyMap();
 
     InstrumentationScope instrumentationScope = BraveScope.instrumentationScope();
 
-    /** The throwable parser. Defaults to {@link Tags#ERROR}. */
+    /**
+     * The throwable parser. Defaults to {@link Tags#ERROR}.
+     */
     public Builder errorTag(Tag<Throwable> errorTag) {
       if (errorTag == null) {
         throw new NullPointerException("errorTag == null");
@@ -39,7 +43,17 @@ public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
       return this;
     }
 
-    /** static resource attributes added to a {@link io.opentelemetry.proto.resource.v1.Resource}. Defaults to empty map. */
+    public Builder tagToAttributes(TagToAttributes tagToAttributes) {
+      if (tagToAttributes == null) {
+        throw new NullPointerException("tagToAttributes == null");
+      }
+      this.tagToAttributes = tagToAttributes;
+      return this;
+    }
+
+    /**
+     * static resource attributes added to a {@link io.opentelemetry.proto.resource.v1.Resource}. Defaults to empty map.
+     */
     public Builder resourceAttributes(Map<String, String> resourceAttributes) {
       if (resourceAttributes == null) {
         throw new NullPointerException("resourceAttributes == null");
@@ -48,7 +62,9 @@ public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
       return this;
     }
 
-    /** The Instrumentation scope which represents a logical unit within the application code with which the emitted telemetry can be associated */
+    /**
+     * The Instrumentation scope which represents a logical unit within the application code with which the emitted telemetry can be associated
+     */
     public Builder instrumentationScope(InstrumentationScope instrumentationScope) {
       if (instrumentationScope == null) {
         throw new NullPointerException("implementationScope == null");
@@ -71,6 +87,7 @@ public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
   private OtlpProtoV1Encoder(Builder builder) {
     this.spanTranslator = SpanTranslator.newBuilder()
         .errorTag(builder.errorTag)
+        .tagToAttributes(builder.tagToAttributes)
         .resourceAttributes(builder.resourceAttributes)
         .instrumentationScope(builder.instrumentationScope)
         .build();
