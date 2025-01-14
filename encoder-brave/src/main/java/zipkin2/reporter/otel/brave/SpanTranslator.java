@@ -4,19 +4,11 @@
  */
 package zipkin2.reporter.otel.brave;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 import brave.Span.Kind;
 import brave.Tag;
 import brave.handler.MutableSpan;
 import brave.handler.MutableSpan.AnnotationConsumer;
-import brave.handler.MutableSpan.TagConsumer;
-import brave.http.HttpTags;
 import com.google.protobuf.ByteString;
-import io.opentelemetry.proto.common.v1.AnyValue;
-import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.resource.v1.Resource;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
@@ -25,6 +17,13 @@ import io.opentelemetry.proto.trace.v1.Span.Event;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.TracesData;
+
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static zipkin2.reporter.otel.brave.TagToAttribute.maybeAddIntAttribute;
+import static zipkin2.reporter.otel.brave.TagToAttribute.maybeAddStringAttribute;
+import static zipkin2.reporter.otel.brave.TagToAttribute.stringAttribute;
 
 /**
  * SpanTranslator converts a Brave Span to a OpenTelemetry Span.
@@ -55,47 +54,36 @@ final class SpanTranslator {
   // Same version as the default instrumentation scope
   static final String TELEMETRY_SDK_VERSION = BraveScope.VERSION;
 
-  /**
-   * Tag to Attribute mappings which map brave data policy to otel semantics.
-   *
-   * @see <a href="https://opentelemetry.io/docs/specs/semconv/http/http-spans/">https://opentelemetry.io/docs/specs/semconv/http/http-spans/</a>
-   * @see brave.http.HttpTags
-   */
-  // TODO: brave also defines rpc and messaging data policy
-  static final Map<String, String> TAG_TO_ATTRIBUTE;
+  final TagToAttributes tagToAttributes;
 
-  static {
-    TAG_TO_ATTRIBUTE = new LinkedHashMap<>();
-    // "http.host" is not defined in HttpTags, but is a well-known tag.
-    TAG_TO_ATTRIBUTE.put("http.host", SemanticConventionsAttributes.SERVER_ADDRESS);
-    TAG_TO_ATTRIBUTE.put(HttpTags.METHOD.key(), SemanticConventionsAttributes.HTTP_REQUEST_METHOD);
-    TAG_TO_ATTRIBUTE.put(HttpTags.PATH.key(), SemanticConventionsAttributes.URL_PATH);
-    TAG_TO_ATTRIBUTE.put(HttpTags.ROUTE.key(), SemanticConventionsAttributes.HTTP_ROUTE);
-    TAG_TO_ATTRIBUTE.put(HttpTags.URL.key(), SemanticConventionsAttributes.URL_FULL);
-    TAG_TO_ATTRIBUTE.put(HttpTags.STATUS_CODE.key(), SemanticConventionsAttributes.HTTP_RESPONSE_STATUS_CODE);
-  }
+  final Tag<Throwable> errorTag;
 
-  final TagMapper tagMapper;
+  final AnnotationMapper annotationMapper = new AnnotationMapper();
 
   final Map<String, String> resourceAttributes;
 
   final InstrumentationScope instrumentationScope;
 
   static final class Builder {
-    private TagMapper tagMapper;
+    private Tag<Throwable> errorTag;
+
+    private TagToAttributes tagToAttributes;
 
     private Map<String, String> resourceAttributes;
 
     private InstrumentationScope instrumentationScope;
-
-    private String telemetrySdkName;
 
     Builder() {
 
     }
 
     Builder errorTag(Tag<Throwable> errorTag) {
-      this.tagMapper = new TagMapper(errorTag, TAG_TO_ATTRIBUTE);
+      this.errorTag = errorTag;
+      return this;
+    }
+
+    Builder tagToAttributes(TagToAttributes tagToAttributes) {
+      this.tagToAttributes = tagToAttributes;
       return this;
     }
 
@@ -119,7 +107,8 @@ final class SpanTranslator {
   }
 
   SpanTranslator(Builder builder) {
-    this.tagMapper = builder.tagMapper;
+    this.tagToAttributes = builder.tagToAttributes == null ? TagToAttributes.create() : builder.tagToAttributes;
+    this.errorTag = builder.errorTag;
     this.resourceAttributes = builder.resourceAttributes;
     this.instrumentationScope = builder.instrumentationScope;
   }
@@ -171,9 +160,15 @@ final class SpanTranslator {
     maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.NETWORK_PEER_ADDRESS, span.remoteIp());
     maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.NETWORK_PEER_PORT, span.remotePort());
     maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.PEER_SERVICE, span.remoteServiceName());
-    span.forEachTag(tagMapper, spanBuilder);
-    span.forEachAnnotation(tagMapper, spanBuilder);
-    tagMapper.addErrorTag(spanBuilder, span);
+    span.forEachTag(tagToAttributes, spanBuilder);
+    span.forEachAnnotation(annotationMapper, spanBuilder);
+    String errorValue = errorTag.value(span.error(), null);
+    if (errorValue != null) {
+      spanBuilder.addAttributes(stringAttribute("error", errorValue));
+      spanBuilder.setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
+    } else {
+      spanBuilder.setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build());
+    }
     return spanBuilder;
   }
 
@@ -193,67 +188,11 @@ final class SpanTranslator {
     return DEFAULT_KIND;
   }
 
-  static KeyValue stringAttribute(String key, String value) {
-    return KeyValue.newBuilder()
-        .setKey(key)
-        .setValue(AnyValue.newBuilder().setStringValue(value))
-        .build();
-  }
-
-  static KeyValue intAttribute(String key, int value) {
-    return KeyValue.newBuilder()
-        .setKey(key)
-        .setValue(AnyValue.newBuilder().setIntValue(value))
-        .build();
-  }
-
-  private static void maybeAddStringAttribute(Span.Builder spanBuilder, String key, String value) {
-    if (value != null) {
-      spanBuilder.addAttributes(stringAttribute(key, value));
-    }
-  }
-
-  private static void maybeAddIntAttribute(Span.Builder spanBuilder, String key, int value) {
-    if (value != 0) {
-      spanBuilder.addAttributes(intAttribute(key, value));
-    }
-  }
-
-  static final class TagMapper implements TagConsumer<Span.Builder>, AnnotationConsumer<Span.Builder> {
-
-    final Tag<Throwable> errorTag;
-
-    final Map<String, String> tagToAttribute;
-
-    TagMapper(Tag<Throwable> errorTag, Map<String, String> tagToAttribute) {
-      this.errorTag = errorTag;
-      this.tagToAttribute = tagToAttribute;
-    }
-
-    @Override
-    public void accept(Span.Builder target, String tagKey, String value) {
-      target.addAttributes(stringAttribute(convertTagToAttribute(tagKey), value));
-    }
-
-    void addErrorTag(Span.Builder target, MutableSpan span) {
-      String errorValue = errorTag.value(span.error(), null);
-      if (errorValue != null) {
-        target.addAttributes(stringAttribute("error", errorValue));
-        target.setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
-      } else {
-        target.setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build());
-      }
-    }
-
+  static final class AnnotationMapper implements AnnotationConsumer<Span.Builder> {
     @Override
     public void accept(Span.Builder target, long timestamp, String value) {
       target.addEvents(Event.newBuilder().setTimeUnixNano(TimeUnit.MICROSECONDS.toNanos(timestamp))
           .setName(value).build());
-    }
-
-    private String convertTagToAttribute(String tagKey) {
-      String attributeKey = tagToAttribute.get(tagKey);
-      return attributeKey != null ? attributeKey : tagKey;
     }
   }
 

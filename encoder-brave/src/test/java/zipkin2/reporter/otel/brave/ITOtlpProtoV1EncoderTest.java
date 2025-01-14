@@ -4,19 +4,6 @@
  */
 package zipkin2.reporter.otel.brave;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
-import java.util.zip.GZIPInputStream;
-
 import brave.Span.Kind;
 import brave.Tags;
 import brave.handler.MutableSpan;
@@ -38,6 +25,10 @@ import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.Span;
 import io.opentelemetry.proto.trace.v1.Status;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.NetworkAttributes;
+import io.opentelemetry.semconv.TelemetryAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -60,9 +51,22 @@ import zipkin2.reporter.brave.AsyncZipkinSpanHandler;
 import zipkin2.reporter.brave.MutableSpanBytesEncoder;
 import zipkin2.reporter.okhttp3.OkHttpSender;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin2.reporter.otel.brave.SpanTranslator.intAttribute;
-import static zipkin2.reporter.otel.brave.SpanTranslator.stringAttribute;
+import static zipkin2.reporter.otel.brave.TagToAttribute.intAttribute;
+import static zipkin2.reporter.otel.brave.TagToAttribute.stringAttribute;
 
 public class ITOtlpProtoV1EncoderTest {
   private static GenericContainer<?> collector;
@@ -126,7 +130,7 @@ public class ITOtlpProtoV1EncoderTest {
         .encoding(encoding)
         .endpoint(endpoint)
         .build();
-       AsyncZipkinSpanHandler spanHandler = AsyncZipkinSpanHandler.newBuilder(okHttpSender).build(encoder);
+         AsyncZipkinSpanHandler spanHandler = AsyncZipkinSpanHandler.newBuilder(okHttpSender).build(encoder);
     ) {
       TraceContext context = B3SingleFormat.parseB3SingleFormat("0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-1").context();
       MutableSpan span = new MutableSpan(context, null);
@@ -137,10 +141,8 @@ public class ITOtlpProtoV1EncoderTest {
       span.localServiceName("isao01");
       span.localIp("10.23.14.72");
       span.localPort(12345);
-      span.tag("http.host", "zipkin.example.com");
       span.tag("http.method", "GET");
       span.tag("http.url", "https://zipkin.example.com/rs/A");
-      span.tag("http.path", "/rs/A");
       span.tag("http.status_code", "200");
       span.tag("location", "T67792");
       span.tag("other", "A");
@@ -161,13 +163,13 @@ public class ITOtlpProtoV1EncoderTest {
       Resource.Builder resourceBuilder = Resource.newBuilder().addAttributes(stringAttribute("service.name", "isao01"));
       if (encoder instanceof OtlpProtoV1Encoder) {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.NAME).setVersion(BraveScope.VERSION));
-        spanBuilder.addAttributes(stringAttribute("network.local.address", "10.23.14.72"))
-            .addAttributes(intAttribute("network.local.port", 12345))
-            .addAttributes(stringAttribute("server.address", "zipkin.example.com"))
-            .addAttributes(stringAttribute("http.request.method", "GET"))
-            .addAttributes(stringAttribute("url.full", "https://zipkin.example.com/rs/A"))
-            .addAttributes(stringAttribute("url.path", "/rs/A"))
-            .addAttributes(stringAttribute("http.response.status_code", "200"))
+        spanBuilder.addAttributes(stringAttribute(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "10.23.14.72"))
+            .addAttributes(intAttribute(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), 12345))
+            .addAttributes(stringAttribute(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), "GET"))
+            .addAttributes(stringAttribute(UrlAttributes.URL_FULL.getKey(), "https://zipkin.example.com/rs/A"))
+            .addAttributes(stringAttribute(UrlAttributes.URL_SCHEME.getKey(), "https"))
+            .addAttributes(stringAttribute(UrlAttributes.URL_PATH.getKey(), "/rs/A"))
+            .addAttributes(stringAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), "200"))
             .addAttributes(stringAttribute("location", "T67792"))
             .addAttributes(stringAttribute("other", "A"))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build());
@@ -178,11 +180,9 @@ public class ITOtlpProtoV1EncoderTest {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().build() /* empty */);
         spanBuilder.addAttributes(stringAttribute("http.method", "GET"))
             .addAttributes(stringAttribute("http.url", "https://zipkin.example.com/rs/A"))
-            .addAttributes(stringAttribute("http.path", "/rs/A"))
             .addAttributes(stringAttribute("http.status_code", "200"))
             .addAttributes(stringAttribute("location", "T67792"))
             .addAttributes(stringAttribute("other", "A"))
-            .addAttributes(stringAttribute("http.host", "zipkin.example.com"))
             .addAttributes(stringAttribute("net.host.ip", "10.23.14.72"))
             .addAttributes(intAttribute("net.host.port", 12345))
             .setStatus(Status.newBuilder().build() /* empty */);
@@ -206,7 +206,7 @@ public class ITOtlpProtoV1EncoderTest {
         .encoding(encoding)
         .endpoint(endpoint)
         .build();
-       AsyncZipkinSpanHandler spanHandler = AsyncZipkinSpanHandler.newBuilder(okHttpSender).build(encoder);
+         AsyncZipkinSpanHandler spanHandler = AsyncZipkinSpanHandler.newBuilder(okHttpSender).build(encoder);
     ) {
       TraceContext context = B3SingleFormat.parseB3SingleFormat("123caa480c3fa187dd37f5d5c991f2c7-5d64683224ba9b17-1").context();
       MutableSpan span = new MutableSpan(context, null);
@@ -220,10 +220,8 @@ public class ITOtlpProtoV1EncoderTest {
       span.remoteIp("1.2.3.4");
       span.remotePort(9999);
       span.remoteServiceName("demo");
-      span.tag("http.host", "zipkin.example.com");
       span.tag("http.method", "POST");
       span.tag("http.url", "https://zipkin.example.com/order");
-      span.tag("http.path", "/order");
       span.tag("http.status_code", "500");
       span.error(new RuntimeException("Unexpected Exception!"));
       spanHandler.end(context, span, null);
@@ -241,30 +239,28 @@ public class ITOtlpProtoV1EncoderTest {
       Resource.Builder resourceBuilder = Resource.newBuilder().addAttributes(stringAttribute("service.name", "test-api"));
       if (encoder instanceof OtlpProtoV1Encoder) {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.NAME).setVersion(BraveScope.VERSION));
-        spanBuilder.addAttributes(stringAttribute("network.local.address", "10.99.99.99"))
-            .addAttributes(intAttribute("network.local.port", 43210))
-            .addAttributes(stringAttribute("network.peer.address", "1.2.3.4"))
-            .addAttributes(intAttribute("network.peer.port", 9999))
+        spanBuilder.addAttributes(stringAttribute(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "10.99.99.99"))
+            .addAttributes(intAttribute(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), 43210))
+            .addAttributes(stringAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "1.2.3.4"))
+            .addAttributes(intAttribute(NetworkAttributes.NETWORK_PEER_PORT.getKey(), 9999))
             .addAttributes(stringAttribute("peer.service", "demo"))
-            .addAttributes(stringAttribute("server.address", "zipkin.example.com"))
-            .addAttributes(stringAttribute("http.request.method", "POST"))
-            .addAttributes(stringAttribute("url.full", "https://zipkin.example.com/order"))
-            .addAttributes(stringAttribute("url.path", "/order"))
-            .addAttributes(stringAttribute("http.response.status_code", "500"))
+            .addAttributes(stringAttribute(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), "POST"))
+            .addAttributes(stringAttribute(UrlAttributes.URL_FULL.getKey(), "https://zipkin.example.com/order"))
+            .addAttributes(stringAttribute(UrlAttributes.URL_SCHEME.getKey(), "https"))
+            .addAttributes(stringAttribute(UrlAttributes.URL_PATH.getKey(), "/order"))
+            .addAttributes(stringAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), "500"))
             .addAttributes(stringAttribute("error", "Unexpected Exception!"))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
         resourceBuilder
-            .addAttributes(stringAttribute("telemetry.sdk.language", "java"))
-            .addAttributes(stringAttribute("telemetry.sdk.name", BraveScope.NAME))
-            .addAttributes(stringAttribute("telemetry.sdk.version", BraveScope.VERSION));
+            .addAttributes(stringAttribute(TelemetryAttributes.TELEMETRY_SDK_LANGUAGE.getKey(), "java"))
+            .addAttributes(stringAttribute(TelemetryAttributes.TELEMETRY_SDK_NAME.getKey(), BraveScope.NAME))
+            .addAttributes(stringAttribute(TelemetryAttributes.TELEMETRY_SDK_VERSION.getKey(), BraveScope.VERSION));
       } else {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().build() /* empty */);
         spanBuilder.addAttributes(stringAttribute("http.method", "POST"))
             .addAttributes(stringAttribute("http.url", "https://zipkin.example.com/order"))
             .addAttributes(stringAttribute("error", "Unexpected Exception!"))
-            .addAttributes(stringAttribute("http.path", "/order"))
             .addAttributes(stringAttribute("http.status_code", "500"))
-            .addAttributes(stringAttribute("http.host", "zipkin.example.com"))
             .addAttributes(stringAttribute("net.host.ip", "10.99.99.99"))
             .addAttributes(intAttribute("net.host.port", 43210))
             .addAttributes(stringAttribute("net.peer.ip", "1.2.3.4"))
@@ -357,7 +353,7 @@ public class ITOtlpProtoV1EncoderTest {
 
     private byte[] decompressGzip(byte[] compressed) throws IOException {
       try (InputStream gis = new GZIPInputStream(new ByteArrayInputStream(compressed));
-         ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+           ByteArrayOutputStream out = new ByteArrayOutputStream()) {
         byte[] buffer = new byte[1024];
         int len;
         while ((len = gis.read(buffer)) != -1) {

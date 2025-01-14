@@ -30,6 +30,12 @@ final class SemanticConventionsAttributes {
   static final String URL_FULL = "url.full";
   // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.29.0/semconv/src/main/java/io/opentelemetry/semconv/UrlAttributes.java#L71
   static final String URL_PATH = "url.path";
+  // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.29.0/semconv/src/main/java/io/opentelemetry/semconv/UrlAttributes.java#L103
+  static final String URL_QUERY = "url.query";
+  // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.29.0/semconv/src/main/java/io/opentelemetry/semconv/UrlAttributes.java#L109
+  static final String URL_SCHEME = "url.scheme";
+  // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.29.0/semconv/src/main/java/io/opentelemetry/semconv/UrlAttributes.java#L17
+  static final String URL_FRAGMENT = "url.fragment";
   // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.29.0/semconv-incubating/src/main/java/io/opentelemetry/semconv/incubating/PeerIncubatingAttributes.java#L21
   static final String PEER_SERVICE = "peer.service";
   // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.29.0/semconv/src/main/java/io/opentelemetry/semconv/TelemetryAttributes.java#L17

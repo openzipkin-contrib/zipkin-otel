@@ -24,6 +24,8 @@ public class TestObjects {
     braveSpan.annotate(1472470996403000L, "bar");
     braveSpan.tag("clnt/finagle.version", "6.45.0");
     braveSpan.tag("http.path", "/api");
+    braveSpan.tag("method", "GET");
+    braveSpan.tag("status", "200");
     return braveSpan;
   }
 }

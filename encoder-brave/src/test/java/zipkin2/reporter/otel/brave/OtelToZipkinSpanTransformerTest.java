@@ -4,12 +4,6 @@
  */
 package zipkin2.reporter.otel.brave;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.Nullable;
-
 import brave.Span;
 import brave.Span.Kind;
 import brave.handler.MutableSpan;
@@ -27,10 +21,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import javax.annotation.Nullable;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import static io.opentelemetry.proto.trace.v1.Span.newBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin2.reporter.otel.brave.SpanTranslator.intAttribute;
-import static zipkin2.reporter.otel.brave.SpanTranslator.stringAttribute;
+import static zipkin2.reporter.otel.brave.TagToAttribute.intAttribute;
+import static zipkin2.reporter.otel.brave.TagToAttribute.stringAttribute;
 
 // Adapted from https://github.com/open-telemetry/opentelemetry-java/blob/v1.39.0/exporters/zipkin/src/test/java/io/opentelemetry/exporter/zipkin/OtelToZipkinSpanTransformerTest.java
 class OtelToZipkinSpanTransformerTest {
