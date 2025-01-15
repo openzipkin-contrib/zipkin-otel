@@ -83,6 +83,18 @@ class TagToAttributesTest {
   }
 
   @Test
+  void defaultMappingShouldMapUrlTagNotFullButWithQueryAndFragment() {
+    TagToAttributes tagToAttributes = TagToAttributes.create();
+    Span.Builder spanBuilder = Span.newBuilder();
+    tagToAttributes.accept(spanBuilder, HttpTags.URL.key(), "/search?q=OpenTelemetry#SemConv");
+    Span span = spanBuilder.build();
+    assertThat(span.getAttributesList())
+        .containsExactlyInAnyOrder(stringAttribute(UrlAttributes.URL_PATH.getKey(), "/search"),
+            stringAttribute(UrlAttributes.URL_QUERY.getKey(), "q=OpenTelemetry"),
+            stringAttribute(UrlAttributes.URL_FRAGMENT.getKey(), "SemConv"));
+  }
+
+  @Test
   void defaultMappingShouldNotMapViolatedUrlTag() {
     TagToAttributes tagToAttributes = TagToAttributes.create();
     Span.Builder spanBuilder = Span.newBuilder();
@@ -90,15 +102,6 @@ class TagToAttributesTest {
     Span span = spanBuilder.build();
     assertThat(span.getAttributesList())
         .containsExactlyInAnyOrder(stringAttribute(HttpTags.URL.key(), "https://example.com/entries|123"));
-  }
-
-  @Test
-  void defaultMappingShouldNotMapUnexpectedUrlTag() {
-    TagToAttributes tagToAttributes = TagToAttributes.create();
-    Span.Builder spanBuilder = Span.newBuilder();
-    tagToAttributes.accept(spanBuilder, HttpTags.URL.key(), "abc");
-    Span span = spanBuilder.build();
-    assertThat(span.getAttributesList()).containsExactlyInAnyOrder(stringAttribute(HttpTags.URL.key(), "abc"));
   }
 
   @Test

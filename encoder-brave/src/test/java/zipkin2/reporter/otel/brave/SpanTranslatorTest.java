@@ -6,6 +6,7 @@ package zipkin2.reporter.otel.brave;
 
 import brave.Tags;
 import brave.handler.MutableSpan;
+import brave.http.HttpTags;
 import brave.propagation.TraceContext;
 import com.google.protobuf.ByteString;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
@@ -16,8 +17,9 @@ import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.Status.StatusCode;
 import io.opentelemetry.proto.trace.v1.TracesData;
+import io.opentelemetry.semconv.ClientAttributes;
 import io.opentelemetry.semconv.HttpAttributes;
-import io.opentelemetry.semconv.NetworkAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
 import org.junit.jupiter.api.Test;
 
@@ -65,9 +67,8 @@ class SpanTranslatorTest {
                     TimeUnit.MILLISECONDS.toNanos(
                         Instant.ofEpochSecond(1472470996, 406_000_000).toEpochMilli()))
                 .addAllAttributes(
-                    Arrays.asList(stringAttribute(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "127.0.0.1"),
-                        stringAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "192.168.99.101"),
-                        intAttribute(NetworkAttributes.NETWORK_PEER_PORT.getKey(), 9000),
+                    Arrays.asList(stringAttribute(ServerAttributes.SERVER_ADDRESS.getKey(), "192.168.99.101"),
+                        intAttribute(ServerAttributes.SERVER_PORT.getKey(), 9000),
                         stringAttribute("peer.service", "backend"),
                         stringAttribute("clnt/finagle.version", "6.45.0"),
                         stringAttribute(UrlAttributes.URL_PATH.getKey(), "/api"),
@@ -160,9 +161,8 @@ class SpanTranslatorTest {
                     TimeUnit.MILLISECONDS.toNanos(
                         Instant.ofEpochSecond(1472470996, 406_000_000).toEpochMilli()))
                 .addAllAttributes(
-                    Arrays.asList(stringAttribute(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "127.0.0.1"),
-                        stringAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "192.168.99.101"),
-                        intAttribute(NetworkAttributes.NETWORK_PEER_PORT.getKey(), 9000),
+                    Arrays.asList(stringAttribute(ServerAttributes.SERVER_ADDRESS.getKey(), "192.168.99.101"),
+                        intAttribute(ServerAttributes.SERVER_PORT.getKey(), 9000),
                         stringAttribute("peer.service", "backend"),
                         stringAttribute("clnt/finagle.version", "6.45.0"),
                         stringAttribute(UrlAttributes.URL_PATH.getKey(), "/api"),
@@ -179,6 +179,84 @@ class SpanTranslatorTest {
                         .setName("bar").build()))
                 .setStatus(Status.newBuilder().setCode(StatusCode.STATUS_CODE_OK).build())
                 .build());
+  }
+
+  @Test
+  void otelDocExampleClientSideSpan() {
+    // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#http-client-server-example
+    MutableSpan braveSpan = new MutableSpan(TraceContext.newBuilder().traceId(3).spanId(2).build(), null);
+    braveSpan.kind(brave.Span.Kind.CLIENT);
+    braveSpan.name("GET");
+    braveSpan.tag(HttpTags.METHOD.key(), "GET");
+    braveSpan.tag(HttpTags.URL.key(), "https://example.com:8080/webshop/articles/4?s=1&t=2");
+    braveSpan.tag(HttpTags.STATUS_CODE.key(), "200");
+    braveSpan.localIp("192.0.2.4");
+    braveSpan.localPort(54321);
+    braveSpan.localServiceName("client");
+    braveSpan.remoteServiceName("webshop");
+    TracesData translated = spanTranslator.translate(braveSpan);
+    Span span = firstSpan(translated);
+    assertThat(span).isEqualTo(
+        Span.newBuilder()
+            .setTraceId(ByteString.fromHex(braveSpan.traceId()))
+            .setSpanId(ByteString.fromHex(braveSpan.id()))
+            .setName("GET")
+            .setKind(SpanKind.SPAN_KIND_CLIENT)
+            .addAllAttributes(
+                Arrays.asList(
+                    stringAttribute(ServerAttributes.SERVER_ADDRESS.getKey(), "example.com"),
+                    intAttribute(ServerAttributes.SERVER_PORT.getKey(), 8080),
+                    stringAttribute("peer.service", "webshop"),
+                    stringAttribute(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), "GET"),
+                    stringAttribute(UrlAttributes.URL_FULL.getKey(), "https://example.com:8080/webshop/articles/4?s=1&t=2"),
+                    stringAttribute(UrlAttributes.URL_SCHEME.getKey(), "https"),
+                    stringAttribute(UrlAttributes.URL_PATH.getKey(), "/webshop/articles/4"),
+                    stringAttribute(UrlAttributes.URL_QUERY.getKey(), "s=1&t=2"),
+                    stringAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), "200"))
+            )
+            .setStatus(Status.newBuilder().setCode(StatusCode.STATUS_CODE_OK).build())
+            .build());
+  }
+
+  @Test
+  void otelDocExampleServerSideSpan() {
+    // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#http-client-server-example
+    MutableSpan braveSpan = new MutableSpan(TraceContext.newBuilder().traceId(3).spanId(2).build(), null);
+    braveSpan.kind(brave.Span.Kind.SERVER);
+    braveSpan.name("GET /webshop/articles/:article_id");
+    braveSpan.tag(HttpTags.METHOD.key(), "GET");
+    braveSpan.tag(HttpTags.ROUTE.key(), "/webshop/articles/:article_id");
+    braveSpan.tag(HttpTags.URL.key(), "/webshop/articles/4?s=1&t=2");
+    braveSpan.tag(HttpTags.STATUS_CODE.key(), "200");
+    braveSpan.localIp("192.0.2.5");
+    braveSpan.localPort(8080);
+    braveSpan.localServiceName("webshop");
+    braveSpan.remoteIp("192.0.2.4");
+    braveSpan.remotePort(54321);
+    braveSpan.remoteServiceName("client");
+    TracesData translated = spanTranslator.translate(braveSpan);
+    Span span = firstSpan(translated);
+    assertThat(span).isEqualTo(
+        Span.newBuilder()
+            .setTraceId(ByteString.fromHex(braveSpan.traceId()))
+            .setSpanId(ByteString.fromHex(braveSpan.id()))
+            .setName("GET /webshop/articles/:article_id")
+            .setKind(SpanKind.SPAN_KIND_SERVER)
+            .addAllAttributes(
+                Arrays.asList(
+                    stringAttribute(ServerAttributes.SERVER_ADDRESS.getKey(), "192.0.2.5"),
+                    intAttribute(ServerAttributes.SERVER_PORT.getKey(), 8080),
+                    stringAttribute(ClientAttributes.CLIENT_ADDRESS.getKey(), "192.0.2.4"),
+                    intAttribute(ClientAttributes.CLIENT_PORT.getKey(), 54321),
+                    stringAttribute("peer.service", "client"),
+                    stringAttribute(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), "GET"),
+                    stringAttribute(HttpAttributes.HTTP_ROUTE.getKey(), "/webshop/articles/:article_id"),
+                    stringAttribute(UrlAttributes.URL_PATH.getKey(), "/webshop/articles/4"),
+                    stringAttribute(UrlAttributes.URL_QUERY.getKey(), "s=1&t=2"),
+                    stringAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), "200"))
+            )
+            .setStatus(Status.newBuilder().setCode(StatusCode.STATUS_CODE_OK).build())
+            .build());
   }
 
   private static io.opentelemetry.proto.common.v1.InstrumentationScope implementationScope(TracesData translated) {

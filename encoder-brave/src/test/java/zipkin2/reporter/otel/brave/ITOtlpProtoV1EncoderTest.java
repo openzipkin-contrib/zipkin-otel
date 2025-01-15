@@ -25,8 +25,9 @@ import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.Span;
 import io.opentelemetry.proto.trace.v1.Status;
+import io.opentelemetry.semconv.ClientAttributes;
 import io.opentelemetry.semconv.HttpAttributes;
-import io.opentelemetry.semconv.NetworkAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.TelemetryAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
 import org.junit.jupiter.api.AfterAll;
@@ -141,8 +142,10 @@ public class ITOtlpProtoV1EncoderTest {
       span.localServiceName("isao01");
       span.localIp("10.23.14.72");
       span.localPort(12345);
+      span.remoteIp("10.0.0.1");
+      span.remotePort(54321);
       span.tag("http.method", "GET");
-      span.tag("http.url", "https://zipkin.example.com/rs/A");
+      span.tag("http.url", "/rs/A");
       span.tag("http.status_code", "200");
       span.tag("location", "T67792");
       span.tag("other", "A");
@@ -163,11 +166,11 @@ public class ITOtlpProtoV1EncoderTest {
       Resource.Builder resourceBuilder = Resource.newBuilder().addAttributes(stringAttribute("service.name", "isao01"));
       if (encoder instanceof OtlpProtoV1Encoder) {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.NAME).setVersion(BraveScope.VERSION));
-        spanBuilder.addAttributes(stringAttribute(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "10.23.14.72"))
-            .addAttributes(intAttribute(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), 12345))
+        spanBuilder.addAttributes(stringAttribute(ServerAttributes.SERVER_ADDRESS.getKey(), "10.23.14.72"))
+            .addAttributes(intAttribute(ServerAttributes.SERVER_PORT.getKey(), 12345))
+            .addAttributes(stringAttribute(ClientAttributes.CLIENT_ADDRESS.getKey(), "10.0.0.1"))
+            .addAttributes(intAttribute(ClientAttributes.CLIENT_PORT.getKey(), 54321))
             .addAttributes(stringAttribute(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), "GET"))
-            .addAttributes(stringAttribute(UrlAttributes.URL_FULL.getKey(), "https://zipkin.example.com/rs/A"))
-            .addAttributes(stringAttribute(UrlAttributes.URL_SCHEME.getKey(), "https"))
             .addAttributes(stringAttribute(UrlAttributes.URL_PATH.getKey(), "/rs/A"))
             .addAttributes(stringAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), "200"))
             .addAttributes(stringAttribute("location", "T67792"))
@@ -179,12 +182,14 @@ public class ITOtlpProtoV1EncoderTest {
       } else {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().build() /* empty */);
         spanBuilder.addAttributes(stringAttribute("http.method", "GET"))
-            .addAttributes(stringAttribute("http.url", "https://zipkin.example.com/rs/A"))
+            .addAttributes(stringAttribute("http.url", "/rs/A"))
             .addAttributes(stringAttribute("http.status_code", "200"))
             .addAttributes(stringAttribute("location", "T67792"))
             .addAttributes(stringAttribute("other", "A"))
             .addAttributes(stringAttribute("net.host.ip", "10.23.14.72"))
             .addAttributes(intAttribute("net.host.port", 12345))
+            .addAttributes(stringAttribute("net.peer.ip", "10.0.0.1"))
+            .addAttributes(intAttribute("net.peer.port", 54321))
             .setStatus(Status.newBuilder().build() /* empty */);
       }
       ResourceSpans resourceSpans = ResourceSpans.newBuilder()
@@ -218,7 +223,7 @@ public class ITOtlpProtoV1EncoderTest {
       span.localIp("10.99.99.99");
       span.localPort(43210);
       span.remoteIp("1.2.3.4");
-      span.remotePort(9999);
+      span.remotePort(443);
       span.remoteServiceName("demo");
       span.tag("http.method", "POST");
       span.tag("http.url", "https://zipkin.example.com/order");
@@ -239,10 +244,8 @@ public class ITOtlpProtoV1EncoderTest {
       Resource.Builder resourceBuilder = Resource.newBuilder().addAttributes(stringAttribute("service.name", "test-api"));
       if (encoder instanceof OtlpProtoV1Encoder) {
         scopeSpanBuilder.setScope(InstrumentationScope.newBuilder().setName(BraveScope.NAME).setVersion(BraveScope.VERSION));
-        spanBuilder.addAttributes(stringAttribute(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "10.99.99.99"))
-            .addAttributes(intAttribute(NetworkAttributes.NETWORK_LOCAL_PORT.getKey(), 43210))
-            .addAttributes(stringAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "1.2.3.4"))
-            .addAttributes(intAttribute(NetworkAttributes.NETWORK_PEER_PORT.getKey(), 9999))
+        spanBuilder.addAttributes(stringAttribute(ServerAttributes.SERVER_ADDRESS.getKey(), "zipkin.example.com"))
+            .addAttributes(intAttribute(ServerAttributes.SERVER_PORT.getKey(), 443))
             .addAttributes(stringAttribute("peer.service", "demo"))
             .addAttributes(stringAttribute(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), "POST"))
             .addAttributes(stringAttribute(UrlAttributes.URL_FULL.getKey(), "https://zipkin.example.com/order"))
@@ -264,7 +267,7 @@ public class ITOtlpProtoV1EncoderTest {
             .addAttributes(stringAttribute("net.host.ip", "10.99.99.99"))
             .addAttributes(intAttribute("net.host.port", 43210))
             .addAttributes(stringAttribute("net.peer.ip", "1.2.3.4"))
-            .addAttributes(intAttribute("net.peer.port", 9999))
+            .addAttributes(intAttribute("net.peer.port", 443))
             .addAttributes(stringAttribute("peer.service", "demo"))
             .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
       }

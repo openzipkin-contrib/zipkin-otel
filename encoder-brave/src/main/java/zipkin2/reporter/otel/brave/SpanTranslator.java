@@ -8,6 +8,7 @@ import brave.Span.Kind;
 import brave.Tag;
 import brave.handler.MutableSpan;
 import brave.handler.MutableSpan.AnnotationConsumer;
+import brave.http.HttpTags;
 import com.google.protobuf.ByteString;
 import io.opentelemetry.proto.resource.v1.Resource;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
@@ -18,8 +19,11 @@ import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.TracesData;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import static zipkin2.reporter.otel.brave.TagToAttribute.maybeAddIntAttribute;
 import static zipkin2.reporter.otel.brave.TagToAttribute.maybeAddStringAttribute;
@@ -154,11 +158,19 @@ final class SpanTranslator {
     resourceBuilder.addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_LANGUAGE, TELEMETRY_SDK_LANGUAGE))
         .addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_NAME, TELEMETRY_SDK_NAME))
         .addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_VERSION, TELEMETRY_SDK_VERSION));
-
-    maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.NETWORK_LOCAL_ADDRESS, span.localIp());
-    maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.NETWORK_LOCAL_PORT, span.localPort());
-    maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.NETWORK_PEER_ADDRESS, span.remoteIp());
-    maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.NETWORK_PEER_PORT, span.remotePort());
+    if (span.kind() == Kind.SERVER || span.kind() == Kind.CONSUMER) {
+      resolveAddressAndPort(span, span::localIp, span::localPort, (address, port) -> {
+        maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.SERVER_ADDRESS, address);
+        maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.SERVER_PORT, port);
+      });
+      maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.CLIENT_ADDRESS, span.remoteIp());
+      maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.CLIENT_PORT, span.remotePort());
+    } else if (span.kind() == Kind.CLIENT || span.kind() == Kind.PRODUCER) {
+      resolveAddressAndPort(span, span::remoteIp, span::remotePort, (address, port) -> {
+        maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.SERVER_ADDRESS, address);
+        maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.SERVER_PORT, port);
+      });
+    }
     maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.PEER_SERVICE, span.remoteServiceName());
     span.forEachTag(tagToAttributes, spanBuilder);
     span.forEachAnnotation(annotationMapper, spanBuilder);
@@ -170,6 +182,28 @@ final class SpanTranslator {
       spanBuilder.setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build());
     }
     return spanBuilder;
+  }
+
+  void resolveAddressAndPort(MutableSpan span, Supplier<String> fallbackAddress, Supplier<Integer> fallbackPort, BiConsumer<String, Integer> addressAndPortConsumer) {
+    String url = span.tag(HttpTags.URL.key());
+    String address = null;
+    int port = 0;
+    if (url != null) {
+      try {
+        URI uri = URI.create(url);
+        address = uri.getHost();
+        int p = uri.getPort();
+        if (p != -1) {
+          port = p;
+        } else if ("http".equals(uri.getScheme())) {
+          port = 80;
+        } else if ("https".equals(uri.getScheme())) {
+          port = 443;
+        }
+      } catch (IllegalArgumentException ignored) {
+      }
+    }
+    addressAndPortConsumer.accept(address == null ? fallbackAddress.get() : address, port == 0 ? fallbackPort.get() : port);
   }
 
   private static SpanKind translateKind(Kind kind) {
