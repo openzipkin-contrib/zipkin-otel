@@ -24,6 +24,12 @@ final class SemanticConventionsAttributes {
   static final String NETWORK_PEER_PORT = "network.peer.port";
   // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.29.0/semconv/src/main/java/io/opentelemetry/semconv/ServerAttributes.java#L27
   static final String SERVER_ADDRESS = "server.address";
+  // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.29.0/semconv/src/main/java/io/opentelemetry/semconv/ServerAttributes.java#L38
+  static final String SERVER_PORT = "server.port";
+  // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.29.0/semconv/src/main/java/io/opentelemetry/semconv/ClientAttributes.java#L27
+  static final String CLIENT_ADDRESS = "client.address";
+  // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.29.0/semconv/src/main/java/io/opentelemetry/semconv/ClientAttributes.java#L38
+  static final String CLIENT_PORT = "client.port";
   // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.29.0/semconv/src/main/java/io/opentelemetry/semconv/ServiceAttributes.java#L27
   static final String SERVICE_NAME = "service.name";
   // https://github.com/open-telemetry/semantic-conventions-java/blob/v1.29.0/semconv/src/main/java/io/opentelemetry/semconv/UrlAttributes.java#L61

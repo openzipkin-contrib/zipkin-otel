@@ -473,8 +473,8 @@ class OtelToZipkinSpanTransformerTest {
                             .setTraceId(SpanTranslator.INVALID_TRACE_ID)
                             .setKind(
                                 toSpanKind(spanKind))
-                            .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
-                            .addAttributes(intAttribute("network.peer.port", 42))
+                            .addAttributes(stringAttribute("server.address", "8.8.8.8"))
+                            .addAttributes(intAttribute("server.port", 42))
                             .addAttributes(stringAttribute("peer.service", "remote-test-service"))
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
@@ -513,8 +513,8 @@ class OtelToZipkinSpanTransformerTest {
                             .setTraceId(SpanTranslator.INVALID_TRACE_ID)
                             .setKind(
                                 toSpanKind(spanKind))
-                            .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
-                            .addAttributes(intAttribute("network.peer.port", 42))
+                            .addAttributes(stringAttribute("client.address", "8.8.8.8"))
+                            .addAttributes(intAttribute("client.port", 42))
                             .addAttributes(stringAttribute("peer.service", "remote-test-service"))
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())
@@ -552,8 +552,8 @@ class OtelToZipkinSpanTransformerTest {
                             .setTraceId(SpanTranslator.INVALID_TRACE_ID)
                             .setKind(
                                 toSpanKind(spanKind))
-                            .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
-                            .addAttributes(intAttribute("network.peer.port", 42))
+                            .addAttributes(stringAttribute("server.address", "8.8.8.8"))
+                            .addAttributes(intAttribute("server.port", 42))
                             .setStatus(
                                 Status.newBuilder().setCode(StatusCode.STATUS_CODE_OK).build())
                             .build())
@@ -590,7 +590,7 @@ class OtelToZipkinSpanTransformerTest {
                             .setTraceId(SpanTranslator.INVALID_TRACE_ID)
                             .setKind(
                                 toSpanKind(spanKind))
-                            .addAttributes(stringAttribute("network.peer.address", "8.8.8.8"))
+                            .addAttributes(stringAttribute("server.address", "8.8.8.8"))
                             .addAttributes(stringAttribute("peer.service", "remote-test-service"))
                             .setStatus(
                                 Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build())

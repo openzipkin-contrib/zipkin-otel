@@ -38,34 +38,52 @@ public final class TagToAttributes implements MutableSpan.TagConsumer<Span.Build
     private final Map<String, TagToAttribute> map = new LinkedHashMap<>();
 
     /**
-     * Covert brave <code>http.url</code> tag to otel attributes.<br>
-     * If the <code>http.url</code> is full, it will be parsed further into attributes.
+     * Covert brave <code>http.url</code> tag to otel attributes (<code>url.path</code>, <code>url.query</code> and <code>url.fragment</code>).<br>
+     * If the <code>http.url</code> includes the schema part (mostly client side), <code>url.full</code> and <code>url.schema</code> will be added.
      */
     private static final TagToAttribute URL_TAG_TO_ATTRIBUTE = (spanBuilder, value) -> {
-      if (value.startsWith("http")) {
-        try {
-          URI uri = URI.create(value);
-          spanBuilder.addAttributes(stringAttribute(SemanticConventionsAttributes.URL_FULL, value));
-          // map URI parts to "stable" attributes as of OpenTelemetry Semantic Conventions 1.29.0
-          maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.URL_SCHEME, uri.getScheme());
-          maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.URL_PATH, uri.getPath());
-          maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.URL_QUERY, uri.getQuery());
-          maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.URL_FRAGMENT, uri.getFragment());
-        } catch (IllegalArgumentException e) {
-          // do not convert
-          spanBuilder.addAttributes(stringAttribute(HttpTags.URL.key(), value));
+      try {
+        URI uri = URI.create(value);
+        String scheme = uri.getScheme();
+        if (scheme != null) {
+          spanBuilder.addAttributes(stringAttribute(SemanticConventionsAttributes.URL_FULL, value))
+              .addAttributes(stringAttribute(SemanticConventionsAttributes.URL_SCHEME, scheme));
         }
-      } else if (value.startsWith("/")) {
-        // There are also libraries (like Spring Framework) that only include the path in `http.url` tag.
-        spanBuilder.addAttributes(stringAttribute(SemanticConventionsAttributes.URL_PATH, value));
-      } else {
-        // do not covert due to the unexpected format
+        // map URI parts to "stable" attributes as of OpenTelemetry Semantic Conventions 1.29.0
+        maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.URL_PATH, uri.getPath());
+        maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.URL_QUERY, uri.getQuery());
+        maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.URL_FRAGMENT, uri.getFragment());
+      } catch (IllegalArgumentException e) {
+        // do not convert
         spanBuilder.addAttributes(stringAttribute(HttpTags.URL.key(), value));
       }
     };
 
     /**
      * Default tag to attribute mappings
+     *
+     * <table>
+     *   <tr>
+     *     <th>Brave Tag</th><th>OTel Attribute</th>
+     *   </tr>
+     *   <tr>
+     *     <td><code>http.method</code></td><td><code>http.request.method</code></td>
+     *   </tr>
+     *   <tr>
+     *     <td><code>http.path</code></td><td><code>url.path</code></td>
+     *   </tr>
+     *   <tr>
+     *     <td><code>http.route</code></td><td><code>http.route</code></td>
+     *   </tr>
+     *   <tr>
+     *     <td><code>http.url</code></td><td>See {@link #URL_TAG_TO_ATTRIBUTE}</td>
+     *   </tr>
+     *   <tr>
+     *     <td><code>http.status_code</code></td><td><code>http.response.status_code</code></td>
+     *   </tr>
+     * </table>
+     *
+     * @see #URL_TAG_TO_ATTRIBUTE
      */
     public Builder withDefaults() {
       // TODO: brave also defines rpc and messaging data policy
