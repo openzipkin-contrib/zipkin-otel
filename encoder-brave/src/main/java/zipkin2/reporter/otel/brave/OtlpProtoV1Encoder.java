@@ -15,102 +15,108 @@ import java.util.Collections;
 import java.util.Map;
 
 public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
-  public static OtlpProtoV1Encoder create() {
-    return newBuilder().build();
-  }
 
-  public static Builder newBuilder() {
-    return new Builder();
-  }
+	public static OtlpProtoV1Encoder create() {
+		return newBuilder().build();
+	}
 
-  public static final class Builder {
-    Tag<Throwable> errorTag = Tags.ERROR;
+	public static Builder newBuilder() {
+		return new Builder();
+	}
 
-    TagToAttributes tagToAttributes;
+	public static final class Builder {
 
-    Map<String, String> resourceAttributes = Collections.emptyMap();
+		Tag<Throwable> errorTag = Tags.ERROR;
 
-    InstrumentationScope instrumentationScope = BraveScope.instrumentationScope();
+		TagToAttributes tagToAttributes;
 
-    /**
-     * The throwable parser. Defaults to {@link Tags#ERROR}.
-     */
-    public Builder errorTag(Tag<Throwable> errorTag) {
-      if (errorTag == null) {
-        throw new NullPointerException("errorTag == null");
-      }
-      this.errorTag = errorTag;
-      return this;
-    }
+		Map<String, String> resourceAttributes = Collections.emptyMap();
 
-    public Builder tagToAttributes(TagToAttributes tagToAttributes) {
-      if (tagToAttributes == null) {
-        throw new NullPointerException("tagToAttributes == null");
-      }
-      this.tagToAttributes = tagToAttributes;
-      return this;
-    }
+		InstrumentationScope instrumentationScope = BraveScope.instrumentationScope();
 
-    /**
-     * static resource attributes added to a {@link io.opentelemetry.proto.resource.v1.Resource}. Defaults to empty map.
-     */
-    public Builder resourceAttributes(Map<String, String> resourceAttributes) {
-      if (resourceAttributes == null) {
-        throw new NullPointerException("resourceAttributes == null");
-      }
-      this.resourceAttributes = resourceAttributes;
-      return this;
-    }
+		/**
+		 * The throwable parser. Defaults to {@link Tags#ERROR}.
+		 */
+		public Builder errorTag(Tag<Throwable> errorTag) {
+			if (errorTag == null) {
+				throw new NullPointerException("errorTag == null");
+			}
+			this.errorTag = errorTag;
+			return this;
+		}
 
-    /**
-     * The Instrumentation scope which represents a logical unit within the application code with which the emitted telemetry can be associated
-     */
-    public Builder instrumentationScope(InstrumentationScope instrumentationScope) {
-      if (instrumentationScope == null) {
-        throw new NullPointerException("implementationScope == null");
-      }
-      this.instrumentationScope = instrumentationScope;
-      return this;
-    }
+		public Builder tagToAttributes(TagToAttributes tagToAttributes) {
+			if (tagToAttributes == null) {
+				throw new NullPointerException("tagToAttributes == null");
+			}
+			this.tagToAttributes = tagToAttributes;
+			return this;
+		}
 
-    public OtlpProtoV1Encoder build() {
-      return new OtlpProtoV1Encoder(this);
-    }
+		/**
+		 * static resource attributes added to a
+		 * {@link io.opentelemetry.proto.resource.v1.Resource}. Defaults to empty map.
+		 */
+		public Builder resourceAttributes(Map<String, String> resourceAttributes) {
+			if (resourceAttributes == null) {
+				throw new NullPointerException("resourceAttributes == null");
+			}
+			this.resourceAttributes = resourceAttributes;
+			return this;
+		}
 
-    Builder() {
+		/**
+		 * The Instrumentation scope which represents a logical unit within the
+		 * application code with which the emitted telemetry can be associated
+		 */
+		public Builder instrumentationScope(InstrumentationScope instrumentationScope) {
+			if (instrumentationScope == null) {
+				throw new NullPointerException("implementationScope == null");
+			}
+			this.instrumentationScope = instrumentationScope;
+			return this;
+		}
 
-    }
-  }
+		public OtlpProtoV1Encoder build() {
+			return new OtlpProtoV1Encoder(this);
+		}
 
-  final SpanTranslator spanTranslator;
+		Builder() {
 
-  private OtlpProtoV1Encoder(Builder builder) {
-    this.spanTranslator = SpanTranslator.newBuilder()
-        .errorTag(builder.errorTag)
-        .tagToAttributes(builder.tagToAttributes)
-        .resourceAttributes(builder.resourceAttributes)
-        .instrumentationScope(builder.instrumentationScope)
-        .build();
-  }
+		}
 
-  @Override
-  public Encoding encoding() {
-    return Encoding.PROTO3;
-  }
+	}
 
-  @Override
-  public int sizeInBytes(MutableSpan span) {
-    // TODO: Create a proto size function to avoid allocations here
-    TracesData convert = translate(span);
-    return encoding().listSizeInBytes(convert.getSerializedSize());
-  }
+	final SpanTranslator spanTranslator;
 
-  @Override
-  public byte[] encode(MutableSpan span) {
-    return translate(span).toByteArray();
-  }
+	private OtlpProtoV1Encoder(Builder builder) {
+		this.spanTranslator = SpanTranslator.newBuilder()
+			.errorTag(builder.errorTag)
+			.tagToAttributes(builder.tagToAttributes)
+			.resourceAttributes(builder.resourceAttributes)
+			.instrumentationScope(builder.instrumentationScope)
+			.build();
+	}
 
-  TracesData translate(MutableSpan span) {
-    return spanTranslator.translate(span);
-  }
+	@Override
+	public Encoding encoding() {
+		return Encoding.PROTO3;
+	}
+
+	@Override
+	public int sizeInBytes(MutableSpan span) {
+		// TODO: Create a proto size function to avoid allocations here
+		TracesData convert = translate(span);
+		return encoding().listSizeInBytes(convert.getSerializedSize());
+	}
+
+	@Override
+	public byte[] encode(MutableSpan span) {
+		return translate(span).toByteArray();
+	}
+
+	TracesData translate(MutableSpan span) {
+		return spanTranslator.translate(span);
+	}
+
 }

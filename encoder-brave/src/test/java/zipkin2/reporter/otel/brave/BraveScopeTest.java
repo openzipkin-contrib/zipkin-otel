@@ -10,8 +10,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class BraveScopeTest {
 
-  @Test
-  void getName() {
-    assertThat(BraveScope.NAME).isEqualTo("io.zipkin.contrib.otel:encoder-brave");
-  }
+	@Test
+	void getName() {
+		assertThat(BraveScope.NAME).isEqualTo("io.zipkin.contrib.otel:encoder-brave");
+	}
+
 }

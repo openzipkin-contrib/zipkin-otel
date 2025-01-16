@@ -13,32 +13,35 @@ import java.util.Properties;
  * Define InstrumentationScope for encoder-brave
  */
 final class BraveScope {
-  static final String NAME;
 
-  static final String VERSION;
+	static final String NAME;
 
-  static final InstrumentationScope INSTRUMENTATION_SCOPE;
+	static final String VERSION;
 
-  static {
-    try (InputStream stream = BraveScope.class.getClassLoader().getResourceAsStream("scope.properties")) {
-      if (stream != null) {
-        Properties props = new Properties();
-        props.load(stream);
-        NAME = props.getProperty("name");
-        VERSION = props.getProperty("version");
-      } else {
-        NAME = "unknown";
-        VERSION = "unknown";
-      }
-      INSTRUMENTATION_SCOPE = new InstrumentationScope(NAME, VERSION);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-  }
+	static final InstrumentationScope INSTRUMENTATION_SCOPE;
 
-  /** Returns a scope derived from the classpath resource "scope.properties" */
-  public static InstrumentationScope instrumentationScope() {
-    return INSTRUMENTATION_SCOPE;
-  }
+	static {
+		try (InputStream stream = BraveScope.class.getClassLoader().getResourceAsStream("scope.properties")) {
+			if (stream != null) {
+				Properties props = new Properties();
+				props.load(stream);
+				NAME = props.getProperty("name");
+				VERSION = props.getProperty("version");
+			}
+			else {
+				NAME = "unknown";
+				VERSION = "unknown";
+			}
+			INSTRUMENTATION_SCOPE = new InstrumentationScope(NAME, VERSION);
+		}
+		catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
+
+	/** Returns a scope derived from the classpath resource "scope.properties" */
+	public static InstrumentationScope instrumentationScope() {
+		return INSTRUMENTATION_SCOPE;
+	}
 
 }

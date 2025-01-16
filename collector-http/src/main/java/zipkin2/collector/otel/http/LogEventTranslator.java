@@ -25,96 +25,103 @@ import static zipkin2.collector.otel.http.SpanTranslator.nanoToMills;
 /**
  * LogEventTranslator converts OpenTelemetry Log Events to Zipkin Spans
  * <p>
- * See <a href="https://opentelemetry.io/docs/specs/otel/logs/api/#emit-an-event">https://opentelemetry.io/docs/specs/otel/logs/api/#emit-an-event</a>
+ * See <a href=
+ * "https://opentelemetry.io/docs/specs/otel/logs/api/#emit-an-event">https://opentelemetry.io/docs/specs/otel/logs/api/#emit-an-event</a>
  */
 final class LogEventTranslator {
-  final OtelResourceMapper resourceMapper;
 
-  public static LogEventTranslator create() {
-    return newBuilder().build();
-  }
+	final OtelResourceMapper resourceMapper;
 
-  static Builder newBuilder() {
-    return new Builder();
-  }
+	public static LogEventTranslator create() {
+		return newBuilder().build();
+	}
 
-  static final class Builder {
-    private OtelResourceMapper resourceMapper;
-    private String logEventNameAttribute;
+	static Builder newBuilder() {
+		return new Builder();
+	}
 
-    public Builder otelResourceMapper(OtelResourceMapper resourceMapper) {
-      this.resourceMapper = resourceMapper;
-      return this;
-    }
+	static final class Builder {
 
-    public LogEventTranslator build() {
-      return new LogEventTranslator(this);
-    }
-  }
+		private OtelResourceMapper resourceMapper;
 
-  private LogEventTranslator(Builder builder) {
-    this.resourceMapper = builder.resourceMapper == null ? DefaultOtelResourceMapper.create() : builder.resourceMapper;
-  }
+		public Builder otelResourceMapper(OtelResourceMapper resourceMapper) {
+			this.resourceMapper = resourceMapper;
+			return this;
+		}
 
-  List<Span> translate(ExportLogsServiceRequest logs) {
-    ArrayList<Span> spans = new ArrayList<>();
-    List<ResourceLogs> resourceLogsList = logs.getResourceLogsList();
-    for (ResourceLogs resourceLogs : resourceLogsList) {
-      for (ScopeLogs scopeLogs : resourceLogs.getScopeLogsList()) {
-        for (LogRecord logRecord : scopeLogs.getLogRecordsList()) {
-          Span span = generateSpan(logRecord);
-          if (span != null) {
-            spans.add(span);
-          }
-        }
-      }
-    }
-    return spans;
-  }
+		public LogEventTranslator build() {
+			return new LogEventTranslator(this);
+		}
 
-  @Nullable
-  Span generateSpan(LogRecord logRecord) {
-    // the log record must have both trace id and span id
-    if (logRecord.getTraceId().isEmpty() || logRecord.getSpanId().isEmpty()) {
-      return null;
-    }
-    Optional<String> eventNameOptional = logRecord.getAttributesList().stream()
-        .filter(attribute -> attribute.getKey().equals(SemanticConventionsAttributes.EVENT_NAME))
-        .findAny()
-        .map(kv -> ProtoUtils.valueToString(kv.getValue()));
-    if (!eventNameOptional.isPresent()) {
-      return null;
-    }
-    String eventName = eventNameOptional.get();
-    long timestamp = nanoToMills(logRecord.getTimeUnixNano());
-    KeyValueList.Builder kvListBuilder = KeyValueList.newBuilder();
-    if (logRecord.getSeverityNumber() != SeverityNumber.SEVERITY_NUMBER_UNSPECIFIED) {
-      kvListBuilder.addValues(KeyValue.newBuilder()
-          .setKey("severity_number")
-          .setValue(AnyValue.newBuilder().setIntValue(logRecord.getSeverityNumberValue())));
-    }
-    if (!logRecord.getSeverityText().isEmpty()) {
-      kvListBuilder.addValues(KeyValue.newBuilder()
-          .setKey("severity_text")
-          .setValue(AnyValue.newBuilder().setStringValue(logRecord.getSeverityText())));
-    }
-    int droppedAttributesCount = logRecord.getDroppedAttributesCount();
-    if (droppedAttributesCount > 0) {
-      kvListBuilder.addValues(KeyValue.newBuilder()
-          .setKey("dropped_attributes_count")
-          .setValue(AnyValue.newBuilder().setIntValue(droppedAttributesCount)));
-    }
-    String annotationValue = "\"" + eventName + "\":" + ProtoUtils.valueToJson(AnyValue.newBuilder()
-        .setKvlistValue(kvListBuilder.addValues(KeyValue.newBuilder()
-            .setKey("body")
-            .setValue(logRecord.getBody()))).build());
-    byte[] traceIdBytes = logRecord.getTraceId().toByteArray();
-    long high = bytesToLong(traceIdBytes, 0);
-    long low = bytesToLong(traceIdBytes, 8);
-    return Span.newBuilder()
-        .traceId(high, low)
-        .id(bytesToLong(logRecord.getSpanId().toByteArray(), 0))
-        .addAnnotation(timestamp, annotationValue)
-        .build();
-  }
+	}
+
+	private LogEventTranslator(Builder builder) {
+		this.resourceMapper = builder.resourceMapper == null ? DefaultOtelResourceMapper.create()
+				: builder.resourceMapper;
+	}
+
+	List<Span> translate(ExportLogsServiceRequest logs) {
+		ArrayList<Span> spans = new ArrayList<>();
+		List<ResourceLogs> resourceLogsList = logs.getResourceLogsList();
+		for (ResourceLogs resourceLogs : resourceLogsList) {
+			for (ScopeLogs scopeLogs : resourceLogs.getScopeLogsList()) {
+				for (LogRecord logRecord : scopeLogs.getLogRecordsList()) {
+					Span span = generateSpan(logRecord);
+					if (span != null) {
+						spans.add(span);
+					}
+				}
+			}
+		}
+		return spans;
+	}
+
+	@Nullable
+	Span generateSpan(LogRecord logRecord) {
+		// the log record must have both trace id and span id
+		if (logRecord.getTraceId().isEmpty() || logRecord.getSpanId().isEmpty()) {
+			return null;
+		}
+		Optional<String> eventNameOptional = logRecord.getAttributesList()
+			.stream()
+			.filter(attribute -> attribute.getKey().equals(SemanticConventionsAttributes.EVENT_NAME))
+			.findAny()
+			.map(kv -> ProtoUtils.valueToString(kv.getValue()));
+		if (!eventNameOptional.isPresent()) {
+			return null;
+		}
+		String eventName = eventNameOptional.get();
+		long timestamp = nanoToMills(logRecord.getTimeUnixNano());
+		KeyValueList.Builder kvListBuilder = KeyValueList.newBuilder();
+		if (logRecord.getSeverityNumber() != SeverityNumber.SEVERITY_NUMBER_UNSPECIFIED) {
+			kvListBuilder.addValues(KeyValue.newBuilder()
+				.setKey("severity_number")
+				.setValue(AnyValue.newBuilder().setIntValue(logRecord.getSeverityNumberValue())));
+		}
+		if (!logRecord.getSeverityText().isEmpty()) {
+			kvListBuilder.addValues(KeyValue.newBuilder()
+				.setKey("severity_text")
+				.setValue(AnyValue.newBuilder().setStringValue(logRecord.getSeverityText())));
+		}
+		int droppedAttributesCount = logRecord.getDroppedAttributesCount();
+		if (droppedAttributesCount > 0) {
+			kvListBuilder.addValues(KeyValue.newBuilder()
+				.setKey("dropped_attributes_count")
+				.setValue(AnyValue.newBuilder().setIntValue(droppedAttributesCount)));
+		}
+		String annotationValue = "\"" + eventName + "\":"
+				+ ProtoUtils.valueToJson(AnyValue.newBuilder()
+					.setKvlistValue(
+							kvListBuilder.addValues(KeyValue.newBuilder().setKey("body").setValue(logRecord.getBody())))
+					.build());
+		byte[] traceIdBytes = logRecord.getTraceId().toByteArray();
+		long high = bytesToLong(traceIdBytes, 0);
+		long low = bytesToLong(traceIdBytes, 8);
+		return Span.newBuilder()
+			.traceId(high, low)
+			.id(bytesToLong(logRecord.getSpanId().toByteArray(), 0))
+			.addAnnotation(timestamp, annotationValue)
+			.build();
+	}
+
 }

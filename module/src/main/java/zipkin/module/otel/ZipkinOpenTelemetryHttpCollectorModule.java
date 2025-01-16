@@ -21,33 +21,32 @@ import zipkin2.storage.StorageComponent;
 @ConditionalOnProperty(name = "zipkin.collector.otel.http.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(ZipkinOpenTelemetryHttpCollectorProperties.class)
 class ZipkinOpenTelemetryHttpCollectorModule {
-  @Bean
-  OpenTelemetryHttpCollector otelHttpCollector(StorageComponent storage,
-                                               CollectorSampler sampler, CollectorMetrics metrics,
-                                               OtelResourceMapper otelResourceMapper,
-                                               ZipkinOpenTelemetryHttpCollectorProperties properties) {
-    OpenTelemetryHttpCollector.Builder builder = OpenTelemetryHttpCollector.newBuilder();
-    return builder
-        .storage(storage)
-        .sampler(sampler)
-        .metrics(metrics)
-        .otelResourceMapper(otelResourceMapper)
-        .build();
-  }
 
-  @Bean
-  ArmeriaServerConfigurator otelHttpCollectorConfigurator(
-      OpenTelemetryHttpCollector collector) {
-    return collector::reconfigure;
-  }
+	@Bean
+	OpenTelemetryHttpCollector otelHttpCollector(StorageComponent storage, CollectorSampler sampler,
+			CollectorMetrics metrics, OtelResourceMapper otelResourceMapper,
+			ZipkinOpenTelemetryHttpCollectorProperties properties) {
+		OpenTelemetryHttpCollector.Builder builder = OpenTelemetryHttpCollector.newBuilder();
+		return builder.storage(storage)
+			.sampler(sampler)
+			.metrics(metrics)
+			.otelResourceMapper(otelResourceMapper)
+			.build();
+	}
 
-  @ConditionalOnMissingBean(OtelResourceMapper.class)
-  @Bean
-  OtelResourceMapper otelResourceMapper(ZipkinOpenTelemetryHttpCollectorProperties properties) {
-    DefaultOtelResourceMapper.Builder builder = DefaultOtelResourceMapper.newBuilder();
-    if (properties.getResourceAttributePrefix() != null) {
-      builder.resourceAttributePrefix(properties.getResourceAttributePrefix());
-    }
-    return builder.build();
-  }
+	@Bean
+	ArmeriaServerConfigurator otelHttpCollectorConfigurator(OpenTelemetryHttpCollector collector) {
+		return collector::reconfigure;
+	}
+
+	@ConditionalOnMissingBean(OtelResourceMapper.class)
+	@Bean
+	OtelResourceMapper otelResourceMapper(ZipkinOpenTelemetryHttpCollectorProperties properties) {
+		DefaultOtelResourceMapper.Builder builder = DefaultOtelResourceMapper.newBuilder();
+		if (properties.getResourceAttributePrefix() != null) {
+			builder.resourceAttributePrefix(properties.getResourceAttributePrefix());
+		}
+		return builder.build();
+	}
+
 }

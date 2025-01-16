@@ -8,13 +8,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("zipkin.collector.otel.http")
 public class ZipkinOpenTelemetryHttpCollectorProperties {
-  private String resourceAttributePrefix;
 
-  public String getResourceAttributePrefix() {
-    return resourceAttributePrefix;
-  }
+	private String resourceAttributePrefix;
 
-  public void setResourceAttributePrefix(String resourceAttributePrefix) {
-    this.resourceAttributePrefix = resourceAttributePrefix;
-  }
+	public String getResourceAttributePrefix() {
+		return resourceAttributePrefix;
+	}
+
+	public void setResourceAttributePrefix(String resourceAttributePrefix) {
+		this.resourceAttributePrefix = resourceAttributePrefix;
+	}
+
 }

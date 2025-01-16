@@ -34,211 +34,227 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public final class OpenTelemetryHttpCollector extends CollectorComponent
-    implements ServerConfigurator {
+public final class OpenTelemetryHttpCollector extends CollectorComponent implements ServerConfigurator {
 
-  public static Builder newBuilder() {
-    return new Builder();
-  }
+	public static Builder newBuilder() {
+		return new Builder();
+	}
 
-  public static final class Builder extends CollectorComponent.Builder {
+	public static final class Builder extends CollectorComponent.Builder {
 
-    Collector.Builder delegate = Collector.newBuilder(OpenTelemetryHttpCollector.class);
+		Collector.Builder delegate = Collector.newBuilder(OpenTelemetryHttpCollector.class);
 
-    CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
+		CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
 
-    OtelResourceMapper otelResourceMapper;
+		OtelResourceMapper otelResourceMapper;
 
-    @Override
-    public Builder storage(StorageComponent storageComponent) {
-      delegate.storage(storageComponent);
-      return this;
-    }
+		@Override
+		public Builder storage(StorageComponent storageComponent) {
+			delegate.storage(storageComponent);
+			return this;
+		}
 
-    @Override
-    public Builder metrics(CollectorMetrics metrics) {
-      if (metrics == null) {
-        throw new NullPointerException("metrics == null");
-      }
-      delegate.metrics(this.metrics = metrics.forTransport("otel/http"));
-      return this;
-    }
+		@Override
+		public Builder metrics(CollectorMetrics metrics) {
+			if (metrics == null) {
+				throw new NullPointerException("metrics == null");
+			}
+			delegate.metrics(this.metrics = metrics.forTransport("otel/http"));
+			return this;
+		}
 
-    @Override
-    public Builder sampler(CollectorSampler sampler) {
-      delegate.sampler(sampler);
-      return this;
-    }
+		@Override
+		public Builder sampler(CollectorSampler sampler) {
+			delegate.sampler(sampler);
+			return this;
+		}
 
-    public Builder otelResourceMapper(OtelResourceMapper otelResourceMapper) {
-      this.otelResourceMapper = otelResourceMapper;
-      return this;
-    }
+		public Builder otelResourceMapper(OtelResourceMapper otelResourceMapper) {
+			this.otelResourceMapper = otelResourceMapper;
+			return this;
+		}
 
-    @Override
-    public OpenTelemetryHttpCollector build() {
-      return new OpenTelemetryHttpCollector(this);
-    }
+		@Override
+		public OpenTelemetryHttpCollector build() {
+			return new OpenTelemetryHttpCollector(this);
+		}
 
-    Builder() {
-    }
-  }
+		Builder() {
+		}
 
-  final Collector collector;
+	}
 
-  final CollectorMetrics metrics;
+	final Collector collector;
 
-  final OtelResourceMapper otelResourceMapper;
+	final CollectorMetrics metrics;
 
-  OpenTelemetryHttpCollector(Builder builder) {
-    collector = builder.delegate.build();
-    metrics = builder.metrics;
-    otelResourceMapper = builder.otelResourceMapper == null ? DefaultOtelResourceMapper.create() : builder.otelResourceMapper;
-  }
+	final OtelResourceMapper otelResourceMapper;
 
-  @Override
-  public OpenTelemetryHttpCollector start() {
-    return this;
-  }
+	OpenTelemetryHttpCollector(Builder builder) {
+		collector = builder.delegate.build();
+		metrics = builder.metrics;
+		otelResourceMapper = builder.otelResourceMapper == null ? DefaultOtelResourceMapper.create()
+				: builder.otelResourceMapper;
+	}
 
-  @Override
-  public String toString() {
-    return "OpenTelemetryHttpCollector{}";
-  }
+	@Override
+	public OpenTelemetryHttpCollector start() {
+		return this;
+	}
 
-  public OtelResourceMapper getOtelResourceMapper() {
-    return otelResourceMapper;
-  }
+	@Override
+	public String toString() {
+		return "OpenTelemetryHttpCollector{}";
+	}
 
-  /**
-   * Reconfigures the service per https://opentelemetry.io/docs/specs/otlp/#otlphttp-request
-   */
-  @Override
-  public void reconfigure(ServerBuilder sb) {
-    sb.decorator(DecodingService.newDecorator(StreamDecoderFactory.gzip()));
-    sb.service("/v1/traces", new OtlpProtoV1TracesHttpService(this));
-    sb.service("/v1/logs", new OtlpProtoV1LogsHttpService(this));
-  }
+	public OtelResourceMapper getOtelResourceMapper() {
+		return otelResourceMapper;
+	}
 
-  static final class OtlpProtoV1TracesHttpService extends AbstractHttpService {
-    private static final Logger LOG = Logger.getLogger(OtlpProtoV1TracesHttpService.class.getName());
+	/**
+	 * Reconfigures the service per
+	 * https://opentelemetry.io/docs/specs/otlp/#otlphttp-request
+	 */
+	@Override
+	public void reconfigure(ServerBuilder sb) {
+		sb.decorator(DecodingService.newDecorator(StreamDecoderFactory.gzip()));
+		sb.service("/v1/traces", new OtlpProtoV1TracesHttpService(this));
+		sb.service("/v1/logs", new OtlpProtoV1LogsHttpService(this));
+	}
 
-    final OpenTelemetryHttpCollector collector;
+	static final class OtlpProtoV1TracesHttpService extends AbstractHttpService {
 
-    final SpanTranslator spanTranslator;
+		private static final Logger LOG = Logger.getLogger(OtlpProtoV1TracesHttpService.class.getName());
 
-    OtlpProtoV1TracesHttpService(OpenTelemetryHttpCollector collector) {
-      this.collector = collector;
-      this.spanTranslator = new SpanTranslator(collector.otelResourceMapper);
-    }
+		final OpenTelemetryHttpCollector collector;
 
-    @Override
-    protected HttpResponse doPost(ServiceRequestContext ctx, HttpRequest req) {
-      CompletableCallback result = new CompletableCallback();
-      req.aggregate(AggregationOptions.usePooledObjects(ctx.alloc(), ctx.eventLoop()
-      )).handle((msg, t) -> {
-        if (t != null) {
-          collector.metrics.incrementMessagesDropped();
-          result.onError(t);
-          return null;
-        }
-        try (HttpData content = msg.content()) {
-          if (content.isEmpty()) {
-            result.onSuccess(null);
-            return null;
-          }
-          collector.metrics.incrementBytes(content.length());
-          try {
-            ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
-            collector.metrics.incrementMessages();
-            try {
-              List<Span> spans = spanTranslator.translate(request);
-              collector.collector.accept(spans, result);
-            } catch (RuntimeException e) {
-              // If the span is invalid, an exception such as IllegalArgumentException will be thrown.
-              int spanSize = request.getResourceSpansList().stream()
-                  .flatMap(rs -> rs.getScopeSpansList().stream())
-                  .mapToInt(ScopeSpans::getSpansCount).sum();
-              collector.metrics.incrementSpansDropped(spanSize);
-              LOG.log(Level.WARNING, "Unable to translate the spans:", e);
-              result.onError(e);
-            }
-          } catch (IOException e) {
-            collector.metrics.incrementMessagesDropped();
-            LOG.log(Level.WARNING, "Unable to parse the request:", e);
-            result.onError(e);
-          }
-          return null;
-        }
-      });
-      return HttpResponse.of(result);
-    }
-  }
+		final SpanTranslator spanTranslator;
 
-  static final class OtlpProtoV1LogsHttpService extends AbstractHttpService {
-    private static final Logger LOG = Logger.getLogger(OtlpProtoV1LogsHttpService.class.getName());
-    final OpenTelemetryHttpCollector collector;
-    final LogEventTranslator logEventTranslator;
+		OtlpProtoV1TracesHttpService(OpenTelemetryHttpCollector collector) {
+			this.collector = collector;
+			this.spanTranslator = new SpanTranslator(collector.otelResourceMapper);
+		}
 
-    OtlpProtoV1LogsHttpService(OpenTelemetryHttpCollector collector) {
-      this.collector = collector;
-      this.logEventTranslator = LogEventTranslator.newBuilder()
-          .otelResourceMapper(collector.otelResourceMapper)
-          .build();
-    }
+		@Override
+		protected HttpResponse doPost(ServiceRequestContext ctx, HttpRequest req) {
+			CompletableCallback result = new CompletableCallback();
+			req.aggregate(AggregationOptions.usePooledObjects(ctx.alloc(), ctx.eventLoop())).handle((msg, t) -> {
+				if (t != null) {
+					collector.metrics.incrementMessagesDropped();
+					result.onError(t);
+					return null;
+				}
+				try (HttpData content = msg.content()) {
+					if (content.isEmpty()) {
+						result.onSuccess(null);
+						return null;
+					}
+					collector.metrics.incrementBytes(content.length());
+					try {
+						ExportTraceServiceRequest request = ExportTraceServiceRequest
+							.parseFrom(UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
+						collector.metrics.incrementMessages();
+						try {
+							List<Span> spans = spanTranslator.translate(request);
+							collector.collector.accept(spans, result);
+						}
+						catch (RuntimeException e) {
+							// If the span is invalid, an exception such as
+							// IllegalArgumentException will be thrown.
+							int spanSize = request.getResourceSpansList()
+								.stream()
+								.flatMap(rs -> rs.getScopeSpansList().stream())
+								.mapToInt(ScopeSpans::getSpansCount)
+								.sum();
+							collector.metrics.incrementSpansDropped(spanSize);
+							LOG.log(Level.WARNING, "Unable to translate the spans:", e);
+							result.onError(e);
+						}
+					}
+					catch (IOException e) {
+						collector.metrics.incrementMessagesDropped();
+						LOG.log(Level.WARNING, "Unable to parse the request:", e);
+						result.onError(e);
+					}
+					return null;
+				}
+			});
+			return HttpResponse.of(result);
+		}
 
-    @Override
-    protected HttpResponse doPost(ServiceRequestContext ctx, HttpRequest req) throws Exception {
-      CompletableCallback result = new CompletableCallback();
-      req.aggregate(AggregationOptions.usePooledObjects(ctx.alloc(), ctx.eventLoop()
-      )).handle((msg, t) -> {
-        if (t != null) {
-          collector.metrics.incrementMessagesDropped();
-          result.onError(t);
-          return null;
-        }
-        try (HttpData content = msg.content()) {
-          if (content.isEmpty()) {
-            result.onSuccess(null);
-            return null;
-          }
-          collector.metrics.incrementBytes(content.length());
-          try {
-            ExportLogsServiceRequest request = ExportLogsServiceRequest.parseFrom(UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
-            collector.metrics.incrementMessages();
-            try {
-              List<Span> spans = logEventTranslator.translate(request);
-              collector.collector.accept(spans, result);
-            } catch (RuntimeException e) {
-              // TODO count dropped spans
-              LOG.log(Level.WARNING, "Unable to translate the logs:", e);
-              result.onError(e);
-            }
-          } catch (IOException e) {
-            collector.metrics.incrementMessagesDropped();
-            LOG.log(Level.WARNING, "Unable to parse the request:", e);
-            result.onError(e);
-          }
-          return null;
-        }
-      });
-      return HttpResponse.of(result);
-    }
-  }
+	}
 
-  static final class CompletableCallback extends CompletableFuture<HttpResponse>
-      implements Callback<Void> {
+	static final class OtlpProtoV1LogsHttpService extends AbstractHttpService {
 
-    static final ResponseHeaders ACCEPTED_RESPONSE = ResponseHeaders.of(HttpStatus.ACCEPTED);
+		private static final Logger LOG = Logger.getLogger(OtlpProtoV1LogsHttpService.class.getName());
 
-    @Override
-    public void onSuccess(Void value) {
-      complete(HttpResponse.of(ACCEPTED_RESPONSE));
-    }
+		final OpenTelemetryHttpCollector collector;
 
-    @Override
-    public void onError(Throwable t) {
-      completeExceptionally(t);
-    }
-  }
+		final LogEventTranslator logEventTranslator;
+
+		OtlpProtoV1LogsHttpService(OpenTelemetryHttpCollector collector) {
+			this.collector = collector;
+			this.logEventTranslator = LogEventTranslator.newBuilder()
+				.otelResourceMapper(collector.otelResourceMapper)
+				.build();
+		}
+
+		@Override
+		protected HttpResponse doPost(ServiceRequestContext ctx, HttpRequest req) throws Exception {
+			CompletableCallback result = new CompletableCallback();
+			req.aggregate(AggregationOptions.usePooledObjects(ctx.alloc(), ctx.eventLoop())).handle((msg, t) -> {
+				if (t != null) {
+					collector.metrics.incrementMessagesDropped();
+					result.onError(t);
+					return null;
+				}
+				try (HttpData content = msg.content()) {
+					if (content.isEmpty()) {
+						result.onSuccess(null);
+						return null;
+					}
+					collector.metrics.incrementBytes(content.length());
+					try {
+						ExportLogsServiceRequest request = ExportLogsServiceRequest
+							.parseFrom(UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
+						collector.metrics.incrementMessages();
+						try {
+							List<Span> spans = logEventTranslator.translate(request);
+							collector.collector.accept(spans, result);
+						}
+						catch (RuntimeException e) {
+							// TODO count dropped spans
+							LOG.log(Level.WARNING, "Unable to translate the logs:", e);
+							result.onError(e);
+						}
+					}
+					catch (IOException e) {
+						collector.metrics.incrementMessagesDropped();
+						LOG.log(Level.WARNING, "Unable to parse the request:", e);
+						result.onError(e);
+					}
+					return null;
+				}
+			});
+			return HttpResponse.of(result);
+		}
+
+	}
+
+	static final class CompletableCallback extends CompletableFuture<HttpResponse> implements Callback<Void> {
+
+		static final ResponseHeaders ACCEPTED_RESPONSE = ResponseHeaders.of(HttpStatus.ACCEPTED);
+
+		@Override
+		public void onSuccess(Void value) {
+			complete(HttpResponse.of(ACCEPTED_RESPONSE));
+		}
+
+		@Override
+		public void onError(Throwable t) {
+			completeExceptionally(t);
+		}
+
+	}
+
 }
