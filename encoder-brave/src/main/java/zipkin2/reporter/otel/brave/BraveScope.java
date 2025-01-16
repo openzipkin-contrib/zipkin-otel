@@ -20,7 +20,8 @@ final class BraveScope {
   static final InstrumentationScope INSTRUMENTATION_SCOPE;
 
   static {
-    try (InputStream stream = BraveScope.class.getClassLoader().getResourceAsStream("scope.properties")) {
+    try (InputStream stream = BraveScope.class.getClassLoader()
+        .getResourceAsStream("scope.properties")) {
       if (stream != null) {
         Properties props = new Properties();
         props.load(stream);
@@ -36,9 +37,10 @@ final class BraveScope {
     }
   }
 
-  /** Returns a scope derived from the classpath resource "scope.properties" */
+  /**
+   * Returns a scope derived from the classpath resource "scope.properties"
+   */
   public static InstrumentationScope instrumentationScope() {
     return INSTRUMENTATION_SCOPE;
   }
-
 }

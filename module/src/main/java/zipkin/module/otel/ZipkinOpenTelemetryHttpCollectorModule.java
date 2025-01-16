@@ -23,9 +23,9 @@ import zipkin2.storage.StorageComponent;
 class ZipkinOpenTelemetryHttpCollectorModule {
   @Bean
   OpenTelemetryHttpCollector otelHttpCollector(StorageComponent storage,
-                                               CollectorSampler sampler, CollectorMetrics metrics,
-                                               OtelResourceMapper otelResourceMapper,
-                                               ZipkinOpenTelemetryHttpCollectorProperties properties) {
+      CollectorSampler sampler, CollectorMetrics metrics,
+      OtelResourceMapper otelResourceMapper,
+      ZipkinOpenTelemetryHttpCollectorProperties properties) {
     OpenTelemetryHttpCollector.Builder builder = OpenTelemetryHttpCollector.newBuilder();
     return builder
         .storage(storage)

@@ -4,12 +4,6 @@
  */
 package zipkin2.collector.otel.http;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import com.google.protobuf.ByteString;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 import io.opentelemetry.proto.common.v1.AnyValue;
@@ -23,6 +17,11 @@ import io.opentelemetry.proto.trace.v1.Span.Event;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.Status.StatusCode;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import zipkin2.Endpoint;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -51,7 +50,6 @@ final class SpanTranslator {
     this(DefaultOtelResourceMapper.create());
   }
 
-
   List<zipkin2.Span> translate(ExportTraceServiceRequest otelSpans) {
     List<zipkin2.Span> spans = new ArrayList<>();
     List<ResourceSpans> spansList = otelSpans.getResourceSpansList();
@@ -79,7 +77,8 @@ final class SpanTranslator {
     long endTimestamp = nanoToMills(spanData.getEndTimeUnixNano());
     Map<String, AnyValue> attributesMap = spanData.getAttributesList()
         .stream()
-        .collect(Collectors.toMap(KeyValue::getKey, KeyValue::getValue, (a, b) -> b /* The latter wins */));
+        .collect(Collectors.toMap(KeyValue::getKey, KeyValue::getValue,
+            (a, b) -> b /* The latter wins */));
     zipkin2.Span.Builder spanBuilder = zipkin2.Span.newBuilder();
     byte[] traceIdBytes = spanData.getTraceId().toByteArray();
     long high = bytesToLong(traceIdBytes, 0);
@@ -110,10 +109,12 @@ final class SpanTranslator {
     Status status = spanData.getStatus();
     // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk_exporters/zipkin.md#status
     if (status.getCode() != Status.StatusCode.STATUS_CODE_UNSET) {
-      String codeValue = status.getCode().toString().replace("STATUS_CODE_", ""); // either OK or ERROR
+      String codeValue =
+          status.getCode().toString().replace("STATUS_CODE_", ""); // either OK or ERROR
       spanBuilder.putTag(SemanticConventionsAttributes.OTEL_STATUS_CODE, codeValue);
       // add the error tag, if it isn't already in the source span.
-      if (status.getCode() == StatusCode.STATUS_CODE_ERROR && !attributesMap.containsKey(ERROR_TAG)) {
+      if (status.getCode() == StatusCode.STATUS_CODE_ERROR && !attributesMap.containsKey(
+          ERROR_TAG)) {
         spanBuilder.putTag(ERROR_TAG, status.getMessage());
       }
     }
@@ -153,8 +154,10 @@ final class SpanTranslator {
         .orElse(null);
     if (serviceName != null) {
       Endpoint.Builder endpoint = Endpoint.newBuilder().serviceName(serviceName.getStringValue());
-      AnyValue networkLocalAddress = attributesMap.get(SemanticConventionsAttributes.NETWORK_LOCAL_ADDRESS);
-      AnyValue networkLocalPort = attributesMap.get(SemanticConventionsAttributes.NETWORK_LOCAL_PORT);
+      AnyValue networkLocalAddress =
+          attributesMap.get(SemanticConventionsAttributes.NETWORK_LOCAL_ADDRESS);
+      AnyValue networkLocalPort =
+          attributesMap.get(SemanticConventionsAttributes.NETWORK_LOCAL_PORT);
       if (networkLocalAddress != null) {
         endpoint.ip(networkLocalAddress.getStringValue());
       }
@@ -170,7 +173,8 @@ final class SpanTranslator {
   private static Endpoint getRemoteEndpoint(Map<String, AnyValue> attributesMap, SpanKind kind) {
     if (kind == SpanKind.SPAN_KIND_CLIENT || kind == SpanKind.SPAN_KIND_PRODUCER) {
       AnyValue peerService = attributesMap.get(SemanticConventionsAttributes.PEER_SERVICE);
-      AnyValue networkPeerAddress = attributesMap.get(SemanticConventionsAttributes.NETWORK_PEER_ADDRESS);
+      AnyValue networkPeerAddress =
+          attributesMap.get(SemanticConventionsAttributes.NETWORK_PEER_ADDRESS);
       String serviceName = null;
       // TODO: Implement fallback mechanism?
       // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk_exporters/zipkin.md#otlp---zipkin
@@ -181,7 +185,8 @@ final class SpanTranslator {
       }
       if (serviceName != null) {
         Endpoint.Builder endpoint = Endpoint.newBuilder().serviceName(serviceName);
-        AnyValue networkPeerPort = attributesMap.get(SemanticConventionsAttributes.NETWORK_PEER_PORT);
+        AnyValue networkPeerPort =
+            attributesMap.get(SemanticConventionsAttributes.NETWORK_PEER_PORT);
         if (networkPeerAddress != null) {
           endpoint.ip(networkPeerAddress.getStringValue());
         }

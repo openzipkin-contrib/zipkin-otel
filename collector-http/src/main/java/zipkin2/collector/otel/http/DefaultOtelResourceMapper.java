@@ -53,6 +53,7 @@ public class DefaultOtelResourceMapper implements OtelResourceMapper {
   public void accept(Resource resource, Span.Builder builder) {
     resource.getAttributesList().stream()
         .filter(kv -> !kv.getKey().equals(SemanticConventionsAttributes.SERVICE_NAME))
-        .forEach(kv -> builder.putTag(resourceAttributePrefix + kv.getKey(), ProtoUtils.valueToString(kv.getValue())));
+        .forEach(kv -> builder.putTag(resourceAttributePrefix + kv.getKey(),
+            ProtoUtils.valueToString(kv.getValue())));
   }
 }
