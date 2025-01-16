@@ -18,7 +18,6 @@ import io.opentelemetry.proto.trace.v1.Span.Event;
 import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.TracesData;
-
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -109,7 +108,8 @@ final class SpanTranslator {
   }
 
   SpanTranslator(Builder builder) {
-    this.tagToAttributes = builder.tagToAttributes == null ? TagToAttributes.create() : builder.tagToAttributes;
+    this.tagToAttributes =
+        builder.tagToAttributes == null ? TagToAttributes.create() : builder.tagToAttributes;
     this.errorTag = builder.errorTag;
     this.resourceAttributes = builder.resourceAttributes;
     this.instrumentationScope = builder.instrumentationScope;
@@ -121,7 +121,8 @@ final class SpanTranslator {
     ScopeSpans.Builder scopeSpanBuilder = ScopeSpans.newBuilder();
     Span.Builder spanBuilder = builderForSingleSpan(braveSpan, resourceSpansBuilder);
     scopeSpanBuilder.addSpans(spanBuilder.build());
-    io.opentelemetry.proto.common.v1.InstrumentationScope.Builder scopeBuilder = io.opentelemetry.proto.common.v1.InstrumentationScope.newBuilder();
+    io.opentelemetry.proto.common.v1.InstrumentationScope.Builder scopeBuilder =
+        io.opentelemetry.proto.common.v1.InstrumentationScope.newBuilder();
     scopeBuilder.setName(this.instrumentationScope.name());
     scopeBuilder.setVersion(this.instrumentationScope.version());
     scopeSpanBuilder.setScope(scopeBuilder.build());
@@ -130,7 +131,8 @@ final class SpanTranslator {
     return tracesDataBuilder.build();
   }
 
-  private Span.Builder builderForSingleSpan(MutableSpan span, ResourceSpans.Builder resourceSpansBuilder) {
+  private Span.Builder builderForSingleSpan(MutableSpan span,
+      ResourceSpans.Builder resourceSpansBuilder) {
     Span.Builder spanBuilder = Span.newBuilder()
         .setTraceId(span.traceId() != null ? ByteString.fromHex(span.traceId()) : INVALID_TRACE_ID)
         .setSpanId(span.id() != null ? ByteString.fromHex(span.id()) : INVALID_SPAN_ID)
@@ -149,34 +151,44 @@ final class SpanTranslator {
       if (localServiceName == null || localServiceName.isEmpty()) {
         localServiceName = DEFAULT_SERVICE_NAME;
       }
-      resourceBuilder.addAttributes(stringAttribute(SemanticConventionsAttributes.SERVICE_NAME, localServiceName));
+      resourceBuilder.addAttributes(
+          stringAttribute(SemanticConventionsAttributes.SERVICE_NAME, localServiceName));
     }
     resourceAttributes.forEach((k, v) -> resourceBuilder.addAttributes(stringAttribute(k, v)));
     // Set Telemetry SDK resource attributes https://opentelemetry.io/docs/specs/semconv/attributes-registry/telemetry/
-    resourceBuilder.addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_LANGUAGE, TELEMETRY_SDK_LANGUAGE))
-        .addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_NAME, TELEMETRY_SDK_NAME))
-        .addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_VERSION, TELEMETRY_SDK_VERSION));
+    resourceBuilder.addAttributes(
+            stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_LANGUAGE,
+                TELEMETRY_SDK_LANGUAGE))
+        .addAttributes(
+            stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_NAME, TELEMETRY_SDK_NAME))
+        .addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_VERSION,
+            TELEMETRY_SDK_VERSION));
     if (span.kind() == Kind.SERVER || span.kind() == Kind.CONSUMER) {
       setServerAddressAndPort(span, span.localIp(), span.localPort(), spanBuilder);
-      maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.CLIENT_ADDRESS, span.remoteIp());
-      maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.CLIENT_PORT, span.remotePort());
+      maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.CLIENT_ADDRESS,
+          span.remoteIp());
+      maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.CLIENT_PORT,
+          span.remotePort());
     } else if (span.kind() == Kind.CLIENT || span.kind() == Kind.PRODUCER) {
       setServerAddressAndPort(span, span.remoteIp(), span.remotePort(), spanBuilder);
     }
-    maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.PEER_SERVICE, span.remoteServiceName());
+    maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.PEER_SERVICE,
+        span.remoteServiceName());
     span.forEachTag(tagToAttributes, spanBuilder);
     span.forEachAnnotation(annotationMapper, spanBuilder);
     String errorValue = errorTag.value(span.error(), null);
     if (errorValue != null) {
       spanBuilder.addAttributes(stringAttribute("error", errorValue));
-      spanBuilder.setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
+      spanBuilder.setStatus(
+          Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build());
     } else {
       spanBuilder.setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_OK).build());
     }
     return spanBuilder;
   }
 
-  void setServerAddressAndPort(MutableSpan span, String fallbackAddress, int fallbackPort, Span.Builder spanBuilder) {
+  void setServerAddressAndPort(MutableSpan span, String fallbackAddress, int fallbackPort,
+      Span.Builder spanBuilder) {
     String url = span.tag(HttpTags.URL.key());
     String address = null;
     int port = 0;
@@ -195,8 +207,10 @@ final class SpanTranslator {
       } catch (IllegalArgumentException ignored) {
       }
     }
-    maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.SERVER_ADDRESS, address == null ? fallbackAddress : address);
-    maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.SERVER_PORT, port == 0 ? fallbackPort : port);
+    maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.SERVER_ADDRESS,
+        address == null ? fallbackAddress : address);
+    maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.SERVER_PORT,
+        port == 0 ? fallbackPort : port);
   }
 
   private static SpanKind translateKind(Kind kind) {
@@ -222,5 +236,4 @@ final class SpanTranslator {
           .setName(value).build());
     }
   }
-
 }

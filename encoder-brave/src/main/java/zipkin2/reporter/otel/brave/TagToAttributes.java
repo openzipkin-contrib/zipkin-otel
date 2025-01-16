@@ -8,7 +8,6 @@ import brave.Tag;
 import brave.handler.MutableSpan;
 import brave.http.HttpTags;
 import io.opentelemetry.proto.trace.v1.Span;
-
 import java.net.URI;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -51,8 +50,10 @@ public final class TagToAttributes implements MutableSpan.TagConsumer<Span.Build
         }
         // map URI parts to "stable" attributes as of OpenTelemetry Semantic Conventions 1.29.0
         maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.URL_PATH, uri.getPath());
-        maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.URL_QUERY, uri.getQuery());
-        maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.URL_FRAGMENT, uri.getFragment());
+        maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.URL_QUERY,
+            uri.getQuery());
+        maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.URL_FRAGMENT,
+            uri.getFragment());
       } catch (IllegalArgumentException e) {
         // do not convert
         spanBuilder.addAttributes(stringAttribute(HttpTags.URL.key(), value));
@@ -92,7 +93,8 @@ public final class TagToAttributes implements MutableSpan.TagConsumer<Span.Build
           .tagToAttribute(HttpTags.PATH, SemanticConventionsAttributes.URL_PATH)
           .tagToAttribute(HttpTags.ROUTE, SemanticConventionsAttributes.HTTP_ROUTE)
           .tagToAttribute(HttpTags.URL.key(), URL_TAG_TO_ATTRIBUTE)
-          .tagToAttribute(HttpTags.STATUS_CODE, SemanticConventionsAttributes.HTTP_RESPONSE_STATUS_CODE);
+          .tagToAttribute(HttpTags.STATUS_CODE,
+              SemanticConventionsAttributes.HTTP_RESPONSE_STATUS_CODE);
     }
 
     /**

@@ -57,7 +57,8 @@ class LogEventTranslatorTest {
     assertThat(span).isEqualTo(Span.newBuilder()
         .id("7180c278b62e8f6a")
         .traceId("6b221d5bc9e6496c6b221d5bc9e6496c")
-        .addAnnotation(1505855794000L, "\"demo.event\":{\"severity_number\":9,\"body\":\"Hello World!\"}")
+        .addAnnotation(1505855794000L,
+            "\"demo.event\":{\"severity_number\":9,\"body\":\"Hello World!\"}")
         .build());
   }
 
@@ -74,7 +75,8 @@ class LogEventTranslatorTest {
     assertThat(span).isEqualTo(Span.newBuilder()
         .id("7180c278b62e8f6a")
         .traceId("6b221d5bc9e6496c6b221d5bc9e6496c")
-        .addAnnotation(1505855794000L, "\"demo.event\":{\"severity_text\":\"INFO\",\"body\":\"Hello World!\"}")
+        .addAnnotation(1505855794000L,
+            "\"demo.event\":{\"severity_text\":\"INFO\",\"body\":\"Hello World!\"}")
         .build());
   }
 
@@ -91,7 +93,8 @@ class LogEventTranslatorTest {
     assertThat(span).isEqualTo(Span.newBuilder()
         .id("7180c278b62e8f6a")
         .traceId("6b221d5bc9e6496c6b221d5bc9e6496c")
-        .addAnnotation(1505855794000L, "\"demo.event\":{\"dropped_attributes_count\":3,\"body\":\"Hello World!\"}")
+        .addAnnotation(1505855794000L,
+            "\"demo.event\":{\"dropped_attributes_count\":3,\"body\":\"Hello World!\"}")
         .build());
   }
 
@@ -102,14 +105,19 @@ class LogEventTranslatorTest {
         .setTraceId(ByteString.fromHex("6b221d5bc9e6496c6b221d5bc9e6496c"))
         .setTimeUnixNano(1505855794000000L)
         .setBody(AnyValue.newBuilder().setKvlistValue(KeyValueList.newBuilder()
-            .addValues(KeyValue.newBuilder().setKey("string").setValue(AnyValue.newBuilder().setStringValue("value1")))
-            .addValues(KeyValue.newBuilder().setKey("int").setValue(AnyValue.newBuilder().setIntValue(2)))))
+            .addValues(KeyValue.newBuilder()
+                .setKey("string")
+                .setValue(AnyValue.newBuilder().setStringValue("value1")))
+            .addValues(KeyValue.newBuilder()
+                .setKey("int")
+                .setValue(AnyValue.newBuilder().setIntValue(2)))))
         .addAttributes(stringAttribute("event.name", "demo.event"))
         .build());
     assertThat(span).isEqualTo(Span.newBuilder()
         .id("7180c278b62e8f6a")
         .traceId("6b221d5bc9e6496c6b221d5bc9e6496c")
-        .addAnnotation(1505855794000L, "\"demo.event\":{\"body\":{\"string\":\"value1\",\"int\":2}}")
+        .addAnnotation(1505855794000L,
+            "\"demo.event\":{\"body\":{\"string\":\"value1\",\"int\":2}}")
         .build());
   }
 }

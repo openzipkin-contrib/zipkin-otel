@@ -8,11 +8,10 @@ import brave.Tag;
 import brave.Tags;
 import brave.handler.MutableSpan;
 import io.opentelemetry.proto.trace.v1.TracesData;
-import zipkin2.reporter.BytesEncoder;
-import zipkin2.reporter.Encoding;
-
 import java.util.Collections;
 import java.util.Map;
+import zipkin2.reporter.BytesEncoder;
+import zipkin2.reporter.Encoding;
 
 public final class OtlpProtoV1Encoder implements BytesEncoder<MutableSpan> {
   public static OtlpProtoV1Encoder create() {

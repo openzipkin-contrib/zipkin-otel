@@ -4,11 +4,10 @@
  */
 package zipkin2.collector.otel.http;
 
-import java.util.List;
-
 import com.google.protobuf.TextFormat;
 import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.KeyValue;
+import java.util.List;
 
 import static java.util.stream.Collectors.joining;
 

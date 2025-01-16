@@ -4,14 +4,6 @@
  */
 package zipkin2.collector.otel.http;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.ServerSocket;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Function;
-
 import com.google.protobuf.ByteString;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
@@ -24,6 +16,13 @@ import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.sdk.trace.data.EventData;
 import io.opentelemetry.semconv.NetworkAttributes;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.ServerSocket;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Function;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
@@ -84,7 +83,8 @@ class ZipkinTestUtil {
                     .setName("Recv.helloworld.Greeter.SayHello")
                     .setStartTimeUnixNano(1505855794_194009601L)
                     .setEndTimeUnixNano(1505855799_465726528L)
-                    .addAttributes(stringAttribute(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(), "1.2.3.4"))
+                    .addAttributes(stringAttribute(NetworkAttributes.NETWORK_LOCAL_ADDRESS.getKey(),
+                        "1.2.3.4"))
                     .addEvents(Event.newBuilder()
                         .setName("RECEIVED").setTimeUnixNano(1505855799_433901068L))
                     .addEvents(Event.newBuilder()
@@ -92,15 +92,18 @@ class ZipkinTestUtil {
                 ))));
   }
 
-  static ExportTraceServiceRequest.Builder requestBuilderWithResourceCustomizer(Function<Resource.Builder, Resource.Builder> resourceCustomizer) {
+  static ExportTraceServiceRequest.Builder requestBuilderWithResourceCustomizer(
+      Function<Resource.Builder, Resource.Builder> resourceCustomizer) {
     return requestBuilder(resourceCustomizer, Function.identity(), Function.identity());
   }
 
-  static ExportTraceServiceRequest.Builder requestBuilderWithScopeCustomizer(Function<InstrumentationScope.Builder, InstrumentationScope.Builder> scopeCustomizer) {
+  static ExportTraceServiceRequest.Builder requestBuilderWithScopeCustomizer(
+      Function<InstrumentationScope.Builder, InstrumentationScope.Builder> scopeCustomizer) {
     return requestBuilder(Function.identity(), scopeCustomizer, Function.identity());
   }
 
-  static ExportTraceServiceRequest.Builder requestBuilderWithSpanCustomizer(Function<io.opentelemetry.proto.trace.v1.Span.Builder, io.opentelemetry.proto.trace.v1.Span.Builder> spanCustomizer) {
+  static ExportTraceServiceRequest.Builder requestBuilderWithSpanCustomizer(
+      Function<io.opentelemetry.proto.trace.v1.Span.Builder, io.opentelemetry.proto.trace.v1.Span.Builder> spanCustomizer) {
     return requestBuilder(Function.identity(), Function.identity(), spanCustomizer);
   }
 

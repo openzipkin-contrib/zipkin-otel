@@ -23,7 +23,6 @@ class ZipkinOpenTelemetryHttpCollectorModuleTest {
 
   ApplicationContextRunner contextRunner = new ApplicationContextRunner();
 
-
   @Test
   void httpCollector_enabledByDefault() {
     contextRunner.withUserConfiguration(ZipkinOpenTelemetryHttpCollectorModule.class)
@@ -35,7 +34,9 @@ class ZipkinOpenTelemetryHttpCollectorModuleTest {
           OpenTelemetryHttpCollector collector = context.getBean(OpenTelemetryHttpCollector.class);
           OtelResourceMapper otelResourceMapper = collector.getOtelResourceMapper();
           assertThat(otelResourceMapper).isInstanceOf(DefaultOtelResourceMapper.class);
-          assertThat(((DefaultOtelResourceMapper) otelResourceMapper).getResourceAttributePrefix()).isEqualTo("");
+          assertThat(
+              ((DefaultOtelResourceMapper) otelResourceMapper).getResourceAttributePrefix()).isEqualTo(
+              "");
         });
   }
 
@@ -51,10 +52,11 @@ class ZipkinOpenTelemetryHttpCollectorModuleTest {
           OpenTelemetryHttpCollector collector = context.getBean(OpenTelemetryHttpCollector.class);
           OtelResourceMapper otelResourceMapper = collector.getOtelResourceMapper();
           assertThat(otelResourceMapper).isInstanceOf(DefaultOtelResourceMapper.class);
-          assertThat(((DefaultOtelResourceMapper) otelResourceMapper).getResourceAttributePrefix()).isEqualTo("otel.resources.");
+          assertThat(
+              ((DefaultOtelResourceMapper) otelResourceMapper).getResourceAttributePrefix()).isEqualTo(
+              "otel.resources.");
         });
   }
-
 
   @Test
   void httpCollector_customOtelResourceMapper() {

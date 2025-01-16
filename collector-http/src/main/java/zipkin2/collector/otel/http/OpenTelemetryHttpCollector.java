@@ -20,6 +20,11 @@ import com.linecorp.armeria.server.encoding.DecodingService;
 import io.opentelemetry.proto.collector.logs.v1.ExportLogsServiceRequest;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.collector.Collector;
@@ -27,12 +32,6 @@ import zipkin2.collector.CollectorComponent;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.storage.StorageComponent;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public final class OpenTelemetryHttpCollector extends CollectorComponent
     implements ServerConfigurator {
@@ -93,7 +92,8 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
   OpenTelemetryHttpCollector(Builder builder) {
     collector = builder.delegate.build();
     metrics = builder.metrics;
-    otelResourceMapper = builder.otelResourceMapper == null ? DefaultOtelResourceMapper.create() : builder.otelResourceMapper;
+    otelResourceMapper = builder.otelResourceMapper == null ? DefaultOtelResourceMapper.create()
+        : builder.otelResourceMapper;
   }
 
   @Override
@@ -121,7 +121,8 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
   }
 
   static final class OtlpProtoV1TracesHttpService extends AbstractHttpService {
-    private static final Logger LOG = Logger.getLogger(OtlpProtoV1TracesHttpService.class.getName());
+    private static final Logger LOG =
+        Logger.getLogger(OtlpProtoV1TracesHttpService.class.getName());
 
     final OpenTelemetryHttpCollector collector;
 
@@ -149,7 +150,8 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
           }
           collector.metrics.incrementBytes(content.length());
           try {
-            ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
+            ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(
+                UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
             collector.metrics.incrementMessages();
             try {
               List<Span> spans = spanTranslator.translate(request);
@@ -204,7 +206,8 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
           }
           collector.metrics.incrementBytes(content.length());
           try {
-            ExportLogsServiceRequest request = ExportLogsServiceRequest.parseFrom(UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
+            ExportLogsServiceRequest request = ExportLogsServiceRequest.parseFrom(
+                UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
             collector.metrics.incrementMessages();
             try {
               List<Span> spans = logEventTranslator.translate(request);

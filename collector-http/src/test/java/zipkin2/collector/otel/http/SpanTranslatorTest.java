@@ -4,8 +4,6 @@
  */
 package zipkin2.collector.otel.http;
 
-import java.util.function.Function;
-
 import com.google.protobuf.ByteString;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 import io.opentelemetry.proto.common.v1.AnyValue;
@@ -15,6 +13,7 @@ import io.opentelemetry.proto.trace.v1.Span.SpanKind;
 import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.semconv.NetworkAttributes;
 import io.opentelemetry.semconv.OtelAttributes;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -56,7 +55,6 @@ class SpanTranslatorTest {
         .build();
     assertThat(spanTranslator.translate(data)).containsExactly(expected);
   }
-
 
   @Test
   void translate_invalidTraceId() {
@@ -166,8 +164,9 @@ class SpanTranslatorTest {
 
   @Test
   void translate_noServiceName() {
-    ExportTraceServiceRequest data = requestBuilderWithResourceCustomizer(Resource.Builder::clearAttributes)
-        .build();
+    ExportTraceServiceRequest data =
+        requestBuilderWithResourceCustomizer(Resource.Builder::clearAttributes)
+            .build();
     Span expectedZipkinSpan =
         zipkinSpanBuilder(Span.Kind.SERVER)
             .localEndpoint(null)
@@ -182,7 +181,8 @@ class SpanTranslatorTest {
   void translate_RemoteEndpointMapping(SpanKind spanKind) {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setKind(spanKind)
-        .addAttributes(stringAttribute(SemanticConventionsAttributes.PEER_SERVICE, "remote-test-service"))
+        .addAttributes(
+            stringAttribute(SemanticConventionsAttributes.PEER_SERVICE, "remote-test-service"))
         .addAttributes(stringAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "8.8.8.8"))
         .addAttributes(longAttribute(NetworkAttributes.NETWORK_PEER_PORT.getKey(), 42L)))
         .build();
@@ -207,11 +207,13 @@ class SpanTranslatorTest {
   }
 
   @ParameterizedTest
-  @EnumSource(value = SpanKind.class, names = {"SPAN_KIND_SERVER", "SPAN_KIND_CONSUMER", "SPAN_KIND_INTERNAL", "SPAN_KIND_UNSPECIFIED"})
+  @EnumSource(value = SpanKind.class, names = {"SPAN_KIND_SERVER", "SPAN_KIND_CONSUMER",
+      "SPAN_KIND_INTERNAL", "SPAN_KIND_UNSPECIFIED"})
   void translate_RemoteEndpointMappingWhenKindIsNotClientOrProducer(SpanKind spanKind) {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setKind(spanKind)
-        .addAttributes(stringAttribute(SemanticConventionsAttributes.PEER_SERVICE, "remote-test-service"))
+        .addAttributes(
+            stringAttribute(SemanticConventionsAttributes.PEER_SERVICE, "remote-test-service"))
         .addAttributes(stringAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "8.8.8.8"))
         .addAttributes(longAttribute(NetworkAttributes.NETWORK_PEER_PORT.getKey(), 42L)))
         .build();
@@ -250,7 +252,8 @@ class SpanTranslatorTest {
 
   @ParameterizedTest
   @EnumSource(value = SpanKind.class, names = {"SPAN_KIND_CLIENT", "SPAN_KIND_PRODUCER"})
-  void translate_RemoteEndpointMappingWhenServiceNameIsMissingButPeerAddressExists(SpanKind spanKind) {
+  void translate_RemoteEndpointMappingWhenServiceNameIsMissingButPeerAddressExists(
+      SpanKind spanKind) {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setKind(spanKind)
         .addAttributes(stringAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "8.8.8.8"))
@@ -275,13 +278,13 @@ class SpanTranslatorTest {
         .containsExactly(expectedSpan);
   }
 
-
   @ParameterizedTest
   @EnumSource(value = SpanKind.class, names = {"SPAN_KIND_CLIENT", "SPAN_KIND_PRODUCER"})
   void translate_RemoteEndpointMappingWhenPortIsMissing(SpanKind spanKind) {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setKind(spanKind)
-        .addAttributes(stringAttribute(SemanticConventionsAttributes.PEER_SERVICE, "remote-test-service"))
+        .addAttributes(
+            stringAttribute(SemanticConventionsAttributes.PEER_SERVICE, "remote-test-service"))
         .addAttributes(stringAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS.getKey(), "8.8.8.8")))
         .build();
 
@@ -383,7 +386,10 @@ class SpanTranslatorTest {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setKind(SpanKind.SPAN_KIND_SERVER)
         .addAttributes(stringAttribute("rpc.service", "my service name"))
-        .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).setMessage("timeout").build()))
+        .setStatus(Status.newBuilder()
+            .setCode(Status.StatusCode.STATUS_CODE_ERROR)
+            .setMessage("timeout")
+            .build()))
         .build();
 
     Span expectedSpan =
@@ -402,7 +408,10 @@ class SpanTranslatorTest {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setKind(SpanKind.SPAN_KIND_SERVER)
         .addAttributes(stringAttribute("rpc.service", "my service name"))
-        .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).setMessage("").build()))
+        .setStatus(Status.newBuilder()
+            .setCode(Status.StatusCode.STATUS_CODE_ERROR)
+            .setMessage("")
+            .build()))
         .build();
 
     Span expectedSpan =

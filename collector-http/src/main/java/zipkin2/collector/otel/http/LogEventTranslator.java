@@ -12,12 +12,11 @@ import io.opentelemetry.proto.logs.v1.LogRecord;
 import io.opentelemetry.proto.logs.v1.ResourceLogs;
 import io.opentelemetry.proto.logs.v1.ScopeLogs;
 import io.opentelemetry.proto.logs.v1.SeverityNumber;
-import zipkin2.Span;
-import zipkin2.internal.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import zipkin2.Span;
+import zipkin2.internal.Nullable;
 
 import static zipkin2.collector.otel.http.SpanTranslator.bytesToLong;
 import static zipkin2.collector.otel.http.SpanTranslator.nanoToMills;
@@ -53,7 +52,8 @@ final class LogEventTranslator {
   }
 
   private LogEventTranslator(Builder builder) {
-    this.resourceMapper = builder.resourceMapper == null ? DefaultOtelResourceMapper.create() : builder.resourceMapper;
+    this.resourceMapper = builder.resourceMapper == null ? DefaultOtelResourceMapper.create()
+        : builder.resourceMapper;
   }
 
   List<Span> translate(ExportLogsServiceRequest logs) {

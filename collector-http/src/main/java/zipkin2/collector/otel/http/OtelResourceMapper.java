@@ -4,9 +4,8 @@
  */
 package zipkin2.collector.otel.http;
 
-import java.util.function.BiConsumer;
-
 import io.opentelemetry.proto.resource.v1.Resource;
+import java.util.function.BiConsumer;
 
 /**
  * The interface to map OpenTelemetry Resource to Zipkin Span
