@@ -157,11 +157,11 @@ final class SpanTranslator {
         .addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_NAME, TELEMETRY_SDK_NAME))
         .addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_VERSION, TELEMETRY_SDK_VERSION));
     if (span.kind() == Kind.SERVER || span.kind() == Kind.CONSUMER) {
-      resolveAddressAndPort(span, span.localIp(), span.localPort(), spanBuilder);
+      setServerAddressAndPort(span, span.localIp(), span.localPort(), spanBuilder);
       maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.CLIENT_ADDRESS, span.remoteIp());
       maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.CLIENT_PORT, span.remotePort());
     } else if (span.kind() == Kind.CLIENT || span.kind() == Kind.PRODUCER) {
-      resolveAddressAndPort(span, span.remoteIp(), span.remotePort(), spanBuilder);
+      setServerAddressAndPort(span, span.remoteIp(), span.remotePort(), spanBuilder);
     }
     maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.PEER_SERVICE, span.remoteServiceName());
     span.forEachTag(tagToAttributes, spanBuilder);
@@ -176,7 +176,7 @@ final class SpanTranslator {
     return spanBuilder;
   }
 
-  void resolveAddressAndPort(MutableSpan span, String fallbackAddress, int fallbackPort, Span.Builder spanBuilder) {
+  void setServerAddressAndPort(MutableSpan span, String fallbackAddress, int fallbackPort, Span.Builder spanBuilder) {
     String url = span.tag(HttpTags.URL.key());
     String address = null;
     int port = 0;
