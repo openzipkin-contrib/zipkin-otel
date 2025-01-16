@@ -23,7 +23,6 @@ import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 
 import static zipkin2.reporter.otel.brave.TagToAttribute.maybeAddIntAttribute;
 import static zipkin2.reporter.otel.brave.TagToAttribute.maybeAddStringAttribute;
@@ -159,14 +158,14 @@ final class SpanTranslator {
         .addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_NAME, TELEMETRY_SDK_NAME))
         .addAttributes(stringAttribute(SemanticConventionsAttributes.TELEMETRY_SDK_VERSION, TELEMETRY_SDK_VERSION));
     if (span.kind() == Kind.SERVER || span.kind() == Kind.CONSUMER) {
-      resolveAddressAndPort(span, span::localIp, span::localPort, (address, port) -> {
+      resolveAddressAndPort(span, span.localIp(), span.localPort(), (address, port) -> {
         maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.SERVER_ADDRESS, address);
         maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.SERVER_PORT, port);
       });
       maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.CLIENT_ADDRESS, span.remoteIp());
       maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.CLIENT_PORT, span.remotePort());
     } else if (span.kind() == Kind.CLIENT || span.kind() == Kind.PRODUCER) {
-      resolveAddressAndPort(span, span::remoteIp, span::remotePort, (address, port) -> {
+      resolveAddressAndPort(span, span.remoteIp(), span.remotePort(), (address, port) -> {
         maybeAddStringAttribute(spanBuilder, SemanticConventionsAttributes.SERVER_ADDRESS, address);
         maybeAddIntAttribute(spanBuilder, SemanticConventionsAttributes.SERVER_PORT, port);
       });
@@ -184,7 +183,7 @@ final class SpanTranslator {
     return spanBuilder;
   }
 
-  void resolveAddressAndPort(MutableSpan span, Supplier<String> fallbackAddress, Supplier<Integer> fallbackPort, BiConsumer<String, Integer> addressAndPortConsumer) {
+  void resolveAddressAndPort(MutableSpan span, String fallbackAddress, int fallbackPort, BiConsumer<String, Integer> addressAndPortConsumer) {
     String url = span.tag(HttpTags.URL.key());
     String address = null;
     int port = 0;
@@ -203,7 +202,7 @@ final class SpanTranslator {
       } catch (IllegalArgumentException ignored) {
       }
     }
-    addressAndPortConsumer.accept(address == null ? fallbackAddress.get() : address, port == 0 ? fallbackPort.get() : port);
+    addressAndPortConsumer.accept(address == null ? fallbackAddress : address, port == 0 ? fallbackPort : port);
   }
 
   private static SpanKind translateKind(Kind kind) {
