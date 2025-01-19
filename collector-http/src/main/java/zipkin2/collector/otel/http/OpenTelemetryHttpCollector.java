@@ -5,11 +5,13 @@
 package zipkin2.collector.otel.http;
 
 import com.google.protobuf.UnsafeByteOperations;
+import com.google.protobuf.util.JsonFormat;
 import com.linecorp.armeria.common.AggregationOptions;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.common.encoding.StreamDecoderFactory;
 import com.linecorp.armeria.server.AbstractHttpService;
@@ -89,6 +91,8 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
 
   final OtelResourceMapper otelResourceMapper;
 
+  private final JsonFormat.Parser jsonParser = JsonFormat.parser();
+
   OpenTelemetryHttpCollector(Builder builder) {
     collector = builder.delegate.build();
     metrics = builder.metrics;
@@ -116,19 +120,19 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
   @Override
   public void reconfigure(ServerBuilder sb) {
     sb.decorator(DecodingService.newDecorator(StreamDecoderFactory.gzip()));
-    sb.service("/v1/traces", new OtlpProtoV1TracesHttpService(this));
-    sb.service("/v1/logs", new OtlpProtoV1LogsHttpService(this));
+    sb.service("/v1/traces", new OtlpV1TracesHttpService(this));
+    sb.service("/v1/logs", new OtlpV1LogsHttpService(this));
   }
 
-  static final class OtlpProtoV1TracesHttpService extends AbstractHttpService {
+  static final class OtlpV1TracesHttpService extends AbstractHttpService {
     private static final Logger LOG =
-        Logger.getLogger(OtlpProtoV1TracesHttpService.class.getName());
+        Logger.getLogger(OtlpV1TracesHttpService.class.getName());
 
     final OpenTelemetryHttpCollector collector;
 
     final SpanTranslator spanTranslator;
 
-    OtlpProtoV1TracesHttpService(OpenTelemetryHttpCollector collector) {
+    OtlpV1TracesHttpService(OpenTelemetryHttpCollector collector) {
       this.collector = collector;
       this.spanTranslator = new SpanTranslator(collector.otelResourceMapper);
     }
@@ -150,11 +154,27 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
           }
           collector.metrics.incrementBytes(content.length());
           try {
-            ExportTraceServiceRequest request = ExportTraceServiceRequest.parseFrom(
-                UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
+            MediaType contentType = msg.headers().contentType();
+            if (contentType == null) {
+              collector.metrics.incrementMessagesDropped();
+              return null;
+            }
+            ExportTraceServiceRequest request;
+            boolean base64Decoded = false;
+            if (contentType.isProtobuf()) {
+              request = ExportTraceServiceRequest.parseFrom(
+                  UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
+            } else if (contentType.isJson()) {
+              ExportTraceServiceRequest.Builder builder = ExportTraceServiceRequest.newBuilder();
+              collector.jsonParser.merge(content.toReaderUtf8(), builder);
+              request = builder.build();
+              base64Decoded = true;
+            } else {
+              throw new IllegalArgumentException("Unsupported Content-Type: " + contentType);
+            }
             collector.metrics.incrementMessages();
             try {
-              List<Span> spans = spanTranslator.translate(request);
+              List<Span> spans = spanTranslator.translate(request, base64Decoded);
               collector.collector.accept(spans, result);
             } catch (RuntimeException e) {
               // If the span is invalid, an exception such as IllegalArgumentException will be thrown.
@@ -177,12 +197,12 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
     }
   }
 
-  static final class OtlpProtoV1LogsHttpService extends AbstractHttpService {
-    private static final Logger LOG = Logger.getLogger(OtlpProtoV1LogsHttpService.class.getName());
+  static final class OtlpV1LogsHttpService extends AbstractHttpService {
+    private static final Logger LOG = Logger.getLogger(OtlpV1LogsHttpService.class.getName());
     final OpenTelemetryHttpCollector collector;
     final LogEventTranslator logEventTranslator;
 
-    OtlpProtoV1LogsHttpService(OpenTelemetryHttpCollector collector) {
+    OtlpV1LogsHttpService(OpenTelemetryHttpCollector collector) {
       this.collector = collector;
       this.logEventTranslator = LogEventTranslator.newBuilder()
           .otelResourceMapper(collector.otelResourceMapper)
@@ -206,11 +226,27 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
           }
           collector.metrics.incrementBytes(content.length());
           try {
-            ExportLogsServiceRequest request = ExportLogsServiceRequest.parseFrom(
-                UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
+            MediaType contentType = msg.headers().contentType();
+            if (contentType == null) {
+              collector.metrics.incrementMessagesDropped();
+              return null;
+            }
+            ExportLogsServiceRequest request;
+            boolean base64Decoded = false;
+            if (contentType.isProtobuf()) {
+              request = ExportLogsServiceRequest.parseFrom(
+                  UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
+            } else if (contentType.isJson()) {
+              ExportLogsServiceRequest.Builder builder = ExportLogsServiceRequest.newBuilder();
+              collector.jsonParser.merge(content.toReaderUtf8(), builder);
+              request = builder.build();
+              base64Decoded = true;
+            } else {
+              throw new IllegalArgumentException("Unsupported Content-Type: " + contentType);
+            }
             collector.metrics.incrementMessages();
             try {
-              List<Span> spans = logEventTranslator.translate(request);
+              List<Span> spans = logEventTranslator.translate(request, base64Decoded);
               collector.collector.accept(spans, result);
             } catch (RuntimeException e) {
               // TODO count dropped spans

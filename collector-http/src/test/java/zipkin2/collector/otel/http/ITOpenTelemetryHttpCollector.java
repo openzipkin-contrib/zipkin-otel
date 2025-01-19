@@ -9,19 +9,24 @@ import com.linecorp.armeria.server.Server;
 import com.linecorp.armeria.server.ServerBuilder;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.logs.Logger;
+import io.opentelemetry.api.logs.Severity;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.TracesData;
-import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.logs.SdkLoggerProvider;
+import io.opentelemetry.sdk.logs.export.BatchLogRecordProcessor;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
-import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.semconv.NetworkAttributes;
 import io.opentelemetry.semconv.OtelAttributes;
 import io.opentelemetry.semconv.ServiceAttributes;
@@ -36,11 +41,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.Testcontainers;
+import org.testcontainers.containers.BindMode;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.images.PullPolicy;
+import org.testcontainers.utility.DockerImageName;
+import zipkin2.Annotation;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.collector.InMemoryCollectorMetrics;
 import zipkin2.storage.InMemoryStorage;
@@ -56,30 +74,75 @@ class ITOpenTelemetryHttpCollector {
 
   OpenTelemetryHttpCollector collector;
 
-  int port = ZipkinTestUtil.getFreePort();
+  static int port = ZipkinTestUtil.getFreePort();
 
-  SpanExporter spanExporter = OtlpHttpSpanExporter.builder()
-      .setCompression("gzip")
-      .setEndpoint("http://localhost:" + port + "/v1/traces")
-      .build();
+  static Tracer tracer = getTracer(port);
 
-  SdkTracerProvider sdkTracerProvider = SdkTracerProvider.builder()
-      .setSampler(alwaysOn())
-      .addSpanProcessor(BatchSpanProcessor.builder(spanExporter).build())
-      .addResource(Resource.create(
-          Attributes.of(ServiceAttributes.SERVICE_NAME, "zipkin-collector-otel-http-test")))
-      .build();
+  static Tracer tracerForOtelCollector;
 
-  OpenTelemetrySdk openTelemetrySdk = OpenTelemetrySdk.builder()
-      .setTracerProvider(sdkTracerProvider)
-      .build();
+  static Logger logger = getLogger(port);
 
-  Tracer tracer = openTelemetrySdk.getTracerProvider()
-      .get("io.zipkin.contrib.otel:zipkin-collector-otel-http", "0.0.1");
+  static Logger loggerForOtelCollector;
 
   Server server;
 
+  private static final String COLLECTOR_IMAGE =
+      "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.116.1";
+
+  private static final Integer COLLECTOR_OTLP_HTTP_PORT = 4318;
+
+  private static final Integer COLLECTOR_HEALTH_CHECK_PORT = 13133;
+
+  private static GenericContainer<?> otelCollector;
+
   static final String OTEL_SDK_VERSION = "1.43.0";
+
+  @BeforeAll
+  static void beforeAll() {
+    Testcontainers.exposeHostPorts(port);
+    otelCollector = new GenericContainer<>(DockerImageName.parse(COLLECTOR_IMAGE))
+        .withImagePullPolicy(PullPolicy.alwaysPull())
+        .withEnv("OTLP_EXPORTER_ENDPOINT", "http://host.testcontainers.internal:" + port)
+        .withClasspathResourceMapping("otel-config.yaml", "/otel-config.yaml", BindMode.READ_ONLY)
+        .withCommand("--config", "/otel-config.yaml")
+        .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger("otel-collector")))
+        .withExposedPorts(
+            COLLECTOR_OTLP_HTTP_PORT,
+            COLLECTOR_HEALTH_CHECK_PORT)
+        .waitingFor(Wait.forHttp("/").forPort(COLLECTOR_HEALTH_CHECK_PORT));
+    otelCollector.start();
+    // Send JSON requests to the Zipkin OTLP collector via the OTel collector
+    int otelCollectorPort = otelCollector.getMappedPort(COLLECTOR_OTLP_HTTP_PORT);
+    tracerForOtelCollector = getTracer(otelCollectorPort);
+    loggerForOtelCollector = getLogger(otelCollectorPort);
+  }
+
+  static Tracer getTracer(int port) {
+    return SdkTracerProvider.builder()
+        .setSampler(alwaysOn())
+        .addSpanProcessor(BatchSpanProcessor.builder(OtlpHttpSpanExporter.builder()
+                .setCompression("gzip")
+                .setEndpoint("http://localhost:" + port + "/v1/traces")
+                .build())
+            .build())
+        .addResource(Resource.create(
+            Attributes.of(ServiceAttributes.SERVICE_NAME, "zipkin-collector-otel-http-test")))
+        .build()
+        .get("io.zipkin.contrib.otel:zipkin-collector-otel-http", "0.0.1");
+  }
+
+  static Logger getLogger(int port) {
+    return SdkLoggerProvider.builder()
+        .addLogRecordProcessor(BatchLogRecordProcessor.builder(OtlpHttpLogRecordExporter.builder()
+                .setCompression("gzip")
+                .setEndpoint("http://localhost:" + port + "/v1/logs")
+                .build())
+            .build())
+        .addResource(Resource.create(
+            Attributes.of(ServiceAttributes.SERVICE_NAME, "zipkin-collector-otel-http-test")))
+        .build()
+        .get("io.zipkin.contrib.otel:zipkin-collector-otel-http");
+  }
 
   @BeforeEach
   public void setup() {
@@ -106,8 +169,17 @@ class ITOpenTelemetryHttpCollector {
     server.stop().join();
   }
 
-  @Test
-  void testServerKind() throws Exception {
+  static Stream<Tracer> tracers() {
+    return Stream.of(tracer, tracerForOtelCollector);
+  }
+
+  static Stream<Logger> loggers() {
+    return Stream.of(logger, loggerForOtelCollector);
+  }
+
+  @ParameterizedTest
+  @MethodSource("tracers")
+  void testServerKind(Tracer tracer) throws Exception {
     List<String> traceIds = new ArrayList<>();
     List<String> spanIds = new ArrayList<>();
     final int size = 5;
@@ -128,7 +200,7 @@ class ITOpenTelemetryHttpCollector {
       spanIds.add(span.getSpanContext().getSpanId());
       traceIds.add(span.getSpanContext().getTraceId());
     }
-    Awaitility.waitAtMost(Duration.ofSeconds(5))
+    Awaitility.waitAtMost(Duration.ofSeconds(10))
         .untilAsserted(() -> assertThat(store.acceptedSpanCount()).isEqualTo(size));
     List<List<zipkin2.Span>> received = store.getTraces(traceIds).execute();
     assertThat(received.size()).isEqualTo(size);
@@ -167,13 +239,14 @@ class ITOpenTelemetryHttpCollector {
     }
     assertThat(metrics.spans()).isEqualTo(size);
     assertThat(metrics.spansDropped()).isZero();
-    assertThat(metrics.messages()).isEqualTo(1);
+    assertThat(metrics.messages()).isBetween(1, 2); // Spans can be split into two messages
     assertThat(metrics.messagesDropped()).isZero();
     // TODO calculate received bytes
   }
 
-  @Test
-  void testServerKindWithEvents() throws Exception {
+  @ParameterizedTest
+  @MethodSource("tracers")
+  void testServerKindWithEvents(Tracer tracer) throws Exception {
     List<String> traceIds = new ArrayList<>();
     List<String> spanIds = new ArrayList<>();
     final int size = 5;
@@ -196,7 +269,7 @@ class ITOpenTelemetryHttpCollector {
       spanIds.add(span.getSpanContext().getSpanId());
       traceIds.add(span.getSpanContext().getTraceId());
     }
-    Awaitility.waitAtMost(Duration.ofSeconds(5))
+    Awaitility.waitAtMost(Duration.ofSeconds(10))
         .untilAsserted(() -> assertThat(store.acceptedSpanCount()).isEqualTo(size));
     List<List<zipkin2.Span>> received = store.getTraces(traceIds).execute();
     assertThat(received.size()).isEqualTo(size);
@@ -242,13 +315,14 @@ class ITOpenTelemetryHttpCollector {
     }
     assertThat(metrics.spans()).isEqualTo(size);
     assertThat(metrics.spansDropped()).isZero();
-    assertThat(metrics.messages()).isEqualTo(1);
+    assertThat(metrics.messages()).isBetween(1, 2); // Spans can be split into two messages
     assertThat(metrics.messagesDropped()).isZero();
     // TODO calculate received bytes
   }
 
-  @Test
-  void testServerKindWithError() throws Exception {
+  @ParameterizedTest
+  @MethodSource("tracers")
+  void testServerKindWithError(Tracer tracer) throws Exception {
     List<String> traceIds = new ArrayList<>();
     List<String> spanIds = new ArrayList<>();
     final int size = 5;
@@ -265,7 +339,7 @@ class ITOpenTelemetryHttpCollector {
       spanIds.add(span.getSpanContext().getSpanId());
       traceIds.add(span.getSpanContext().getTraceId());
     }
-    Awaitility.waitAtMost(Duration.ofSeconds(5))
+    Awaitility.waitAtMost(Duration.ofSeconds(10))
         .untilAsserted(() -> assertThat(store.acceptedSpanCount()).isEqualTo(size));
     List<List<zipkin2.Span>> received = store.getTraces(traceIds).execute();
     assertThat(received.size()).isEqualTo(size);
@@ -301,13 +375,14 @@ class ITOpenTelemetryHttpCollector {
     }
     assertThat(metrics.spans()).isEqualTo(size);
     assertThat(metrics.spansDropped()).isZero();
-    assertThat(metrics.messages()).isEqualTo(1);
+    assertThat(metrics.messages()).isBetween(1, 2); // Spans can be split into two messages
     assertThat(metrics.messagesDropped()).isZero();
     // TODO calculate received bytes
   }
 
-  @Test
-  void testClientKind() throws Exception {
+  @ParameterizedTest
+  @MethodSource("tracers")
+  void testClientKind(Tracer tracer) throws Exception {
     List<String> traceIds = new ArrayList<>();
     List<String> spanIds = new ArrayList<>();
     final int size = 5;
@@ -331,7 +406,7 @@ class ITOpenTelemetryHttpCollector {
       spanIds.add(span.getSpanContext().getSpanId());
       traceIds.add(span.getSpanContext().getTraceId());
     }
-    Awaitility.waitAtMost(Duration.ofSeconds(5))
+    Awaitility.waitAtMost(Duration.ofSeconds(10))
         .untilAsserted(() -> assertThat(store.acceptedSpanCount()).isEqualTo(size));
     List<List<zipkin2.Span>> received = store.getTraces(traceIds).execute();
     assertThat(received.size()).isEqualTo(size);
@@ -375,7 +450,7 @@ class ITOpenTelemetryHttpCollector {
     }
     assertThat(metrics.spans()).isEqualTo(size);
     assertThat(metrics.spansDropped()).isZero();
-    assertThat(metrics.messages()).isEqualTo(1);
+    assertThat(metrics.messages()).isBetween(1, 2); // Spans can be split into two messages
     assertThat(metrics.messagesDropped()).isZero();
     // TODO calculate received bytes
   }
@@ -517,6 +592,47 @@ class ITOpenTelemetryHttpCollector {
     assertThat(metrics.messages()).isZero();
     assertThat(metrics.messagesDropped()).isEqualTo(1);
     assertThat(metrics.bytes()).isEqualTo(1);
+  }
+
+  @ParameterizedTest
+  @MethodSource("loggers")
+  void testEventLog(Logger logger) throws Exception {
+    List<String> traceIds = new ArrayList<>();
+    List<String> spanIds = new ArrayList<>();
+    final int size = 5;
+    Instant now = Instant.now();
+    for (int i = 0; i < size; i++) {
+      Context context = Context.current();
+      try (Scope ignored = context.makeCurrent()) {
+        Span span = tracer.spanBuilder("dummy").startSpan();
+        logger
+            .logRecordBuilder()
+            .setContext(span.storeInContext(context))
+            .setAttribute(AttributeKey.stringKey("event.name"), "test-event")
+            .setBody("Hello " + i)
+            .setSeverity(Severity.INFO)
+            .setTimestamp(now.plusSeconds(i))
+            .emit();
+        spanIds.add(span.getSpanContext().getSpanId());
+        traceIds.add(span.getSpanContext().getTraceId());
+      }
+    }
+    Awaitility.waitAtMost(Duration.ofSeconds(10))
+        .untilAsserted(() -> assertThat(store.acceptedSpanCount()).isEqualTo(size));
+    List<List<zipkin2.Span>> received = store.getTraces(traceIds).execute();
+    assertThat(received.size()).isEqualTo(size);
+    for (int i = 0; i < size; i++) {
+      assertThat(received.get(i)).hasSize(1);
+      zipkin2.Span span = received.get(i).get(0);
+      assertThat(span.id()).isEqualTo(spanIds.get(i));
+      assertThat(span.traceId()).isEqualTo(traceIds.get(i));
+      assertThat(span.parentId()).isNull();
+      assertThat(span.annotations()).hasSize(1);
+      Annotation annotation = span.annotations().get(0);
+      assertThat(annotation.timestamp()).isEqualTo(toMillis(now.plusSeconds(i)));
+      assertThat(annotation.value()).isEqualTo(
+          String.format("\"test-event\":{\"severity_number\":9,\"body\":\"Hello %d\"}", i));
+    }
   }
 
   static long toMillis(Instant instant) {

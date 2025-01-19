@@ -23,7 +23,7 @@ class LogEventTranslatorTest {
   void nullSpanShouldBeReturnedWithoutSpanId() {
     Span span = logEventTranslator.generateSpan(LogRecord.newBuilder()
         .setSpanId(ByteString.fromHex("7180c278b62e8f6a216a2aea45d08fc9"))
-        .build());
+        .build(), false);
     assertThat(span).isNull();
   }
 
@@ -31,7 +31,7 @@ class LogEventTranslatorTest {
   void nullSpanShouldBeReturnedWithoutTraceId() {
     Span span = logEventTranslator.generateSpan(LogRecord.newBuilder()
         .setTraceId(ByteString.fromHex("6b221d5bc9e6496c6b221d5bc9e6496c"))
-        .build());
+        .build(), false);
     assertThat(span).isNull();
   }
 
@@ -40,7 +40,7 @@ class LogEventTranslatorTest {
     Span span = logEventTranslator.generateSpan(LogRecord.newBuilder()
         .setSpanId(ByteString.fromHex("7180c278b62e8f6a216a2aea45d08fc9"))
         .setTraceId(ByteString.fromHex("6b221d5bc9e6496c6b221d5bc9e6496c"))
-        .build());
+        .build(), false);
     assertThat(span).isNull();
   }
 
@@ -53,7 +53,7 @@ class LogEventTranslatorTest {
         .setSeverityNumber(SeverityNumber.SEVERITY_NUMBER_INFO)
         .setBody(AnyValue.newBuilder().setStringValue("Hello World!").build())
         .addAttributes(stringAttribute("event.name", "demo.event"))
-        .build());
+        .build(), false);
     assertThat(span).isEqualTo(Span.newBuilder()
         .id("7180c278b62e8f6a")
         .traceId("6b221d5bc9e6496c6b221d5bc9e6496c")
@@ -71,7 +71,7 @@ class LogEventTranslatorTest {
         .setSeverityText("INFO")
         .setBody(AnyValue.newBuilder().setStringValue("Hello World!").build())
         .addAttributes(stringAttribute("event.name", "demo.event"))
-        .build());
+        .build(), false);
     assertThat(span).isEqualTo(Span.newBuilder()
         .id("7180c278b62e8f6a")
         .traceId("6b221d5bc9e6496c6b221d5bc9e6496c")
@@ -89,7 +89,7 @@ class LogEventTranslatorTest {
         .setBody(AnyValue.newBuilder().setStringValue("Hello World!").build())
         .addAttributes(stringAttribute("event.name", "demo.event"))
         .setDroppedAttributesCount(3)
-        .build());
+        .build(), false);
     assertThat(span).isEqualTo(Span.newBuilder()
         .id("7180c278b62e8f6a")
         .traceId("6b221d5bc9e6496c6b221d5bc9e6496c")
@@ -112,7 +112,7 @@ class LogEventTranslatorTest {
                 .setKey("int")
                 .setValue(AnyValue.newBuilder().setIntValue(2)))))
         .addAttributes(stringAttribute("event.name", "demo.event"))
-        .build());
+        .build(), false);
     assertThat(span).isEqualTo(Span.newBuilder()
         .id("7180c278b62e8f6a")
         .traceId("6b221d5bc9e6496c6b221d5bc9e6496c")
