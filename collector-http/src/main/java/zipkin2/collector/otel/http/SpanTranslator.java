@@ -66,11 +66,6 @@ final class SpanTranslator {
     return spans;
   }
 
-  // for backward compatibility
-  List<zipkin2.Span> translate(ExportTraceServiceRequest otelSpans) {
-    return translate(otelSpans, false);
-  }
-
   /**
    * Creates an instance of a Zipkin Span from an OpenTelemetry SpanData instance.
    *
