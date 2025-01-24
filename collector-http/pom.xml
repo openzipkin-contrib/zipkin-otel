@@ -42,6 +42,11 @@
     </dependency>
 
     <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java-util</artifactId>
+      <version>4.28.3</version>
+    </dependency>
+    <dependency>
       <groupId>${zipkin.groupId}</groupId>
       <artifactId>zipkin-tests</artifactId>
       <version>${zipkin.version}</version>

@@ -1,0 +1,30 @@
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+processors:
+  batch:
+    send_batch_size: 5 # the same number as the span size in the tests
+    timeout: 30s
+exporters:
+  debug: # { verbosity: detailed }
+  otlphttp:
+    endpoint: ${OTLP_EXPORTER_ENDPOINT}
+    encoding: json
+    tls:
+      insecure: true
+service:
+  extensions: [ health_check ]
+  pipelines:
+    traces:
+      receivers: [ otlp ]
+      processors: [ batch ]
+      exporters: [ debug, otlphttp ]
+    logs:
+      receivers: [ otlp ]
+      processors: [ batch ]
+      exporters: [ debug, otlphttp ]

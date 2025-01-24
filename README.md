@@ -14,9 +14,9 @@ The component in a zipkin server that receives trace data is called a
 collector. A collector decodes spans reported by applications and
 persists them to a configured collector component.
 
-| Collector                          | Description                                                                             |
-|------------------------------------|-----------------------------------------------------------------------------------------|
-| [collector-http](./collector-http) | Implements the [OTLP/HTTP protocol](https://opentelemetry.io/docs/specs/otlp/#otlphttp) |
+| Collector                          | Description                                                                                                                    |
+|------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
+| [collector-http](./collector-http) | Implements the [OTLP/HTTP protocol](https://opentelemetry.io/docs/specs/otlp/#otlphttp). Both Protobuf and JSON are supported. |
 
 #### Signal Handling
 

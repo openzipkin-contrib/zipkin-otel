@@ -13,6 +13,7 @@ import io.opentelemetry.proto.logs.v1.ResourceLogs;
 import io.opentelemetry.proto.logs.v1.ScopeLogs;
 import io.opentelemetry.proto.logs.v1.SeverityNumber;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import zipkin2.Span;
@@ -56,13 +57,13 @@ final class LogEventTranslator {
         : builder.resourceMapper;
   }
 
-  List<Span> translate(ExportLogsServiceRequest logs) {
+  List<Span> translate(ExportLogsServiceRequest logs, boolean base64Decoded) {
     ArrayList<Span> spans = new ArrayList<>();
     List<ResourceLogs> resourceLogsList = logs.getResourceLogsList();
     for (ResourceLogs resourceLogs : resourceLogsList) {
       for (ScopeLogs scopeLogs : resourceLogs.getScopeLogsList()) {
         for (LogRecord logRecord : scopeLogs.getLogRecordsList()) {
-          Span span = generateSpan(logRecord);
+          Span span = generateSpan(logRecord, base64Decoded);
           if (span != null) {
             spans.add(span);
           }
@@ -73,7 +74,7 @@ final class LogEventTranslator {
   }
 
   @Nullable
-  Span generateSpan(LogRecord logRecord) {
+  Span generateSpan(LogRecord logRecord, boolean base64Decoded) {
     // the log record must have both trace id and span id
     if (logRecord.getTraceId().isEmpty() || logRecord.getSpanId().isEmpty()) {
       return null;
@@ -108,12 +109,21 @@ final class LogEventTranslator {
         .setKvlistValue(kvListBuilder.addValues(KeyValue.newBuilder()
             .setKey("body")
             .setValue(logRecord.getBody()))).build());
+    Span.Builder spanBuilder = Span.newBuilder();
     byte[] traceIdBytes = logRecord.getTraceId().toByteArray();
-    long high = bytesToLong(traceIdBytes, 0);
-    long low = bytesToLong(traceIdBytes, 8);
-    return Span.newBuilder()
-        .traceId(high, low)
-        .id(bytesToLong(logRecord.getSpanId().toByteArray(), 0))
+    byte[] spanIdBytes = logRecord.getSpanId().toByteArray();
+    if (base64Decoded) {
+      // Protobuf JSON parser interprets the hex strings of traceId and spanId as Base64 encoded strings,
+      // and stores the decoded byte arrays.
+      spanBuilder.traceId(Base64.getEncoder().encodeToString(traceIdBytes))
+          .id(Base64.getEncoder().encodeToString(spanIdBytes));
+    } else {
+      long high = bytesToLong(traceIdBytes, 0);
+      long low = bytesToLong(traceIdBytes, 8);
+      spanBuilder.traceId(high, low)
+          .id(bytesToLong(spanIdBytes, 0));
+    }
+    return spanBuilder
         .addAnnotation(timestamp, annotationValue)
         .build();
   }
