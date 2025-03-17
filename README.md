@@ -14,6 +14,13 @@ The component in a zipkin server that receives trace data is called a
 collector. A collector decodes spans reported by applications and
 persists them to a configured collector component.
 
+Zipkin's OTLP endpoints are bound to its server port, which defaults to 9411.
+Hence, applications should override OpenTelemetry exporter configuration to:
+```
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:9411
+OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+```
+
 | Collector                          | Description                                                                                                                    |
 |------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
 | [collector-http](./collector-http) | Implements the [OTLP/HTTP protocol](https://opentelemetry.io/docs/specs/otlp/#otlphttp). Both Protobuf and JSON are supported. |
