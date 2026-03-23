@@ -57,10 +57,10 @@ All artifacts publish to the group ID "io.zipkin.contrib.otel". We use a common
 release version for all components.
 
 ### Library Releases
-Releases are at [Sonatype](https://oss.sonatype.org/content/repositories/releases) and  [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.zipkin.contrib.otel%22)
+Releases are at [Maven Central](https://central.sonatype.com/search?q=zipkin-otel&namespace=io.zipkin.contrib.otel)
 
 ### Library Snapshots
-Snapshots are uploaded to [Sonatype](https://oss.sonatype.org/content/repositories/snapshots) after
+Snapshots are uploaded to [Sonatype](https://central.sonatype.com/repository/maven-snapshots/) after
 commits to main.
 
 ### Docker Images
