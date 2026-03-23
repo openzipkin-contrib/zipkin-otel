@@ -475,11 +475,7 @@
 
 
     <profile>
-      <id>error-prone-21+</id>
-      <activation>
-        <!-- Only LTS versions that work with errorprone -->
-        <jdk>[21,22),[25,26)</jdk>
-      </activation>
+      <id>error-prone</id>
       <build>
         <plugins>
           <plugin>
