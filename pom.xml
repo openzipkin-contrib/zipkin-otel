@@ -63,16 +63,16 @@
     <opentelemetry-proto.version>1.4.0-alpha</opentelemetry-proto.version>
     <opentelemetry-semconv.version>1.29.0-alpha</opentelemetry-semconv.version>
 
-    <assertj.version>3.25.3</assertj.version>
+    <assertj.version>3.27.7</assertj.version>
     <awaitility.version>4.2.1</awaitility.version>
     <junit-jupiter.version>5.10.2</junit-jupiter.version>
-    <mockito.version>5.12.0</mockito.version>
+    <mockito.version>5.23.0</mockito.version>
     <testcontainers.version>1.19.8</testcontainers.version>
     <okhttp.version>4.12.0</okhttp.version>
 
     <!-- override to set exclusions per-project -->
     <errorprone.args />
-    <errorprone.version>2.27.1</errorprone.version>
+    <errorprone.version>2.48.0</errorprone.version>
 
     <license.skip>${skipTests}</license.skip>
 
@@ -281,9 +281,6 @@
         <configuration>
           <!-- Ensures root cause ends up in the console -->
           <trimStackTrace>false</trimStackTrace>
-          <!-- TODO: remove when assertj releases a new version, and includes updated bytebuddy.
-               https://github.com/mockito/mockito/issues/3119#issuecomment-1732179039 -->
-          <argLine>-Dnet.bytebuddy.experimental=true</argLine>
         </configuration>
         <dependencies>
           <!-- needed for surefire.
@@ -314,20 +311,17 @@
           </execution>
         </executions>
         <configuration>
-          <systemProperties>
+          <systemPropertyVariables>
             <!-- Gives better context when there's an exception such as AbortedStreamException.
                  Set globally as we have failures sometimes in collector-elasticsearch and sometimes
                  in zipkin-server tests (same code used two places).
             -->
             <com.linecorp.armeria.verboseExceptions>always</com.linecorp.armeria.verboseExceptions>
-          </systemProperties>
+          </systemPropertyVariables>
           <!-- workaround to SUREFIRE-1831 -->
           <useModulePath>false</useModulePath>
           <!-- Ensures root cause ends up in the console -->
           <trimStackTrace>false</trimStackTrace>
-          <!-- TODO: remove when assertj releases a new version, and includes updated bytebuddy.
-                https://github.com/mockito/mockito/issues/3119#issuecomment-1732179039 -->
-          <argLine>-Dnet.bytebuddy.experimental=true</argLine>
         </configuration>
       </plugin>
 
@@ -368,7 +362,7 @@
                 <requireJavaVersion>
                   <!-- Change this to control LTS JDK versions allowed to build
                        the project. Keep in sync with .github/workflows -->
-                  <version>[17,18),[21,22)</version> <!-- In sync with Boot 3 JDK version -->
+                  <version>[21,22),[25,26)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -481,10 +475,10 @@
 
 
     <profile>
-      <id>error-prone-11+</id>
+      <id>error-prone-21+</id>
       <activation>
-        <!-- Only LTS versions -->
-        <jdk>[11,12),[17,18),[21,22)</jdk>
+        <!-- Only LTS versions that work with errorprone -->
+        <jdk>[21,22),[25,26)</jdk>
       </activation>
       <build>
         <plugins>
@@ -510,15 +504,16 @@
                   <forceJavacCompilerUse>true</forceJavacCompilerUse>
                   <compilerArgs>
                     <arg>-XDcompilePolicy=simple</arg>
+                    <arg>--should-stop=ifError=FLOW</arg>
                     <arg>-Xplugin:ErrorProne ${errorprone.args}</arg>
-                    <!-- below needed for JDK16+ per https://errorprone.info/docs/installation -->
+                    <arg>-XDaddTypeAnnotationsToSymbol=true</arg>
+                    <!-- below needed per https://errorprone.info/docs/installation -->
                     <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
                     <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
                     <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
                     <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
                     <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED
-                    </arg>
+                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
                     <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
                     <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
                     <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
