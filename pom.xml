@@ -134,15 +134,6 @@
     </developer>
   </developers>
 
-  <dependencyManagement>
-    <!-- Be careful here, especially to not import BOMs as io.zipkin.contrib.otel:encoder-brave has this parent.
-
-         For example, if you imported Netty's BOM here, using Brave would also download that BOM as
-         it depends indirectly on io.zipkin.contrib.otel:encoder-brave. As Brave itself is
-         indirectly used, this can be extremely confusing when people are troubleshooting library
-         version assignments. -->
-  </dependencyManagement>
-
   <dependencies>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
