@@ -160,21 +160,20 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
               return null;
             }
             ExportTraceServiceRequest request;
-            boolean base64Decoded = false;
             if (contentType.isProtobuf()) {
               request = ExportTraceServiceRequest.parseFrom(
                   UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
             } else if (contentType.isJson()) {
               ExportTraceServiceRequest.Builder builder = ExportTraceServiceRequest.newBuilder();
               collector.jsonParser.merge(content.toReaderUtf8(), builder);
+              ProtoUtils.fixJsonIds(builder);
               request = builder.build();
-              base64Decoded = true;
             } else {
               throw new IllegalArgumentException("Unsupported Content-Type: " + contentType);
             }
             collector.metrics.incrementMessages();
             try {
-              List<Span> spans = spanTranslator.translate(request, base64Decoded);
+              List<Span> spans = spanTranslator.translate(request);
               collector.collector.accept(spans, result);
             } catch (RuntimeException e) {
               // If the span is invalid, an exception such as IllegalArgumentException will be thrown.
@@ -232,21 +231,20 @@ public final class OpenTelemetryHttpCollector extends CollectorComponent
               return null;
             }
             ExportLogsServiceRequest request;
-            boolean base64Decoded = false;
             if (contentType.isProtobuf()) {
               request = ExportLogsServiceRequest.parseFrom(
                   UnsafeByteOperations.unsafeWrap(content.byteBuf().nioBuffer()).newCodedInput());
             } else if (contentType.isJson()) {
               ExportLogsServiceRequest.Builder builder = ExportLogsServiceRequest.newBuilder();
               collector.jsonParser.merge(content.toReaderUtf8(), builder);
+              ProtoUtils.fixJsonIds(builder);
               request = builder.build();
-              base64Decoded = true;
             } else {
               throw new IllegalArgumentException("Unsupported Content-Type: " + contentType);
             }
             collector.metrics.incrementMessages();
             try {
-              List<Span> spans = logEventTranslator.translate(request, base64Decoded);
+              List<Span> spans = logEventTranslator.translate(request);
               collector.collector.accept(spans, result);
             } catch (RuntimeException e) {
               // TODO count dropped spans

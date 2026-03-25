@@ -19,7 +19,6 @@ import io.opentelemetry.proto.trace.v1.Status;
 import io.opentelemetry.proto.trace.v1.Status.StatusCode;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -51,7 +50,7 @@ final class SpanTranslator {
     this(DefaultOtelResourceMapper.create());
   }
 
-  List<zipkin2.Span> translate(ExportTraceServiceRequest otelSpans, boolean base64Decoded) {
+  List<zipkin2.Span> translate(ExportTraceServiceRequest otelSpans) {
     List<zipkin2.Span> spans = new ArrayList<>();
     List<ResourceSpans> spansList = otelSpans.getResourceSpansList();
     for (ResourceSpans resourceSpans : spansList) {
@@ -59,23 +58,14 @@ final class SpanTranslator {
       for (ScopeSpans scopeSpans : resourceSpans.getScopeSpansList()) {
         InstrumentationScope scope = scopeSpans.getScope();
         for (io.opentelemetry.proto.trace.v1.Span span : scopeSpans.getSpansList()) {
-          spans.add(generateSpan(span, scope, resource, base64Decoded));
+          spans.add(generateSpan(span, scope, resource));
         }
       }
     }
     return spans;
   }
 
-  /**
-   * Creates an instance of a Zipkin Span from an OpenTelemetry SpanData instance.
-   *
-   * @param spanData      an OpenTelemetry spanData instance
-   * @param scope         InstrumentationScope of the span
-   * @param base64Decoded Whether traceId and spanId are byte arrays that are Base64 decoded strings
-   * @return a new Zipkin Span
-   */
-  private zipkin2.Span generateSpan(Span spanData, InstrumentationScope scope, Resource resource,
-      boolean base64Decoded) {
+  private zipkin2.Span generateSpan(Span spanData, InstrumentationScope scope, Resource resource) {
     long startTimestamp = nanoToMills(spanData.getStartTimeUnixNano());
     long endTimestamp = nanoToMills(spanData.getEndTimeUnixNano());
     Map<String, AnyValue> attributesMap = spanData.getAttributesList()
@@ -85,18 +75,11 @@ final class SpanTranslator {
     zipkin2.Span.Builder spanBuilder = zipkin2.Span.newBuilder();
     byte[] traceIdBytes = spanData.getTraceId().toByteArray();
     byte[] spanIdBytes = spanData.getSpanId().toByteArray();
-    if (base64Decoded) {
-      // Protobuf JSON parser interprets the hex strings of traceId and spanId as Base64 encoded strings,
-      // and stores the decoded byte arrays.
-      spanBuilder.traceId(Base64.getEncoder().encodeToString(traceIdBytes))
-          .id(Base64.getEncoder().encodeToString(spanIdBytes));
-    } else {
-      long high = bytesToLong(traceIdBytes, 0);
-      long low = bytesToLong(traceIdBytes, 8);
-      spanBuilder
-          .traceId(high, low)
-          .id(bytesToLong(spanIdBytes, 0));
-    }
+    long high = bytesToLong(traceIdBytes, 0);
+    long low = bytesToLong(traceIdBytes, 8);
+    spanBuilder
+        .traceId(high, low)
+        .id(bytesToLong(spanIdBytes, 0));
     spanBuilder
         .kind(toSpanKind(spanData.getKind()))
         .name(spanData.getName())
