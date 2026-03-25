@@ -45,18 +45,18 @@
     <!-- matching armeria/grpc/zipkin -->
     <zipkin.groupId>io.zipkin.zipkin2</zipkin.groupId>
     <!-- when updating, update docker/Dockerfile -->
-    <zipkin.version>3.4.4</zipkin.version>
-    <zipkin-reporter.version>3.4.3</zipkin-reporter.version>
-    <spring-boot.version>3.3.7</spring-boot.version>
+    <zipkin.version>3.6.0</zipkin.version>
+    <zipkin-reporter.version>3.5.3</zipkin-reporter.version>
+    <spring-boot.version>3.5.12</spring-boot.version>
     <!-- armeria.groupId allows you to test feature branches with jitpack -->
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>1.30.2</armeria.version>
+    <armeria.version>1.37.0</armeria.version>
 
     <!-- This allows you to test feature branches with jitpack -->
     <!--    <brave.groupId>com.github.openzipkin.brave</brave.groupId>-->
     <!--    <brave.version>master-SNAPSHOT</brave.version>-->
     <brave.groupId>io.zipkin.brave</brave.groupId>
-    <brave.version>6.0.3</brave.version>
+    <brave.version>6.3.0</brave.version>
 
     <opentelemetry.version>1.43.0</opentelemetry.version>
     <!-- Alpha jar! -->
@@ -64,10 +64,11 @@
     <opentelemetry-semconv.version>1.29.0-alpha</opentelemetry-semconv.version>
 
     <assertj.version>3.27.7</assertj.version>
-    <awaitility.version>4.2.1</awaitility.version>
-    <junit-jupiter.version>5.10.2</junit-jupiter.version>
+    <awaitility.version>4.3.0</awaitility.version>
+    <junit-jupiter.version>5.14.3</junit-jupiter.version>
+    <junit-platform-launcher.version>1.14.3</junit-platform-launcher.version>
     <mockito.version>5.23.0</mockito.version>
-    <testcontainers.version>1.19.8</testcontainers.version>
+    <testcontainers.version>2.0.4</testcontainers.version>
     <okhttp.version>4.12.0</okhttp.version>
 
     <!-- override to set exclusions per-project -->
@@ -78,23 +79,22 @@
 
     <animal-sniffer-maven-plugin.version>1.23</animal-sniffer-maven-plugin.version>
     <go-offline-maven-plugin.version>1.2.8</go-offline-maven-plugin.version>
-    <!-- TODO: cleanup any redundant ignores now also in the 4.0 release (once final) -->
-    <license-maven-plugin.version>4.5</license-maven-plugin.version>
+    <license-maven-plugin.version>5.0.0</license-maven-plugin.version>
     <maven-bundle-plugin.version>5.1.9</maven-bundle-plugin.version>
-    <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+    <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
     <!-- Use same version as https://github.com/openzipkin/docker-java -->
-    <maven-dependency-plugin.version>3.6.1</maven-dependency-plugin.version>
-    <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
-    <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
+    <maven-dependency-plugin.version>3.10.0</maven-dependency-plugin.version>
+    <maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
+    <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
     <!-- Use same version as https://github.com/openzipkin/docker-java -->
-    <maven-help-plugin.version>3.4.0</maven-help-plugin.version>
-    <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
-    <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
-    <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
-    <maven-release-plugin.version>3.0.1</maven-release-plugin.version>
-    <maven-shade-plugin.version>3.5.2</maven-shade-plugin.version>
-    <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
-    <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    <maven-help-plugin.version>3.5.1</maven-help-plugin.version>
+    <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
+    <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
+    <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+    <maven-release-plugin.version>3.3.1</maven-release-plugin.version>
+    <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
+    <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
+    <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
     <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
     <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
   </properties>
@@ -169,6 +169,12 @@
       <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <version>${junit-platform-launcher.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -200,6 +206,7 @@
                 <artifactId>error_prone_core</artifactId>
                 <version>${errorprone.version}</version>
                 <repositoryType>MAIN</repositoryType>
+                <type>jar</type>
               </DynamicDependency>
               <DynamicDependency>
                 <groupId>org.apache.maven.surefire</groupId>
@@ -289,7 +296,7 @@
               <goal>compile</goal>
             </goals>
             <configuration>
-              <forceJavacCompilerUse>true</forceJavacCompilerUse>
+              <forceLegacyJavacApi>true</forceLegacyJavacApi>
               <compilerArgs>
                 <arg>-XDcompilePolicy=simple</arg>
                 <arg>--should-stop=ifError=FLOW</arg>
@@ -326,15 +333,6 @@
           <!-- Ensures root cause ends up in the console -->
           <trimStackTrace>false</trimStackTrace>
         </configuration>
-        <dependencies>
-          <!-- needed for surefire.
-               https://maven.apache.org/surefire/maven-surefire-plugin/examples/junit-platform.html -->
-          <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit-jupiter.version}</version>
-          </dependency>
-        </dependencies>
       </plugin>
 
       <plugin>
@@ -420,7 +418,6 @@
         <version>${license-maven-plugin.version}</version>
         <configuration>
           <skip>${license.skip}</skip>
-          <header>${maven.multiModuleProjectDirectory}/src/etc/header.txt</header>
           <mapping>
             <!-- Don't use javadoc style as this makes code formatters break it by adding tags! -->
             <java>SLASHSTAR_STYLE</java>
@@ -447,21 +444,26 @@
             <maven_opts>SCRIPT_STYLE</maven_opts>
             <maven_unjar>SCRIPT_STYLE</maven_unjar>
           </mapping>
-          <excludes>
-            <exclude>.gitignore</exclude>
-            <exclude>.dockerignore</exclude>
-            <exclude>.editorconfig</exclude>
-            <exclude>.mvn/**</exclude>
-            <exclude>mvnw*</exclude>
-            <exclude>etc/header.txt</exclude>
-            <exclude>**/.idea/**</exclude>
-            <exclude>LICENSE</exclude>
-            <exclude>**/*.md</exclude>
-            <exclude>src/test/resources/**</exclude>
-            <exclude>src/main/resources/**</exclude>
-            <exclude>build-bin/*</exclude>
-          </excludes>
-          <strictCheck>true</strictCheck>
+          <licenseSets>
+            <licenseSet>
+              <!-- session.executionRootDirectory resolves properly even with nested modules -->
+              <header>${maven.multiModuleProjectDirectory}/src/etc/header.txt</header>
+              <excludes>
+                <exclude>.gitignore</exclude>
+                <exclude>.dockerignore</exclude>
+                <exclude>.editorconfig</exclude>
+                <exclude>.mvn/**</exclude>
+                <exclude>mvnw*</exclude>
+                <exclude>etc/header.txt</exclude>
+                <exclude>**/.idea/**</exclude>
+                <exclude>LICENSE</exclude>
+                <exclude>**/*.md</exclude>
+                <exclude>src/test/resources/**</exclude>
+                <exclude>src/main/resources/**</exclude>
+                <exclude>build-bin/*</exclude>
+              </excludes>
+            </licenseSet>
+          </licenseSets>
         </configuration>
         <dependencies>
           <dependency>
@@ -560,7 +562,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>3.1.0</version>
+            <version>3.2.8</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>

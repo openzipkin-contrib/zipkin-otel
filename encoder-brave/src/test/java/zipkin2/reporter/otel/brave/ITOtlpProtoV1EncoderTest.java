@@ -75,7 +75,7 @@ public class ITOtlpProtoV1EncoderTest {
   private static OtlpHttpServer otlpHttpServer;
 
   private static final String COLLECTOR_IMAGE =
-      "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.116.1";
+      "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.148.0";
 
   private static final Integer COLLECTOR_OTLP_HTTP_PORT = 4318;
 
