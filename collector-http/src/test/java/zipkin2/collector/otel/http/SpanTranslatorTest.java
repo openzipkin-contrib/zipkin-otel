@@ -41,7 +41,7 @@ class SpanTranslatorTest {
     Span expected = zipkinSpanBuilder(Span.Kind.SERVER)
         .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
         .build();
-    assertThat(spanTranslator.translate(data, false)).containsExactly(expected);
+    assertThat(spanTranslator.translate(data)).containsExactly(expected);
   }
 
   @Test
@@ -53,7 +53,38 @@ class SpanTranslatorTest {
         .parentId(0)
         .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
         .build();
-    assertThat(spanTranslator.translate(data, false)).containsExactly(expected);
+    assertThat(spanTranslator.translate(data)).containsExactly(expected);
+  }
+
+  /** Span data from https://github.com/open-telemetry/opentelemetry-proto/blob/main/examples/trace.json */
+  @Test
+  void translate_jsonParsedRequest() throws Exception {
+    String json = """
+        {
+          "resourceSpans": [{
+            "resource": {
+              "attributes": [{"key": "service.name", "value": {"stringValue": "my.service"}}]
+            },
+            "scopeSpans": [{
+              "scope": {"name": "my.library", "version": "1.0.0"},
+              "spans": [{
+                "traceId": "5B8EFFF798038103D269B633813FC60C",
+                "spanId": "EEE19B7EC3C1B174",
+                "parentSpanId": "EEE19B7EC3C1B173",
+                "name": "I'm a server span",
+                "startTimeUnixNano": "1544712660000000000",
+                "endTimeUnixNano": "1544712661000000000",
+                "kind": 2
+              }]
+            }]
+          }]
+        }""";
+    ExportTraceServiceRequest.Builder builder = ExportTraceServiceRequest.newBuilder();
+    com.google.protobuf.util.JsonFormat.parser().merge(json, builder);
+    ProtoUtils.fixJsonIds(builder);
+    assertThat(spanTranslator.translate(builder.build())).hasSize(1);
+    assertThat(spanTranslator.translate(builder.build()).get(0).traceId())
+        .isEqualTo("5b8efff798038103d269b633813fc60c");
   }
 
   @Test
@@ -61,7 +92,7 @@ class SpanTranslatorTest {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setTraceId(ByteString.fromHex("00000000000000000000000000000000")))
         .build();
-    assertThatThrownBy(() -> spanTranslator.translate(data, false))
+    assertThatThrownBy(() -> spanTranslator.translate(data))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -70,7 +101,7 @@ class SpanTranslatorTest {
     ExportTraceServiceRequest data = requestBuilderWithSpanCustomizer(span -> span
         .setSpanId(ByteString.fromHex("0000000000000000")))
         .build();
-    assertThatThrownBy(() -> spanTranslator.translate(data, false))
+    assertThatThrownBy(() -> spanTranslator.translate(data))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -86,14 +117,14 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .duration(1)
             .build();
-    assertThat(spanTranslator.translate(data, false)).containsExactly(expected);
+    assertThat(spanTranslator.translate(data)).containsExactly(expected);
   }
 
   @Test
   void translate_ServerKind() {
     ExportTraceServiceRequest data = ZipkinTestUtil.requestBuilderWithSpanCustomizer(span -> span
         .setKind(SpanKind.SPAN_KIND_SERVER)).build();
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(Span.Kind.SERVER)
                 .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
@@ -104,7 +135,7 @@ class SpanTranslatorTest {
   void translate_ClientKind() {
     ExportTraceServiceRequest data = ZipkinTestUtil.requestBuilderWithSpanCustomizer(span -> span
         .setKind(SpanKind.SPAN_KIND_CLIENT)).build();
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(Span.Kind.CLIENT)
                 .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
@@ -115,7 +146,7 @@ class SpanTranslatorTest {
   void translate_InternalKind() {
     ExportTraceServiceRequest data = ZipkinTestUtil.requestBuilderWithSpanCustomizer(span -> span
         .setKind(SpanKind.SPAN_KIND_INTERNAL)).build();
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(null)
                 .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
@@ -126,7 +157,7 @@ class SpanTranslatorTest {
   void translate_ConsumeKind() {
     ExportTraceServiceRequest data = ZipkinTestUtil.requestBuilderWithSpanCustomizer(span -> span
         .setKind(SpanKind.SPAN_KIND_CONSUMER)).build();
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(Span.Kind.CONSUMER)
                 .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
@@ -137,7 +168,7 @@ class SpanTranslatorTest {
   void translate_ProducerKind() {
     ExportTraceServiceRequest data = ZipkinTestUtil.requestBuilderWithSpanCustomizer(span -> span
         .setKind(SpanKind.SPAN_KIND_PRODUCER)).build();
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(
             zipkinSpanBuilder(Span.Kind.PRODUCER)
                 .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
@@ -159,7 +190,7 @@ class SpanTranslatorTest {
             .localEndpoint(expectedLocalEndpoint)
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
-    assertThat(spanTranslator.translate(data, false)).containsExactly(expectedZipkinSpan);
+    assertThat(spanTranslator.translate(data)).containsExactly(expectedZipkinSpan);
   }
 
   @Test
@@ -172,7 +203,7 @@ class SpanTranslatorTest {
             .localEndpoint(null)
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedZipkinSpan);
   }
 
@@ -202,7 +233,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -227,7 +258,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -246,7 +277,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -274,7 +305,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -301,7 +332,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -339,7 +370,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -357,7 +388,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "OK")
             .build();
 
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -377,7 +408,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "ERROR")
             .build();
 
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -399,7 +430,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "ERROR")
             .build();
 
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -421,7 +452,7 @@ class SpanTranslatorTest {
             .putTag(OtelAttributes.OTEL_STATUS_CODE.getKey(), "ERROR")
             .build();
 
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -438,7 +469,7 @@ class SpanTranslatorTest {
             .putTag("rpc.service", "my service name")
             .build();
 
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -457,7 +488,7 @@ class SpanTranslatorTest {
             .putTag(SpanTranslator.OTEL_DROPPED_ATTRIBUTES_COUNT, "1")
             .build();
 
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -483,7 +514,7 @@ class SpanTranslatorTest {
             .putTag("hostname", "localhost")
             .build();
 
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 
@@ -512,7 +543,7 @@ class SpanTranslatorTest {
             .putTag("otel.resources.hostname", "localhost")
             .build();
 
-    assertThat(spanTranslator.translate(data, false))
+    assertThat(spanTranslator.translate(data))
         .containsExactly(expectedSpan);
   }
 }

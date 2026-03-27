@@ -5,6 +5,8 @@
 package zipkin2.collector.otel.http;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.util.JsonFormat;
+import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.ArrayValue;
 import io.opentelemetry.proto.common.v1.KeyValue;
@@ -17,6 +19,35 @@ import static zipkin2.collector.otel.http.ProtoUtils.kvListToJson;
 import static zipkin2.collector.otel.http.ProtoUtils.valueToJson;
 
 class ProtoUtilsTest {
+
+  /** Verifies fix for hex IDs mis-decoded as base64 by {@link JsonFormat#parser()}. */
+  @Test
+  void fixJsonIds_recoversHexTraceAndSpanIds() throws Exception {
+    String json = """
+        {
+          "resourceSpans": [{
+            "scopeSpans": [{
+              "spans": [{
+                "traceId": "5B8EFFF798038103D269B633813FC60C",
+                "spanId": "EEE19B7EC3C1B174",
+                "parentSpanId": "EEE19B7EC3C1B173"
+              }]
+            }]
+          }]
+        }""";
+    ExportTraceServiceRequest.Builder builder = ExportTraceServiceRequest.newBuilder();
+    JsonFormat.parser().merge(json, builder);
+    ProtoUtils.fixJsonIds(builder);
+    ExportTraceServiceRequest request = builder.build();
+
+    ByteString traceId = request.getResourceSpans(0).getScopeSpans(0).getSpans(0).getTraceId();
+    ByteString spanId = request.getResourceSpans(0).getScopeSpans(0).getSpans(0).getSpanId();
+    ByteString parentSpanId = request.getResourceSpans(0).getScopeSpans(0).getSpans(0).getParentSpanId();
+
+    assertThat(traceId).isEqualTo(ByteString.fromHex("5b8efff798038103d269b633813fc60c"));
+    assertThat(spanId).isEqualTo(ByteString.fromHex("eee19b7ec3c1b174"));
+    assertThat(parentSpanId).isEqualTo(ByteString.fromHex("eee19b7ec3c1b173"));
+  }
 
   @Test
   void testValueToJson() {

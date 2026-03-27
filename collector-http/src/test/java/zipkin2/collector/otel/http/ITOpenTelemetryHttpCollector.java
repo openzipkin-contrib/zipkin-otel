@@ -486,6 +486,48 @@ class ITOpenTelemetryHttpCollector {
     assertThat(metrics.bytes()).isEqualTo(tracesData.getSerializedSize());
   }
 
+  /** Span data from https://github.com/open-telemetry/opentelemetry-proto/blob/main/examples/trace.json */
+  @Test
+  void minimalSpanJson() throws Exception {
+    String json = """
+        {
+          "resourceSpans": [{
+            "resource": {
+              "attributes": [{"key": "service.name", "value": {"stringValue": "my.service"}}]
+            },
+            "scopeSpans": [{
+              "scope": {"name": "my.library", "version": "1.0.0"},
+              "spans": [{
+                "traceId": "5B8EFFF798038103D269B633813FC60C",
+                "spanId": "EEE19B7EC3C1B174",
+                "parentSpanId": "EEE19B7EC3C1B173",
+                "name": "I'm a server span",
+                "startTimeUnixNano": "1544712660000000000",
+                "endTimeUnixNano": "1544712661000000000",
+                "kind": 2
+              }]
+            }]
+          }]
+        }""";
+
+    URL url = URI.create("http://localhost:" + port + "/v1/traces").toURL();
+    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+    connection.setRequestMethod("POST");
+    connection.setDoOutput(true);
+    connection.setRequestProperty("Content-Type", "application/json");
+    try (OutputStream os = connection.getOutputStream()) {
+      os.write(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+      os.flush();
+    }
+    int responseCode = connection.getResponseCode();
+    connection.disconnect();
+    assertThat(responseCode).isEqualTo(HttpURLConnection.HTTP_ACCEPTED);
+    Awaitility.waitAtMost(Duration.ofMillis(200))
+        .untilAsserted(() -> assertThat(store.acceptedSpanCount()).isEqualTo(1));
+    assertThat(metrics.spans()).isEqualTo(1);
+    assertThat(metrics.messages()).isEqualTo(1);
+  }
+
   @Test
   void invalidSpanId() throws Exception {
     TracesData tracesData = TracesData.newBuilder()
